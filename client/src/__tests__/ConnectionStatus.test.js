@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import App from '../App.vue'
+import ConnectionStatus from '../components/portal/ConnectionStatus.vue'
 import { api } from '../services/api.js'
 
 vi.mock('../services/api.js', () => ({ api: { get: vi.fn() } }))
@@ -19,7 +19,7 @@ describe('scaffold connection check', () => {
         resolveRequest = resolve
       }),
     )
-    wrapper = mount(App)
+    wrapper = mount(ConnectionStatus)
     await flushPromises()
     expect(wrapper.get('button').attributes('disabled')).toBeDefined()
     resolveRequest({ data: { status: 'ok' } })
@@ -31,7 +31,7 @@ describe('scaffold connection check', () => {
   it('offers retry after failure and shows the recovered result', async () => {
     api.get.mockRejectedValueOnce(new Error('Internal response must not reach the page'))
     api.get.mockResolvedValueOnce({ data: { status: 'ok' } })
-    wrapper = mount(App)
+    wrapper = mount(ConnectionStatus)
     await flushPromises()
     expect(wrapper.get('[role="status"]').text()).toContain('Please try again')
     expect(wrapper.text()).not.toContain('Internal response')

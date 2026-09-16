@@ -2,7 +2,7 @@
 
 A WAD2 (IS216) group project that helps introductory cybersecurity students practise concepts through short, interactive games. Students receive feedback and track progress; instructors use cohort analytics to identify topics that need reinforcement.
 
-**Current status: Step 3 scaffold.** Vue, Bootstrap, Express, MongoDB connection handling, local development scripts, and test tooling are implemented. The initial page checks the API/database connection. Navigation, authentication, RBAC models, user dashboards, seed accounts, and games remain pending. See [TASKS.md](TASKS.md) for implementation status and approval gates; Step 4 requires Boey's approval.
+**Current status: Step 4 UI, including the open-world town pivot.** The modern Sharlock landing/login preview, pixel-art town dashboard, profile/trophy case, responsive navigation/offcanvas, progress display, tips, and route recovery are implemented. The portal uses explicitly labelled sample data. Playable games, account authentication, RBAC, saved learning records, and seed accounts remain pending. See [TASKS.md](TASKS.md) for evidence and next work.
 
 **Presentation environment: localhost. Budget: zero.**
 
@@ -11,6 +11,8 @@ A WAD2 (IS216) group project that helps introductory cybersecurity students prac
 Boey · Keane · Eric · Russell · Xin Lei · Athithya
 
 Assignments have not been decided. Features have shared ownership, and members may contribute to one another's work. Read [TASKS.md](TASKS.md) before starting and coordinate changes that overlap with active work. Record active contributors when implementation begins; these names are coordination information, not exclusive ownership claims.
+
+The exact modern/pixel visual split, colours, typography, mascots and independent game-theme rules are in [DESIGN.md](DESIGN.md). To add a game, follow its [building and metadata registration procedure](DESIGN.md#adding-a-new-game-to-the-homepage); the frontend catalog is separate from the pending authoritative game/result contract.
 
 AI-assisted sessions must explicitly read [agents.md](agents.md), which requires checking `TASKS.md` first. Do not assume that a coding tool automatically discovers the lowercase filename.
 
@@ -46,14 +48,14 @@ Use the [CS440 overview](documentation/CS440%20%28Cybersecurity%20Fundamentals%2
 
 ## Application architecture
 
-The workspace and connection-check page exist. The identity, permissions, learning, recovery, and game contracts below describe the planned application; they are not yet available user features.
+The workspace and portal UI exist, with the connection check on `/about`. The identity, permissions, learning, recovery, and game contracts below describe the planned application; they are not yet available user features.
 
 ### Technology choices
 
 | Area                        | Choice                                                                                                     |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | Frontend                    | HTML, CSS, plain JavaScript, Vue 3.5.42 using `<script setup>`, Vite 8.3.0, Bootstrap 5.3.8.               |
-| Navigation and shared state | Vue Router 4.6.4 installed for Step 4; Pinia 3.0.4 registered with no application stores yet.              |
+| Navigation and shared state | Vue Router 4.6.4 provides portal routes; Pinia 3.0.4 is registered with no account store yet.              |
 | HTTP requests               | A shared Axios client using relative `/api` URLs.                                                          |
 | Backend                     | Node.js 24.x (minimum 24.12.0), Express 5.2.1, and Mongoose 9.10.1.                                        |
 | Database                    | MongoDB; Atlas Free is the shared database option, with a local MongoDB instance also supported.           |
@@ -71,20 +73,21 @@ The repository has a `client/` workspace and a `server/` workspace. Shared UI co
 
 ```text
 client/
-  public/                  Static files copied as-is
+  public/                  Static files, including local image placeholders
   src/
     assets/{images,styles}/
-    components/common/     Reusable UI; reserved for Step 4
+    components/{common,portal}/  Shared widgets, map, and connection status
     composables/           Reusable Vue behaviour
-    layouts/               Shared page layouts; reserved
-    router/                Route configuration; reserved
+    layouts/               Portal shell and responsive offcanvas
+    router/                Portal routes and 404 recovery
     stores/                Pinia stores; reserved
-    views/                 Page components; reserved
+    views/                 Landing, Dashboard, Profile, previews, About, and 404
+    data/                  Labelled sample data for UI review
     games/                 One directory per selected game
     services/api.js        Shared Axios client
     utils/
     __tests__/             Component tests
-    App.vue                Connection-check page
+    App.vue                Portal layout entry point
     main.js                Vue/Pinia entry point
 server/
   src/
@@ -193,7 +196,7 @@ Run the following commands from the repository root. The scaffold does not requi
 - Git and Google Chrome, matching the assessment browser.
 - Node.js **24.12.0 or a newer 24.x release** and pnpm **12.3.4**. If using nvm, run `nvm install` and `nvm use` in this repository. If pnpm is missing, install the pinned version with `npm install -g pnpm@12.3.4`; use pnpm for all repository dependencies afterward.
 - Internet access for the initial package, MongoDB binary, and Playwright browser downloads. Cached local checks need no public API or database account.
-- The included local MongoDB helper supports the operating systems supported by [mongodb-memory-server](https://typegoose.github.io/mongodb-memory-server/). An existing MongoDB instance or Atlas Free is also supported through `MONGODB_URI`.
+- The included local MongoDB helper supports the operating systems supported by [mongodb-memory-server](https://typegoose.github.io/mongodb-memory-server/). An existing MongoDB instance or Atlas Free is also supported through `MONGO_URI`.
 
 ### Install and configure
 
@@ -204,36 +207,36 @@ pnpm install --frozen-lockfile
 pnpm setup:env
 ```
 
-`pnpm setup:env` creates the ignored `server/.env` from the template, generates a private random secret, and preserves an existing environment file. The secret is reserved for Step 4; authentication is not yet implemented.
+`pnpm setup:env` copies the team’s root `.env.example` to `.env` only if missing. Put your Atlas connection string in **root `.env` as `MONGO_URI`**. The command also creates `server/.env` with optional local defaults and a generated private session secret. Existing files are preserved byte-for-byte. The secret is reserved for authentication work; no sign-in flow exists yet.
 
 ### Start locally
 
-In the first terminal, start MongoDB:
-
-```sh
-pnpm db:local
-```
-
-The helper downloads MongoDB **8.2.6** on first use, binds only to `127.0.0.1:27018`, and stores development data in the ignored `.local/mongodb/` directory. Data survives a normal `Ctrl+C` stop and restart. The binary is cached in `.cache/mongodb/`. The helper must be used only for local development with synthetic data.
-
-In a second terminal, start Vue and Express together:
+With `MONGO_URI` configured in root `.env`, start the frontend and backend:
 
 ```sh
 pnpm dev
 ```
 
-Open `http://localhost:5173/`. The connection check should show **API and database connected.** `GET http://localhost:3000/api/health` returns HTTP 200 for a connected database and 503 if its connection becomes unavailable. Stop each terminal's command with `Ctrl+C`.
+Open `http://localhost:5173/` for the landing page, then **Explore the town**. Direct routes include `/dashboard`, `/profile`, `/progress`, `/about`, and `/games/<preview-id>`. The profile and progress routes share the sample learning overview. `/about` includes a real API/database connection check with retry. The API listens on `http://localhost:3000`; `GET /api/health` returns 200 after a successful database ping or 503 if unavailable.
 
-`pnpm dev:client` and `pnpm dev:server` run the workspaces individually. Nodemon watches only server source and its environment file, so database-file activity does not restart the API. The server requires a successful MongoDB connection before listening; the frontend alone can display the connection failure/retry state. Vite reads the local `PORT`/`CLIENT_ORIGIN` settings for its proxy and port, without exporting server secrets into the client.
+The backend loads environment files before connecting with `process.env.MONGO_URI`. Precedence is **existing shell variables → root `.env` → `server/.env` defaults**. An explicit database name in the URI is used; an Atlas URI without one selects `sharlock_dev`. For a shared cluster, use a separate database name per member. Configure database credentials and network access in Atlas; keep credentials only in ignored environment files. [Atlas connection guidance](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/)
 
-For an existing MongoDB instance, change `MONGODB_URI` and omit `pnpm db:local`. For a shared database, give each member a separate name, such as `sharlock_boey_dev`. Atlas users must configure database credentials and permit their machine's network address. Keep credentials in the ignored environment file. [Atlas setup](https://www.mongodb.com/docs/atlas/tutorial/deploy-free-tier-cluster/)
+No local database helper is needed when using Atlas. To opt into the existing local alternative, set root `MONGO_URI` to `mongodb://127.0.0.1:27018/sharlock_dev` and run `pnpm db:local` in another terminal. The helper downloads MongoDB 8.2.6 on first use and preserves development data in ignored `.local/mongodb/`; binaries are cached in ignored `.cache/mongodb/`. These directories must remain out of Git.
+
+`pnpm dev:client` runs the UI alone, including the sample town. `pnpm dev:server` runs Express alone. Nodemon watches server source and both environment file locations. Express requires a database connection before listening. Vite reads `PORT` and `CLIENT_ORIGIN` for the local proxy without exposing connection strings or secrets in its frontend bundle. Stop the commands with `Ctrl+C`.
+
+### Portal preview boundaries
+
+The dashboard is an open-world pixel-art town. All five buildings are available from the start and open activity previews. Hover/focus shows the required metadata; click/tap pins the card and reveals the activity link. Scroll/swipe inside the bounded map or use its keyboard arrows and Jump to selector. The corner sound button starts the looping `/audio/sharlock-bgm.mp3` soundtrack only after interaction; every visit begins muted and paused. Sample scores, progress, and achievements never create or update database records. The selected curriculum is illustrative. Assets are original, replaceable local SVG placeholders; modern pages retain the 3D-style mascot and pastel palette.
+
+`/login`, `/register`, `/leaderboard`, `/instructor`, `/admin`, and `/forbidden` show honest pending-feature messages. They expose no account or cohort data and grant no access. Authentication and server-enforced RBAC remain separate pending tasks. Google Fonts supplies Inter for modern pages and Pixelify Sans for the town; local font fallbacks keep the UI usable offline. Phosphor Vue supplies modern rounded icons, while the town uses original pixel icons. See [DESIGN.md](DESIGN.md) for exact visual rules, module boundaries, and asset credits.
 
 ### Troubleshooting
 
 | Symptom                             | Check                                                                                                                                                    |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Environment/secret validation fails | Run `pnpm setup:env`. An existing file is deliberately preserved; replace a copied template's placeholder with a random 64-character hexadecimal secret. |
-| MongoDB connection fails            | Wait for `pnpm db:local` to report ready, check `MONGODB_URI`, or verify credentials/network access for your existing instance.                          |
+| MongoDB connection fails            | Check root `MONGO_URI` and Atlas database/network access; for the optional local database, wait for `pnpm db:local` to report ready.                     |
 | A port is already occupied          | Stop the conflicting process you own. The database helper uses 27018; Express uses 3000 and Vue 5173 by default. Vite refuses to silently change ports.  |
 | Tests need a browser                | Run `pnpm exec playwright install chromium`.                                                                                                             |
 | First database download fails       | Check network access to the MongoDB download service and the platform requirements in the helper's documentation; retry after resolving the cause.       |
@@ -245,11 +248,11 @@ For an existing MongoDB instance, change `MONGODB_URI` and omit `pnpm db:local`.
 | `NODE_ENV`         | `development` for the local app; `test` for automated tests.                                                                                                                         |
 | `PORT`             | Express port, default `3000`; Vite uses it as its API proxy target.                                                                                                                  |
 | `CLIENT_ORIGIN`    | Exact loopback HTTP frontend origin, default `http://localhost:5173`. Access-control use is reserved for Step 4.                                                                     |
-| `MONGODB_URI`      | Development URI; default `mongodb://127.0.0.1:27018/sharlock_dev`.                                                                                                                   |
+| `MONGO_URI`        | Atlas or local connection string from root `.env`. A URI without a database path uses `sharlock_dev`.                                                                                |
 | `TEST_MONGODB_URI` | Set automatically by the integration/E2E runners to their disposable database. Leave blank in the local file for normal use. Direct test execution must supply an explicit safe URI. |
 | `SESSION_SECRET`   | Random hexadecimal secret of at least 64 characters; generated by `pnpm setup:env`, validated at startup, reserved for Step 4 sessions.                                              |
 
-`server/.env.example` contains no credentials. Shell environment variables override `server/.env`. Missing, malformed, or unsafe values stop startup with redacted guidance. Public API variables will be documented when the provider is chosen. Frontend `VITE_*` variables are public and must contain no secrets. Any future seed-specific inputs must be added here before their command is documented as working.
+The root `.env.example` remains the team’s connection template; `server/.env.example` contains optional defaults and a secret placeholder. Neither private `.env` file belongs in Git. Shell variables override root `.env`, which overrides `server/.env`. Missing, malformed, or unsafe values stop startup with redacted guidance. Public API variables will be documented when the provider is chosen. Frontend `VITE_*` variables are public and must contain no secrets. Any future seed-specific inputs must be added here before their command is documented as working.
 
 ### Seed data and grader accounts
 
@@ -259,25 +262,25 @@ The planned seed provides synthetic SMU and NUS institutions, multiple cohorts, 
 
 ## Testing
 
-The commands below work for the scaffold. Full authentication, role/cohort, recovery, and game journeys remain pending and are tracked separately in `TASKS.md`.
+The commands below check the scaffold and portal UI. Full authentication, role/cohort, recovery, and game journeys remain pending and are tracked separately in `TASKS.md`.
 
-| Command                                 | Current check                                                                                                  |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `pnpm lint`                             | JavaScript/Vue lint checks.                                                                                    |
-| `pnpm format:check`                     | Formatting validation without edits.                                                                           |
-| `pnpm format`                           | Apply formatting to repository source and Markdown.                                                            |
-| `pnpm test:unit`                        | Environment/test-database validation and Vue loading/failure/retry behaviour.                                  |
-| `pnpm test:integration`                 | Real MongoDB round-trip, readiness, unavailable database, safe 404, malformed JSON, and request size limit.    |
-| `pnpm exec playwright install chromium` | One-time installation of the browser used by E2E tests.                                                        |
-| `pnpm test:e2e`                         | Real Vue → Vite proxy → Express → MongoDB connection and failed-request recovery, at mobile and desktop sizes. |
-| `pnpm test`                             | The unit, integration, and E2E suites.                                                                         |
-| `pnpm build`                            | Verify the client build.                                                                                       |
+| Command                                 | Current check                                                                                                                                                                      |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm lint`                             | JavaScript/Vue lint checks.                                                                                                                                                        |
+| `pnpm format:check`                     | Formatting validation without edits.                                                                                                                                               |
+| `pnpm format`                           | Apply formatting to repository source and Markdown.                                                                                                                                |
+| `pnpm test:unit`                        | Environment/test-database validation, connection retry, progress bounds, catalog/card metadata, audio failure/cleanup, and empty trophy state.                                     |
+| `pnpm test:integration`                 | Real MongoDB round-trip, readiness, unavailable database, safe 404, malformed JSON, and request size limit.                                                                        |
+| `pnpm exec playwright install chromium` | One-time installation of the browser used by E2E tests.                                                                                                                            |
+| `pnpm test:e2e`                         | Connection/retry plus all town buildings, metadata, touch/keyboard/hover access, bounded scrolling, real soundtrack playback, profile, offcanvas, branding, and responsive checks. |
+| `pnpm test`                             | The unit, integration, and E2E suites.                                                                                                                                             |
+| `pnpm build`                            | Verify the client build.                                                                                                                                                           |
 
 The integration/E2E scripts create their own real, temporary MongoDB process with a random `sharlock_<run-id>_test` database name and a fresh test secret. They stop and remove only that temporary instance afterward. They do not require `pnpm db:local`, a development server, or a manually configured test database. They ignore a supplied test URI in favour of their own instance.
 
 The server's test-mode validation rejects a missing test URI, a name without `_test`, system databases, database-name overrides, and a name matching the development database even through a different host alias. Future tests must reuse this guarded configuration. No development database is dropped or reset.
 
-Playwright starts its own services on API port **3001** and frontend port **5174** and refuses to reuse existing servers. Close conflicting processes you own before running it. Browser reports go to ignored `playwright-report/`; failure traces/screenshots go to `test-results/`. First-run downloads need network access; the test cases call no public external API.
+Playwright starts its own services on API port **3001** and frontend port **5174** and refuses to reuse existing servers. Close conflicting processes you own before running it. Browser reports go to ignored `playwright-report/`; failure traces/screenshots go to `test-results/`. First-run downloads need network access. Tests use a temporary local database, never Atlas. Browser tests control font responses and exercise the system-font fallback; no public data API is called.
 
 ### Required application journey coverage — pending
 

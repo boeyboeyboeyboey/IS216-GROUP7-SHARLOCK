@@ -53,7 +53,11 @@ export function validateEnvironment(env) {
     nodeEnv === 'test'
       ? assertSafeTestDatabaseUri(env.TEST_MONGODB_URI, env.MONGO_URI)
       : env.MONGO_URI
-  databaseNameFromUri(databaseUri, 'MONGO_URI', nodeEnv === 'development' ? 'sharlock_dev' : undefined)
+  databaseNameFromUri(
+    databaseUri,
+    'MONGO_URI',
+    nodeEnv === 'development' ? 'sharlock_dev' : undefined,
+  )
 
   return Object.freeze({
     nodeEnv,

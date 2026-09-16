@@ -112,6 +112,10 @@ Follow the [security references in README.md](README.md#authentication-and-recov
 
 ## 8. Make every screen responsive and accessible
 
+Read [DESIGN.md](DESIGN.md) before UI work. Preserve the strict visual split: modern pastel landing/login/supporting pages use the exact five root colour tokens, Inter (or Roboto), 700-weight headings/game titles, 400-weight body text, a 3D-style capybara with a monocle, and rounded icons. The student homepage is a 2D pixel-art town with pixel capybara NPCs, buildings, metadata cards and controls. All activities are available from the start; never restore linear locks. Keep the town readable inside a bounded, scrollable viewport at 375px. Retain the 3D navbar logo on every page; show “Sharlock Hub” only from 768px upward.
+
+Follow [Adding a new game to the homepage](DESIGN.md#adding-a-new-game-to-the-homepage) exactly: register a unique entry in `client/src/data/gameCatalog.js`, choose/place its pixel building, supply the name, description, integer 1–3 star difficulty and background-knowledge list, and connect the actual game route. The shared map renders the building and hover/focus/tap card from that entry. Do not duplicate registries or cards. Knowledge is advisory, not an access gate. Preserve the muted-by-default `/audio/sharlock-bgm.mp3` loop, gesture-driven playback, retry and cleanup. Games may use independent scoped palettes while retaining clean typography, soft/friendly aesthetics, accessibility and full responsiveness. Label sample progress explicitly; never present preview data as saved learning records.
+
 The minimum viewport width is **375px**. Design for mobile first and scale through Bootstrap XL and larger.
 
 - Use the Bootstrap grid/utilities, Flexbox, and Grid with flexible dimensions. Scope game-specific styles so they do not alter the shared navbar or other games.

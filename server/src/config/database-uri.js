@@ -6,7 +6,8 @@ export function databaseNameFromUri(uri, label = 'MONGO_URI', fallbackName) {
     const parsed = new ConnectionString(uri)
     const name = decodeURIComponent(parsed.pathname.slice(1)) || fallbackName
     if (
-      !name || !/^[a-zA-Z0-9_-]+$/.test(name) ||
+      !name ||
+      !/^[a-zA-Z0-9_-]+$/.test(name) ||
       ['admin', 'config', 'local'].includes(name.toLowerCase())
     ) {
       throw new Error()

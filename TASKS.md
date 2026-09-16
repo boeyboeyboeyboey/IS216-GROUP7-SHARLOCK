@@ -14,8 +14,8 @@ Boey requested separate approval between these stages. Authorization for one sta
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | 1 — Clarify       | Read supplied PDFs and agree product/architecture defaults.                                                             | Complete; defaults approved, including the subsequent localhost-only and documentation exclusions. |
 | 2 — Documentation | Create only `README.md`, `TASKS.md`, and `agents.md`.                                                                   | Complete; Boey approved moving to Step 3.                                                          |
-| 3 — Scaffold      | Create the MEVN workspace, directories, package/configuration files, environment templates, and development/test setup. | Accepted by Boey; scaffold merged and pushed in `515586c`.                                                 |
-| 4 — Base app      | Implement responsive shell/navbar, routing, authentication, and foundational RBAC/data models.                          | Authorized by Boey; portal UI/design and MONGO_URI update in progress. Authentication remains pending.                                                     |
+| 3 — Scaffold      | Create the MEVN workspace, directories, package/configuration files, environment templates, and development/test setup. | Accepted by Boey; scaffold merged and pushed in `515586c`.                                         |
+| 4 — Base app      | Implement responsive shell/navbar, routing, authentication, and foundational RBAC/data models.                          | Town UI pivot ready for review. Authentication/RBAC remain pending.                                |
 
 Later feature work requires an explicit task request or agreed team scope. Update the gate status when approval is received; preserve the distinction between proposed and implemented work.
 
@@ -33,19 +33,62 @@ Priorities: **P0** foundation or assessment requirement; **P1** core user value;
 
 ## In Progress
 
-Contributor: **Boey**. Branch: `codex/ui-01-sharlock-portal`.
+None recorded. The completed town pivot is awaiting Boey's review below.
 
-Scope: implement the requested portal design, responsive layout/components and routes, and root `MONGO_URI` support. Authentication/RBAC business implementation remains a separate pending task; sample UI data grants no account access or saved rewards.
+## Review
 
-| ID | Priority | Task / affected areas | Dependencies | Acceptance criteria / progress |
-| --- | --- | --- | --- | --- |
-| UI-01   | P0       | Responsive application shell and navigation; shared client components         | Step 4 approval, SET-01  | Header, Bootstrap navbar, content/footer layout, keyboard navigation, and tested behaviour from 375px through XL.                                                                                                   |
-| UI-02   | P0       | Route structure and shared UI states; client router/views                     | Step 4 approval, UI-01   | Home/game hub, auth, profile/progress, cohort leaderboard, instructor, admin, forbidden, and not-found route structure; unfinished views clearly marked; no misleading success displays.                            |
-| DES-01 | P0 | Portal design system; DESIGN.md, agents.md, global CSS and image placeholders | User design specification | Exact five colours, Inter typography, capybara/monocle placeholders, rounded icons, mobile pathway, reusable widgets, and game-theme independence documented and implemented. |
-| CFG-01 | P0 | Atlas configuration; server environment/database helpers and setup docs | User's root .env | Read process.env.MONGO_URI after loading root .env; preserve private files; support Atlas URI without a database path; keep tests isolated and errors redacted. |
+**UI-03 — Open-world pixel town pivot** · P0 · Contributor/reviewer: **Boey** · Branch: `codex/ui-03-pixel-town` (uncommitted; no new commit or push).
 
-Coordination: router, shared layout/styles, preview data, environment names, and setup documentation change together. No other active contributor is recorded. Preserve the user's untracked `.gitignore 2` and private environment files. Next action: implement and verify the UI and database configuration.
+Boey approved direct click/tap building selection and a bounded, scrollable town viewport. Implemented five freely available pixel-art buildings, trees/bushes/paths/pond and passive capybara cousin NPCs. Hover/focus/tap cards expose name, description, 1–3 star difficulty and background knowledge, with an activity link. Touch selection pins the card; Close/Escape restores focus. Keyboard arrows and a Jump to selector provide alternative map navigation. The supplied MP3 loops only after the sound button is clicked and pauses/mutes on departure. The modern landing/login previews and 3D logo remain; the navbar hides “Sharlock Hub” below 768px.
 
+**Shared areas:** dashboard, navbar/layout, router theme metadata, `client/src/data/gameCatalog.js`, town components/styles/assets, preview routes, tests and documentation. No other active contributor is recorded. Existing backend/private configuration, user audio, prior changes, unrelated local files and the user's deletion of `.gitignore 2` were preserved. No authentication, walking character, new game mechanics or saved rewards were implemented.
+
+### Town contribution rules
+
+- **Visual split:** modern pastel public/supporting pages use the 3D monocle mascot. The homepage map, NPCs, hover cards and controls use 2D pixel art; the persistent navbar logo remains 3D.
+- **Adding a game:** follow [DESIGN.md's registration procedure](DESIGN.md#adding-a-new-game-to-the-homepage). Add a unique catalog entry with name, description, integer difficulty 1–3, background-knowledge list, route and pixel building type/coordinates. The map creates its new building and shared metadata card automatically. Connect the playable route and arrange the nearby scenery; keep `isPreview` until the game is playable. Coordinate the pending server registry/result interface separately.
+- **Access and responsiveness:** all buildings are open from the start; no linear locks. Knowledge is advisory. Preserve the readable 1120 × 800 world inside a bounded scrollable viewport, touch/keyboard alternatives and the muted-by-default `/audio/sharlock-bgm.mp3` control.
+- **Documentation:** DESIGN.md is the detailed source of truth and is cross-referenced in agents.md and README.md. Game themes may differ while staying friendly, readable, accessible and responsive.
+
+### Town verification
+
+- `pnpm test:unit`: **40 passed**. Includes catalog validation, metadata/star rendering, progress bounds, audio default silence, failed-play retry, pending-play cleanup, connection retry and environment/test-database guards.
+- `pnpm test:e2e`: **18 passed** across mobile/desktop Chromium using a disposable local MongoDB, never Atlas. Covers all five building/card/preview journeys, hover/focus/tap, Escape/Close restoration, keyboard panning, actual repository MP3 playback only after interaction, muting and route cleanup, profile/menu, modern landing/login, 404, logo-only mobile branding and real API/retry checks. A first-tap focus interception issue was found and fixed before the successful run.
+- Browser layout checks: 375, 576, 767, 768, 992, 1200 and 1440px plus 667 × 375 landscape; no page-wide horizontal overflow, fixed readable world size and reachable sound control. Desktop/mobile map and metadata screenshots inspected. Landing, login, profile, about, game preview and 404 also fit 375/768/1440px with no broken images or browser exceptions.
+- `pnpm lint`, `pnpm format:check`, `pnpm build`, and `git diff --check`: passed. Documentation link targets and requested exclusions checked; no tracked/new files exceed 50 MiB. The supplied soundtrack is approximately 1.5 MB.
+- Additional Chromium rehearsal: a real touch swipe moved the map horizontally without page overflow; repeated Tab navigation remained inside the mobile drawer, backdrop dismissal restored focus, and resizing to desktop removed the backdrop and scroll lock.
+- `pnpm test:integration`: not rerun for this frontend pivot; server code was unchanged by UI-03. Previous six integration checks remain historical evidence below; the E2E run separately exercised the real test API/database connection.
+
+**Next action:** Boey reviews the town at `http://localhost:5173/dashboard`. All five activities remain clearly labelled previews; authentication/RBAC and saved learning data are pending tasks. The MP3's source/permission still needs an asset-credit entry from its contributor for the final assessment.
+
+## Previous portal baseline — superseded by UI-03
+
+Contributor: **Boey**. Branch: `codex/ui-01-sharlock-portal` (uncommitted working changes; no new commit or push). Reviewer: **Boey**.
+
+Scope: implemented the requested portal design, responsive layout/components and routes, and root `MONGO_URI` support. Authentication/RBAC business implementation remains a separate pending task; sample UI data grants no account access or saved rewards.
+
+| ID     | Priority | Task / affected areas                                                         | Dependencies              | Acceptance criteria / progress                                                                                                                                                           |
+| ------ | -------- | ----------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| UI-01  | P0       | Responsive application shell and navigation; shared client components         | Step 4 approval, SET-01   | Header, Bootstrap navbar, content/footer layout, keyboard navigation, and tested behaviour from 375px through XL.                                                                        |
+| UI-02  | P0       | Route structure and shared UI states; client router/views                     | Step 4 approval, UI-01    | Home/game hub, auth, profile/progress, cohort leaderboard, instructor, admin, forbidden, and not-found route structure; unfinished views clearly marked; no misleading success displays. |
+| DES-01 | P0       | Portal design system; DESIGN.md, agents.md, global CSS and image placeholders | User design specification | Exact five colours, Inter typography, capybara/monocle placeholders, rounded icons, mobile pathway, reusable widgets, and game-theme independence documented and implemented.            |
+| CFG-01 | P0       | Atlas configuration; server environment/database helpers and setup docs       | User's root .env          | Read process.env.MONGO_URI after loading root .env; preserve private files; support Atlas URI without a database path; keep tests isolated and errors redacted.                          |
+
+Coordination: router, shared layout/styles, preview data, environment names, and setup documentation change together. No other active contributor is recorded. The user's existing deletion of `.gitignore 2` is preserved; private environment files and the team's root `.env.example` are unchanged. Local data/cache files remain ignored and untracked.
+
+### Portal verification
+
+- `pnpm install --frozen-lockfile`: passed with the pinned Phosphor Vue dependency and one root lockfile.
+- `pnpm setup:env`: passed; hash comparison confirmed existing root `.env`, team `.env.example`, and `server/.env` were preserved exactly.
+- `pnpm dev:server` and `GET /api/health`: connected using the existing root `MONGO_URI`; the real Atlas health ping returned HTTP 200. No application records were written.
+- `pnpm test:unit`: **28 passed**, including Atlas URI handling, isolated test URI validation, connection retry, bounded progress, disabled locked nodes, and empty trophies.
+- `pnpm test:integration`: **6 passed** using a disposable local MongoDB instance, never Atlas.
+- `pnpm test:e2e`: **14 passed** across mobile/desktop Chromium. Covered landing-to-pathway navigation, case previews without score changes, locked/direct-route states, profile/trophies, refresh, menu focus/Escape/route dismissal, tips, 404 recovery, connection/retry, and reduced motion.
+- Browser layout checks: pathway at 375, 576, 767, 768, 992, 1200, and 1440px plus 667×375 landscape. No horizontal overflow; mobile nodes align vertically and desktop nodes alternate along the curve. Desktop/mobile screenshots inspected.
+- Additional browser rehearsal: landing, profile, about, case preview, and 404 pages had no overflow or broken images at 375/768/1440px. After the menu opening animation completed, repeated Tab navigation stayed inside the drawer; backdrop dismissal restored focus, and resizing to desktop removed the backdrop and scroll lock. Menu/profile screenshots inspected.
+- `pnpm lint`, `pnpm format:check`, `pnpm build`, and `git diff --check`: passed. Local credential checks found no private URI/secret in tracked/new source or the built browser bundle. No tracked cache/data/private environment files or files above 50MB were found.
+
+Next action: Boey reviews the design and interaction preview at `http://localhost:5173/dashboard`; the local frontend/API have been left running for review. Authentication, RBAC, real profile/results, and playable games remain separate tasks; the current UI grants no access or saved rewards. Feature routes with no implementation display explicit pending states. Future game contributions follow [DESIGN.md](DESIGN.md).
 
 ## Accepted scaffold history
 
@@ -73,10 +116,6 @@ Coordination: shared root scripts/configuration, the single lockfile, client/ser
 - Additional Chromium rehearsal at widths 375, 576, 768, 992, 1200, and 1440px, plus 667×375 landscape: successful connection checks, no horizontal overflow, visible controls, and keyboard activation passed. Local development processes were stopped after verification.
 
 Boey accepted the scaffold and requested the portal UI and Atlas configuration next. A teammate's independent fresh-checkout rehearsal and the full application journey/breakpoint checks remain future QA work.
-
-## Review
-
-None for the current change yet.
 
 ## Blocked
 
@@ -148,19 +187,19 @@ These are ideas, not commitments or assignments. Select a manageable set based o
 
 ## Decisions and unresolved choices
 
-| Topic                                 | Decision / status                                                                                                                                                     |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Presentation                          | Localhost only; zero budget.                                                                                                                                          |
-| Framework conventions                 | Plain JavaScript, Vue 3 `<script setup>`, Router, Pinia, Bootstrap 5.3.x, Axios, Express, Mongoose/MongoDB, pnpm, Vitest, Playwright.                                 |
-| Enrollment                            | Self-registration, code-based cohort request, instructor approval; admins provision instructors and assign them to cohorts.                                           |
-| Data boundaries                       | Institution contains cohorts; membership supports multiple cohorts; attempts belong to one validated cohort or personal practice.                                     |
-| Role scope                            | Instructors/admins may play; admin learning-record access spans cohorts; instructors remain restricted to assigned-cohort activity.                                   |
-| Rankings                              | Signed-in, authorized cohort members/staff; public profile fields only; staff practice excluded; global competition deferred.                                         |
-| Recovery                              | Staff-assisted single-use reset links; no email-service dependency.                                                                                                   |
-| Game selection and assignments        | Undecided; the above ideas remain exploratory. No member is assigned by this file.                                                                                    |
-| Public API provider                   | Unselected; resolve and verify in API-01. Do not claim the API requirement is met yet.                                                                                |
-| Detailed interfaces and policy values | Finalize during the relevant task: game payloads, session/reset/code lifetimes, log retention, and specific administrator policy controls. Document values and tests. |
-| Verification status                   | Step 3 scaffold commands and checks are available; see Review evidence. No user accounts, authentication, RBAC, or game journeys exist yet.                           |
+| Topic                                 | Decision / status                                                                                                                                                            |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Presentation                          | Localhost only; zero budget.                                                                                                                                                 |
+| Framework conventions                 | Plain JavaScript, Vue 3 `<script setup>`, Router, Pinia, Bootstrap 5.3.x, Axios, Express, Mongoose/MongoDB, pnpm, Vitest, Playwright.                                        |
+| Enrollment                            | Self-registration, code-based cohort request, instructor approval; admins provision instructors and assign them to cohorts.                                                  |
+| Data boundaries                       | Institution contains cohorts; membership supports multiple cohorts; attempts belong to one validated cohort or personal practice.                                            |
+| Role scope                            | Instructors/admins may play; admin learning-record access spans cohorts; instructors remain restricted to assigned-cohort activity.                                          |
+| Rankings                              | Signed-in, authorized cohort members/staff; public profile fields only; staff practice excluded; global competition deferred.                                                |
+| Recovery                              | Staff-assisted single-use reset links; no email-service dependency.                                                                                                          |
+| Game selection and assignments        | Undecided; the above ideas remain exploratory. No member is assigned by this file.                                                                                           |
+| Public API provider                   | Unselected; resolve and verify in API-01. Do not claim the API requirement is met yet.                                                                                       |
+| Detailed interfaces and policy values | Finalize during the relevant task: game payloads, session/reset/code lifetimes, log retention, and specific administrator policy controls. Document values and tests.        |
+| Verification status                   | Town UI verified; see UI-03 Review evidence. Atlas configuration verification is retained in the historical portal record. Accounts, RBAC and playable games remain pending. |
 
 ## Entry template for active work
 

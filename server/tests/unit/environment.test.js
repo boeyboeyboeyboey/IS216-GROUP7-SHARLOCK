@@ -6,11 +6,17 @@ const base = {
   NODE_ENV: 'development',
   PORT: '3000',
   CLIENT_ORIGIN: 'http://localhost:5173',
-  MONGODB_URI: 'mongodb://127.0.0.1:27018/sharlock_dev',
+  MONGO_URI: 'mongodb://127.0.0.1:27018/sharlock_dev',
   SESSION_SECRET: 'a'.repeat(64),
 }
 
 describe('environment validation', () => {
+  it('uses MONGO_URI, including Atlas connections without a database path', () => {
+    const uri = 'mongodb+srv://member:private@example.mongodb.net/?retryWrites=true'
+    expect(validateEnvironment({ ...base, MONGO_URI: uri }).databaseUri).toBe(uri)
+    expect(databaseNameFromUri(uri, 'MONGO_URI', 'sharlock_dev')).toBe('sharlock_dev')
+    expect(() => validateEnvironment({ ...base, MONGO_URI: undefined })).toThrow('MONGO_URI')
+  })
   it('selects the explicit test database without falling back to development', () => {
     const testUri = 'mongodb://127.0.0.1:27019/sharlock_unit_test'
     expect(

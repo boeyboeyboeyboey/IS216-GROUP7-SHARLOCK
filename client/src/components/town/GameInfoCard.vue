@@ -1,0 +1,53 @@
+<script setup>
+import { ref } from 'vue'
+import PixelIcon from './PixelIcon.vue'
+defineProps({ game: { type: Object, required: true } })
+defineEmits(['close'])
+const heading = ref(null)
+defineExpose({ focus: () => heading.value?.focus({ preventScroll: true }) })
+</script>
+<template>
+  <section
+    :id="`game-card-${game.id}`"
+    class="game-info-card"
+    :aria-labelledby="`game-heading-${game.id}`"
+  >
+    <div class="game-card-header">
+      <span>ACTIVITY FILE</span
+      ><button
+        type="button"
+        class="pixel-close"
+        aria-label="Close activity details"
+        @click="$emit('close')"
+      >
+        <PixelIcon name="close" :size="16" />
+      </button>
+    </div>
+    <div class="game-card-content">
+      <h2 :id="`game-heading-${game.id}`" ref="heading" tabindex="-1">{{ game.name }}</h2>
+      <p>{{ game.description }}</p>
+      <div class="difficulty-row">
+        <span>Difficulty</span
+        ><span
+          class="difficulty-stars"
+          role="img"
+          :aria-label="`Difficulty: ${game.difficulty} out of 3 stars`"
+          ><PixelIcon
+            v-for="star in 3"
+            :key="star"
+            name="star"
+            :class="{ 'star-empty': star > game.difficulty }"
+            :size="20"
+        /></span>
+      </div>
+      <h3>Background knowledge needed</h3>
+      <ul class="knowledge-list">
+        <li v-for="topic in game.backgroundKnowledge" :key="topic">{{ topic }}</li>
+      </ul>
+      <RouterLink :to="game.route" class="pixel-button enter-activity"
+        >{{ game.isPreview ? 'View activity preview' : 'Enter activity'
+        }}<PixelIcon name="arrow" :size="16" /></RouterLink
+      ><span v-if="game.isPreview" class="game-preview-label">Playable game in development</span>
+    </div>
+  </section>
+</template>
