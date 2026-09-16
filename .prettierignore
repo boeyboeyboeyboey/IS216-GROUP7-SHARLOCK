@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+.cache/
+.local/
+.env
+.env.*
+pnpm-lock.yaml
+documentation/**/*.pdf

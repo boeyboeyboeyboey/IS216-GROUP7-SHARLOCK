@@ -1,0 +1,43 @@
+{
+  "name": "sharlock",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "node": ">=24.12.0 <25",
+    "pnpm": "12.3.4"
+  },
+  "scripts": {
+    "setup:env": "node scripts/setup-env.mjs",
+    "db:local": "node scripts/start-local-db.mjs",
+    "dev": "concurrently --kill-others --names server,client \"pnpm dev:server\" \"pnpm dev:client\"",
+    "dev:client": "pnpm --filter @sharlock/client dev",
+    "dev:server": "pnpm --filter @sharlock/server dev",
+    "build": "pnpm --filter @sharlock/client build",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:unit": "vitest run --project client --project server",
+    "test:integration": "node scripts/run-with-test-db.mjs integration",
+    "test:e2e": "node scripts/run-with-test-db.mjs e2e",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:e2e"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
+    "@vitejs/plugin-vue": "6.0.9",
+    "@vue/test-utils": "2.5.0",
+    "concurrently": "10.0.5",
+    "eslint": "10.10.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-vue": "10.11.0",
+    "globals": "17.12.0",
+    "jsdom": "27.4.0",
+    "mongodb-memory-server-core": "11.2.0",
+    "prettier": "3.9.6",
+    "supertest": "7.2.2",
+    "vite": "8.3.0",
+    "vitest": "5.0.1"
+  }
+}

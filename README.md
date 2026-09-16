@@ -2,7 +2,7 @@
 
 A WAD2 (IS216) group project that helps introductory cybersecurity students practise concepts through short, interactive games. Students receive feedback and track progress; instructors use cohort analytics to identify topics that need reinforcement.
 
-**Current status: documentation only.** The application, package manifests, environment templates, database seed, and tests have not been implemented. The setup and commands below are the contract for the next stages, not commands that work in the current repository. See [TASKS.md](TASKS.md) for implementation status and approval gates.
+**Current status: Step 3 scaffold.** Vue, Bootstrap, Express, MongoDB connection handling, local development scripts, and test tooling are implemented. The initial page checks the API/database connection. Navigation, authentication, RBAC models, user dashboards, seed accounts, and games remain pending. See [TASKS.md](TASKS.md) for implementation status and approval gates; Step 4 requires Boey's approval.
 
 **Presentation environment: localhost. Budget: zero.**
 
@@ -22,50 +22,89 @@ The learning problem is applying foundational security concepts and understandin
 
 The [project brief and rubric](documentation/project_brief_and_rubric.pdf) is the primary source for assessment requirements. Percentages below are within the final presentation and deliverables component, not percentages of the entire course.
 
-| Criterion | Weight | Evidence to build and demonstrate |
-| --- | --- | --- |
-| Problem solving and solution appropriateness | 20% | Clear learning objectives, useful feedback, and an instructor view that helps identify learning gaps. |
-| Working, correctly implemented, usable application | 27% | Complete student and staff journeys, persistent data, enforced access rules, and understandable error states. |
-| Styling and responsiveness | 18% | Consistent Bootstrap styling and usable pages and games from 375px through XL, in both orientations. |
-| Testing | 10% | Repeatable end-to-end coverage of core journeys, stable selectors, and reproducible instructions. |
-| Presentation and Q&A | 25% | A clear problem-to-solution story, smooth demo, technology explanation, and test evidence. |
+| Criterion                                          | Weight | Evidence to build and demonstrate                                                                             |
+| -------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------- |
+| Problem solving and solution appropriateness       | 20%    | Clear learning objectives, useful feedback, and an instructor view that helps identify learning gaps.         |
+| Working, correctly implemented, usable application | 27%    | Complete student and staff journeys, persistent data, enforced access rules, and understandable error states. |
+| Styling and responsiveness                         | 18%    | Consistent Bootstrap styling and usable pages and games from 375px through XL, in both orientations.          |
+| Testing                                            | 10%    | Repeatable end-to-end coverage of core journeys, stable selectors, and reproducible instructions.             |
+| Presentation and Q&A                               | 25%    | A clear problem-to-solution story, smooth demo, technology explanation, and test evidence.                    |
 
 Additional requirements: HTML/CSS/JavaScript, a backend data store, and meaningful use of at least one public external API through asynchronous HTTP requests. A static fixture or scraped page alone does not fulfil the API requirement.
 
 ### Course concepts to demonstrate
 
-| WAD2 material | Application use |
-| --- | --- |
-| [Course overview](documentation/WAD2%20Course%20Details/WAD2%20Course%20Overview.pdf) | Frontend problem solving, interaction, components, routing, state management, and testing. |
-| [Week 2: CSS](documentation/WAD2%20Course%20Details/Week2Slides.pdf) | Box model, selectors, spacing, Flexbox, Grid, and maintainable styling. |
-| [Week 3: Bootstrap](documentation/WAD2%20Course%20Details/Week3Slides.pdf) | Mobile-first grid, breakpoints, forms, cards, navbar, and accessibility. |
-| [Week 4: Vue](documentation/WAD2%20Course%20Details/Week4Slides.pdf) | Single-file components, Composition API, reactive state, bindings, and routing. |
-| [Week 5: Vue and async requests](documentation/WAD2%20Course%20Details/Week5Slides.pdf) | Events, lifecycle hooks, computed values, list rendering, Axios, and JSON. |
+| WAD2 material                                                                           | Application use                                                                            |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [Course overview](documentation/WAD2%20Course%20Details/WAD2%20Course%20Overview.pdf)   | Frontend problem solving, interaction, components, routing, state management, and testing. |
+| [Week 2: CSS](documentation/WAD2%20Course%20Details/Week2Slides.pdf)                    | Box model, selectors, spacing, Flexbox, Grid, and maintainable styling.                    |
+| [Week 3: Bootstrap](documentation/WAD2%20Course%20Details/Week3Slides.pdf)              | Mobile-first grid, breakpoints, forms, cards, navbar, and accessibility.                   |
+| [Week 4: Vue](documentation/WAD2%20Course%20Details/Week4Slides.pdf)                    | Single-file components, Composition API, reactive state, bindings, and routing.            |
+| [Week 5: Vue and async requests](documentation/WAD2%20Course%20Details/Week5Slides.pdf) | Events, lifecycle hooks, computed values, list rendering, Axios, and JSON.                 |
 
 Use the [CS440 overview](documentation/CS440%20%28Cybersecurity%20Fundamentals%29%20Course%20Details/0-course-intro.pdf) to map activities to basic security concepts, symmetric/asymmetric encryption, integrity and authentication, certificates, identity management, access control, network security, software security, and web security. Specific exercises in the backlog are our proposed interpretations of those topics, not supplied CS440 lecture content.
 
-## Planned application spine
+## Application architecture
+
+The workspace and connection-check page exist. The identity, permissions, learning, recovery, and game contracts below describe the planned application; they are not yet available user features.
 
 ### Technology choices
 
-| Area | Choice |
-| --- | --- |
-| Frontend | HTML, CSS, plain JavaScript, Vue 3 single-file components using `<script setup>`, Vite, Bootstrap 5.3.x. |
-| Navigation and shared state | Vue Router and Pinia. |
-| HTTP requests | A shared Axios client using relative `/api` URLs. |
-| Backend | Node.js, Express, and Mongoose. |
-| Database | MongoDB; Atlas Free is the shared database option, with a local MongoDB instance also supported. |
-| Authentication | Password hashing with Argon2id; server-side sessions stored in MongoDB. |
-| Tooling | pnpm, ESLint, and Prettier; a single pnpm lockfile. |
-| Verification | Vitest for unit/component and API integration tests; Playwright for browser end-to-end tests. |
+| Area                        | Choice                                                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Frontend                    | HTML, CSS, plain JavaScript, Vue 3.5.42 using `<script setup>`, Vite 8.3.0, Bootstrap 5.3.8.               |
+| Navigation and shared state | Vue Router 4.6.4 installed for Step 4; Pinia 3.0.4 registered with no application stores yet.              |
+| HTTP requests               | A shared Axios client using relative `/api` URLs.                                                          |
+| Backend                     | Node.js 24.x (minimum 24.12.0), Express 5.2.1, and Mongoose 9.10.1.                                        |
+| Database                    | MongoDB; Atlas Free is the shared database option, with a local MongoDB instance also supported.           |
+| Authentication              | Planned for Step 4: Argon2id and server-side sessions stored in MongoDB.                                   |
+| Tooling                     | pnpm 12.3.4, ESLint, and Prettier; a single root pnpm lockfile.                                            |
+| Verification                | Vitest 5.0.1 for unit/component and API integration tests; Playwright 1.63.0 for browser end-to-end tests. |
 
-Scaffolding must pin and verify compatible dependency and runtime versions. Follow the taught JavaScript approach; introducing TypeScript or another frontend framework requires an agreed change of direction.
+Direct dependencies are pinned in the package manifests; transitive dependencies are locked in `pnpm-lock.yaml`. `.nvmrc` records the tested Node.js version, 24.12.0. Follow the taught JavaScript approach; introducing TypeScript or another frontend framework requires an agreed change of direction.
 
 ### Local request flow and module boundaries
 
-The browser opens the Vue app at `http://localhost:5173`. Vite proxies `/api` to Express at `http://localhost:3000`. Express validates requests, checks the session and permissions, and reads or writes MongoDB. Public API calls that need keys or shared caching pass through Express.
+The browser opens the Vue app at `http://localhost:5173`. Vite proxies `/api` to Express at `http://localhost:3000`, bound to loopback. The current `/api/health` route checks a real MongoDB connection. Future feature routes must validate requests, sessions, and permissions before accessing data. Public API calls that need keys or shared caching will pass through Express.
 
-The planned repository has a `client/` workspace and a `server/` workspace. Shared UI components, navigation, authentication, state, and HTTP handling belong to the spine. Each game has its own client and server module. The detailed folder structure is reserved for Step 3.
+The repository has a `client/` workspace and a `server/` workspace. Shared UI components, navigation, authentication, state, and HTTP handling belong to the spine. Each selected game will have its own client and server module.
+
+```text
+client/
+  public/                  Static files copied as-is
+  src/
+    assets/{images,styles}/
+    components/common/     Reusable UI; reserved for Step 4
+    composables/           Reusable Vue behaviour
+    layouts/               Shared page layouts; reserved
+    router/                Route configuration; reserved
+    stores/                Pinia stores; reserved
+    views/                 Page components; reserved
+    games/                 One directory per selected game
+    services/api.js        Shared Axios client
+    utils/
+    __tests__/             Component tests
+    App.vue                Connection-check page
+    main.js                Vue/Pinia entry point
+server/
+  src/
+    config/                Environment validation and MongoDB connections
+    middleware/            Safe error responses
+    routes/                API composition and health route
+    models/                Shared identity/cohort/result models; reserved
+    services/              Cross-module services; reserved
+    validators/            Shared request validation; reserved
+    utils/
+    modules/               Feature handlers and services; reserved
+      {auth,users,institutions,cohorts,learning,leaderboards,admin,news,games}/
+    app.js                 Express construction without opening a port
+    server.js              Startup and graceful shutdown
+  tests/{unit,integration,fixtures}/
+scripts/                   Environment, local database, and test helpers
+tests/e2e/                 Browser tests and future fixtures
+```
+
+Empty directories contain `.gitkeep` so they survive a clone. Shared domain models belong in `server/src/models`; game-specific rules and models belong in `server/src/modules/games/<game-id>`. Do not create duplicate models for the same domain object.
 
 All screens must distinguish loading, empty, success, validation failure, and service failure states where relevant. Direct links and refreshes must preserve valid navigation. Unknown and forbidden routes need useful recovery links.
 
@@ -82,18 +121,18 @@ All screens must distinguish loading, empty, success, validation failure, and se
 
 ### Role-based access control
 
-| Capability | Student | Instructor | System administrator |
-| --- | --- | --- | --- |
-| Play games and view own results | Yes | Yes, as practice | Yes, as practice |
-| Edit own username and preset avatar | Yes | Yes | Yes |
-| View cohort leaderboard | Active member's cohorts | Assigned cohorts or active student memberships | All cohorts |
-| Inspect other students' learning records | No | Assigned cohorts' activity only | Across cohorts |
-| Approve student enrollment | No | Assigned cohorts | All cohorts |
-| Trigger student password recovery | No | Active students in assigned cohorts | All students |
-| Manage instructor accounts and assignments | No | No | Yes |
-| View system/error logs and manage application policies | No | No | Yes |
-| Alter game code or scoring through staff screens | No | No | No; changes follow repository review |
-| View stored plaintext passwords | Never | Never | Never |
+| Capability                                             | Student                 | Instructor                                     | System administrator                 |
+| ------------------------------------------------------ | ----------------------- | ---------------------------------------------- | ------------------------------------ |
+| Play games and view own results                        | Yes                     | Yes, as practice                               | Yes, as practice                     |
+| Edit own username and preset avatar                    | Yes                     | Yes                                            | Yes                                  |
+| View cohort leaderboard                                | Active member's cohorts | Assigned cohorts or active student memberships | All cohorts                          |
+| Inspect other students' learning records               | No                      | Assigned cohorts' activity only                | Across cohorts                       |
+| Approve student enrollment                             | No                      | Assigned cohorts                               | All cohorts                          |
+| Trigger student password recovery                      | No                      | Active students in assigned cohorts            | All students                         |
+| Manage instructor accounts and assignments             | No                      | No                                             | Yes                                  |
+| View system/error logs and manage application policies | No                      | No                                             | Yes                                  |
+| Alter game code or scoring through staff screens       | No                      | No                                             | No; changes follow repository review |
+| View stored plaintext passwords                        | Never                   | Never                                          | Never                                |
 
 Enforce permissions in Express and database queries on every request. Vue route guards and conditional navigation provide the corresponding user experience. Derive identity and privilege from the server session, never from a submitted role or user ID. An instructor who also participates in another class has teaching access only where explicitly assigned.
 
@@ -145,87 +184,115 @@ A news or threat-briefing module is an exploratory candidate for the mandatory e
 
 The selected provider must offer a documented, zero-cost public API with usable terms and sufficient quota for development and assessment. Connect retrieved information to the learning objective, preserve source links and timestamps, and support meaningful interaction such as filtering by topic. Provide bounded requests, timeouts, loading/error/empty states, and retry controls. Cached or sample responses must be clearly labeled. Automated tests use controlled responses; a separate manual check verifies the real API.
 
-## Local setup — planned, not yet executable
+## Local setup
 
-This section becomes a verified setup guide during scaffolding and base-app work. Until then, there is no runnable app at either localhost address.
+Run the following commands from the repository root. The scaffold does not require API keys or user accounts.
 
 ### Prerequisites
 
 - Git and Google Chrome, matching the assessment browser.
-- Node.js and pnpm. Week 4 specifies Node.js at least 22.12.0; Step 3 must select a currently supported compatible release and record its exact major/version in the repository.
-- Access to MongoDB Atlas Free or a local MongoDB instance. Use a separate development database per member, such as `sharlock_boey_dev`, and a dedicated test database such as `sharlock_boey_test`.
-- Atlas users must configure database credentials and permit their development machine's network address. Never commit a connection string with credentials. [Atlas setup](https://www.mongodb.com/docs/atlas/tutorial/deploy-free-tier-cluster/)
+- Node.js **24.12.0 or a newer 24.x release** and pnpm **12.3.4**. If using nvm, run `nvm install` and `nvm use` in this repository. If pnpm is missing, install the pinned version with `npm install -g pnpm@12.3.4`; use pnpm for all repository dependencies afterward.
+- Internet access for the initial package, MongoDB binary, and Playwright browser downloads. Cached local checks need no public API or database account.
+- The included local MongoDB helper supports the operating systems supported by [mongodb-memory-server](https://typegoose.github.io/mongodb-memory-server/). An existing MongoDB instance or Atlas Free is also supported through `MONGODB_URI`.
 
-### Intended installation sequence
-
-The first two commands work for cloning the repository. Subsequent commands require the future scaffold.
+### Install and configure
 
 ```sh
 git clone https://github.com/boeyboeyboeyboey/IS216-GROUP7-SHARLOCK.git
 cd IS216-GROUP7-SHARLOCK
-pnpm install
-cp server/.env.example server/.env
+pnpm install --frozen-lockfile
+pnpm setup:env
 ```
 
-Fill the local environment file, then follow the planned workflow:
+`pnpm setup:env` creates the ignored `server/.env` from the template, generates a private random secret, and preserves an existing environment file. The secret is reserved for Step 4; authentication is not yet implemented.
+
+### Start locally
+
+In the first terminal, start MongoDB:
 
 ```sh
-pnpm db:seed
+pnpm db:local
+```
+
+The helper downloads MongoDB **8.2.6** on first use, binds only to `127.0.0.1:27018`, and stores development data in the ignored `.local/mongodb/` directory. Data survives a normal `Ctrl+C` stop and restart. The binary is cached in `.cache/mongodb/`. The helper must be used only for local development with synthetic data.
+
+In a second terminal, start Vue and Express together:
+
+```sh
 pnpm dev
 ```
 
-`pnpm dev` will start the frontend and backend together. Open `http://localhost:5173/`. The planned `GET http://localhost:3000/api/health` endpoint reports service readiness without exposing configuration. Stop both processes with `Ctrl+C`.
+Open `http://localhost:5173/`. The connection check should show **API and database connected.** `GET http://localhost:3000/api/health` returns HTTP 200 for a connected database and 503 if its connection becomes unavailable. Stop each terminal's command with `Ctrl+C`.
 
-### Planned environment variables
+`pnpm dev:client` and `pnpm dev:server` run the workspaces individually. Nodemon watches only server source and its environment file, so database-file activity does not restart the API. The server requires a successful MongoDB connection before listening; the frontend alone can display the connection failure/retry state. Vite reads the local `PORT`/`CLIENT_ORIGIN` settings for its proxy and port, without exporting server secrets into the client.
 
-| Variable | Purpose |
-| --- | --- |
-| `NODE_ENV` | `development` for the local app; `test` for automated tests. |
-| `PORT` | Express port, initially `3000`. |
-| `CLIENT_ORIGIN` | Exact allowed frontend origin, initially `http://localhost:5173`. |
-| `MONGODB_URI` | The member's development database connection string. |
-| `TEST_MONGODB_URI` | A dedicated test database; never the development or shared demo database. |
-| `SESSION_SECRET` | A unique cryptographically random secret, at least 32 bytes; no committed default. |
+For an existing MongoDB instance, change `MONGODB_URI` and omit `pnpm db:local`. For a shared database, give each member a separate name, such as `sharlock_boey_dev`. Atlas users must configure database credentials and permit their machine's network address. Keep credentials in the ignored environment file. [Atlas setup](https://www.mongodb.com/docs/atlas/tutorial/deploy-free-tier-cluster/)
 
-The scaffold will supply `server/.env.example` with placeholders and validate required values at startup. Public API variables will be documented when the provider is chosen. Frontend `VITE_*` variables are public and must contain no secrets. Any future seed-specific inputs must be added here before their command is documented as working.
+### Troubleshooting
+
+| Symptom                             | Check                                                                                                                                                    |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Environment/secret validation fails | Run `pnpm setup:env`. An existing file is deliberately preserved; replace a copied template's placeholder with a random 64-character hexadecimal secret. |
+| MongoDB connection fails            | Wait for `pnpm db:local` to report ready, check `MONGODB_URI`, or verify credentials/network access for your existing instance.                          |
+| A port is already occupied          | Stop the conflicting process you own. The database helper uses 27018; Express uses 3000 and Vue 5173 by default. Vite refuses to silently change ports.  |
+| Tests need a browser                | Run `pnpm exec playwright install chromium`.                                                                                                             |
+| First database download fails       | Check network access to the MongoDB download service and the platform requirements in the helper's documentation; retry after resolving the cause.       |
+
+### Environment variables
+
+| Variable           | Purpose                                                                                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NODE_ENV`         | `development` for the local app; `test` for automated tests.                                                                                                                         |
+| `PORT`             | Express port, default `3000`; Vite uses it as its API proxy target.                                                                                                                  |
+| `CLIENT_ORIGIN`    | Exact loopback HTTP frontend origin, default `http://localhost:5173`. Access-control use is reserved for Step 4.                                                                     |
+| `MONGODB_URI`      | Development URI; default `mongodb://127.0.0.1:27018/sharlock_dev`.                                                                                                                   |
+| `TEST_MONGODB_URI` | Set automatically by the integration/E2E runners to their disposable database. Leave blank in the local file for normal use. Direct test execution must supply an explicit safe URI. |
+| `SESSION_SECRET`   | Random hexadecimal secret of at least 64 characters; generated by `pnpm setup:env`, validated at startup, reserved for Step 4 sessions.                                              |
+
+`server/.env.example` contains no credentials. Shell environment variables override `server/.env`. Missing, malformed, or unsafe values stop startup with redacted guidance. Public API variables will be documented when the provider is chosen. Frontend `VITE_*` variables are public and must contain no secrets. Any future seed-specific inputs must be added here before their command is documented as working.
 
 ### Seed data and grader accounts
 
 The planned seed provides synthetic SMU and NUS institutions, multiple cohorts, student accounts, an instructor assigned to a limited subset of cohorts, and an administrator. Include a student in two cohorts to exercise record separation.
 
-**No accounts or credentials exist yet.** After implementing and verifying the seed, document the exact demo-only usernames/passwords here for graders. Demo credentials must belong only to synthetic local demonstration accounts. Never include a member's real password or database credentials. Seeding must not silently delete existing data or reset existing passwords.
+**No accounts, credentials, or `db:seed` command exist yet.** Seeding depends on the Step 4 models. After implementing and verifying the seed, document the exact demo-only usernames/passwords here for graders. Demo credentials must belong only to synthetic local demonstration accounts. Never include a member's real password or database credentials. Seeding must not silently delete existing data or reset existing passwords.
 
-## Testing — planned, not yet executable
+## Testing
 
-All commands in this table are intended root scripts to be supplied by the scaffold. Tests that depend on later features must be tracked honestly as pending until implemented.
+The commands below work for the scaffold. Full authentication, role/cohort, recovery, and game journeys remain pending and are tracked separately in `TASKS.md`.
 
-| Command | Intended check |
-| --- | --- |
-| `pnpm lint` | JavaScript/Vue lint checks. |
-| `pnpm format:check` | Formatting validation without edits. |
-| `pnpm test:unit` | Pure logic and Vue component behaviour. |
-| `pnpm test:integration` | Express, MongoDB, sessions, permissions, and scoring integration. |
-| `pnpm exec playwright install chromium` | One-time installation of the browser used by E2E tests. |
-| `pnpm test:e2e` | Core journeys against automatically started local test services. |
-| `pnpm test` | The unit, integration, and E2E suites. |
-| `pnpm build` | Verify the client build. |
+| Command                                 | Current check                                                                                                  |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `pnpm lint`                             | JavaScript/Vue lint checks.                                                                                    |
+| `pnpm format:check`                     | Formatting validation without edits.                                                                           |
+| `pnpm format`                           | Apply formatting to repository source and Markdown.                                                            |
+| `pnpm test:unit`                        | Environment/test-database validation and Vue loading/failure/retry behaviour.                                  |
+| `pnpm test:integration`                 | Real MongoDB round-trip, readiness, unavailable database, safe 404, malformed JSON, and request size limit.    |
+| `pnpm exec playwright install chromium` | One-time installation of the browser used by E2E tests.                                                        |
+| `pnpm test:e2e`                         | Real Vue → Vite proxy → Express → MongoDB connection and failed-request recovery, at mobile and desktop sizes. |
+| `pnpm test`                             | The unit, integration, and E2E suites.                                                                         |
+| `pnpm build`                            | Verify the client build.                                                                                       |
 
-Integration and browser tests must use controlled fixtures and their own database. Test setup must reject a missing test URI, a database name without the agreed `_test` suffix, or a target matching the development database. Cleanup must be restricted to the test run's data. Test failures must not trigger external emails, paid services, or uncontrolled public API requests.
+The integration/E2E scripts create their own real, temporary MongoDB process with a random `sharlock_<run-id>_test` database name and a fresh test secret. They stop and remove only that temporary instance afterward. They do not require `pnpm db:local`, a development server, or a manually configured test database. They ignore a supplied test URI in favour of their own instance.
 
-### Required journey coverage
+The server's test-mode validation rejects a missing test URI, a name without `_test`, system databases, database-name overrides, and a name matching the development database even through a different host alias. Future tests must reuse this guarded configuration. No development database is dropped or reset.
 
-| Journey | Expected evidence |
-| --- | --- |
-| Authentication | Valid/invalid registration and login, session restoration, logout, and expired-session recovery. |
-| Cohort enrollment | Request, pending state, approval, removal, and denied access before approval or after removal. |
-| Student learning | Start activity, complete it, receive feedback, save a result, and see it after refresh. |
-| Profile | Edit username/avatar; validation failures preserve useful input and expose no sensitive fields. |
-| Leaderboard | Only eligible cohort scores and public profile fields appear; staff/personal practice is excluded. |
-| Instructor access | Assigned-cohort analytics succeed; another cohort's IDs and multi-cohort students' unrelated results are denied. |
-| Administrator access | Instructor management and cross-cohort review succeed; student/instructor direct API access is denied. |
-| Recovery | Authorized reset succeeds; wrong-scope, staff-target, expired, and reused-token attempts fail; old sessions stop working. |
-| Result integrity | Altered client scores, duplicate completion, and submissions for another player's attempt are rejected or safely deduplicated. |
-| External API | Live manual request plus repeatable mocked success, empty, timeout, and error cases. |
+Playwright starts its own services on API port **3001** and frontend port **5174** and refuses to reuse existing servers. Close conflicting processes you own before running it. Browser reports go to ignored `playwright-report/`; failure traces/screenshots go to `test-results/`. First-run downloads need network access; the test cases call no public external API.
+
+### Required application journey coverage — pending
+
+| Journey              | Expected evidence                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Authentication       | Valid/invalid registration and login, session restoration, logout, and expired-session recovery.                               |
+| Cohort enrollment    | Request, pending state, approval, removal, and denied access before approval or after removal.                                 |
+| Student learning     | Start activity, complete it, receive feedback, save a result, and see it after refresh.                                        |
+| Profile              | Edit username/avatar; validation failures preserve useful input and expose no sensitive fields.                                |
+| Leaderboard          | Only eligible cohort scores and public profile fields appear; staff/personal practice is excluded.                             |
+| Instructor access    | Assigned-cohort analytics succeed; another cohort's IDs and multi-cohort students' unrelated results are denied.               |
+| Administrator access | Instructor management and cross-cohort review succeed; student/instructor direct API access is denied.                         |
+| Recovery             | Authorized reset succeeds; wrong-scope, staff-target, expired, and reused-token attempts fail; old sessions stop working.      |
+| Result integrity     | Altered client scores, duplicate completion, and submissions for another player's attempt are rejected or safely deduplicated. |
+| External API         | Live manual request plus repeatable mocked success, empty, timeout, and error cases.                                           |
 
 Use role/label selectors or intentional `data-testid` attributes. Avoid fixed sleeps, test-order dependencies, and selectors coupled to CSS layout. API authorization tests must call endpoints directly as well as testing navigation.
 
@@ -258,4 +325,4 @@ Task status in a Git file is coordination information, not a live lock across te
 - Prepare the required presentation materials and a video of at most 12 minutes, with at least 720p resolution. Put its link on the first slide.
 - Before submission, verify the README from a fresh checkout: installation, environment setup, seed, local run, exact demo accounts, test commands, and known limitations.
 - Credit external code, libraries, assets, and data sources as required by the brief. Every member must understand and be able to explain their contributions.
-- Remove the documentation-only warning only after the described application and commands actually work; retain explicit pending notes for unfinished features.
+- Keep the status at the top accurate as later stages become available; retain explicit pending notes for unfinished features.
