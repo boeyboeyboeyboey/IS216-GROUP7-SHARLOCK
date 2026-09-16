@@ -1,0 +1,8 @@
+body {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+button {
+  touch-action: manipulation;
+}
