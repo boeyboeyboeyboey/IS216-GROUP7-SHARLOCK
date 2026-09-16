@@ -4,6 +4,7 @@ import { parse } from 'dotenv'
 import { assertSafeTestDatabaseUri, databaseNameFromUri } from './database-uri.js'
 
 export const environmentPath = fileURLToPath(new URL('../../.env', import.meta.url))
+export const rootEnvironmentPath = fileURLToPath(new URL('../../../.env', import.meta.url))
 
 export function readEnvironmentFile(path = environmentPath) {
   try {
@@ -50,9 +51,9 @@ export function validateEnvironment(env) {
 
   const databaseUri =
     nodeEnv === 'test'
-      ? assertSafeTestDatabaseUri(env.TEST_MONGODB_URI, env.MONGODB_URI)
-      : env.MONGODB_URI
-  databaseNameFromUri(databaseUri)
+      ? assertSafeTestDatabaseUri(env.TEST_MONGODB_URI, env.MONGO_URI)
+      : env.MONGO_URI
+  databaseNameFromUri(databaseUri, 'MONGO_URI', nodeEnv === 'development' ? 'sharlock_dev' : undefined)
 
   return Object.freeze({
     nodeEnv,
@@ -64,5 +65,10 @@ export function validateEnvironment(env) {
 }
 
 export function loadEnvironment() {
-  return validateEnvironment({ ...readEnvironmentFile(), ...process.env })
+  // Existing shell values win; the root file overrides legacy server defaults.
+  const fileValues = { ...readEnvironmentFile(), ...readEnvironmentFile(rootEnvironmentPath) }
+  for (const [key, value] of Object.entries(fileValues)) {
+    if (process.env[key] === undefined) process.env[key] = value
+  }
+  return validateEnvironment(process.env)
 }

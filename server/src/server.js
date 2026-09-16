@@ -21,7 +21,7 @@ try {
     database = await connectDatabase(config.databaseUri)
   } catch {
     throw new Error(
-      'MongoDB connection failed. Start pnpm db:local or check your database settings.',
+      'MongoDB connection failed. Check MONGO_URI and database network access.',
     )
   }
   server = createApp(database).listen(config.port, '127.0.0.1')

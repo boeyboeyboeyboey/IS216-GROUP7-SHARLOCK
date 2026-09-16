@@ -1,12 +1,12 @@
 import ConnectionString from 'mongodb-connection-string-url'
 
-export function databaseNameFromUri(uri, label = 'MONGODB_URI') {
+export function databaseNameFromUri(uri, label = 'MONGO_URI', fallbackName) {
   try {
     if (typeof uri !== 'string' || !uri.trim()) throw new Error()
     const parsed = new ConnectionString(uri)
-    const name = decodeURIComponent(parsed.pathname.slice(1))
+    const name = decodeURIComponent(parsed.pathname.slice(1)) || fallbackName
     if (
-      !/^[a-zA-Z0-9_-]+$/.test(name) ||
+      !name || !/^[a-zA-Z0-9_-]+$/.test(name) ||
       ['admin', 'config', 'local'].includes(name.toLowerCase())
     ) {
       throw new Error()
@@ -26,7 +26,7 @@ export function assertSafeTestDatabaseUri(testUri, developmentUri) {
     throw new Error('TEST_MONGODB_URI database must end in _test.')
   }
   if (developmentUri) {
-    const developmentName = databaseNameFromUri(developmentUri)
+    const developmentName = databaseNameFromUri(developmentUri, 'MONGO_URI', 'sharlock_dev')
     // Conservatively reject the same name even when hosts or aliases differ.
     if (testName.toLowerCase() === developmentName.toLowerCase()) {
       throw new Error('Test and development database names must be different.')

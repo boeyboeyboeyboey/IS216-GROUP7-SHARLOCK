@@ -14,8 +14,8 @@ Boey requested separate approval between these stages. Authorization for one sta
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | 1 — Clarify       | Read supplied PDFs and agree product/architecture defaults.                                                             | Complete; defaults approved, including the subsequent localhost-only and documentation exclusions. |
 | 2 — Documentation | Create only `README.md`, `TASKS.md`, and `agents.md`.                                                                   | Complete; Boey approved moving to Step 3.                                                          |
-| 3 — Scaffold      | Create the MEVN workspace, directories, package/configuration files, environment templates, and development/test setup. | Implemented and verified; ready for Boey's review.                                                 |
-| 4 — Base app      | Implement responsive shell/navbar, routing, authentication, and foundational RBAC/data models.                          | Await explicit approval after scaffold review.                                                     |
+| 3 — Scaffold      | Create the MEVN workspace, directories, package/configuration files, environment templates, and development/test setup. | Accepted by Boey; scaffold merged and pushed in `515586c`.                                                 |
+| 4 — Base app      | Implement responsive shell/navbar, routing, authentication, and foundational RBAC/data models.                          | Authorized by Boey; portal UI/design and MONGO_URI update in progress. Authentication remains pending.                                                     |
 
 Later feature work requires an explicit task request or agreed team scope. Update the gate status when approval is received; preserve the distinction between proposed and implemented work.
 
@@ -33,11 +33,23 @@ Priorities: **P0** foundation or assessment requirement; **P1** core user value;
 
 ## In Progress
 
-None.
+Contributor: **Boey**. Branch: `codex/ui-01-sharlock-portal`.
 
-## Review
+Scope: implement the requested portal design, responsive layout/components and routes, and root `MONGO_URI` support. Authentication/RBAC business implementation remains a separate pending task; sample UI data grants no account access or saved rewards.
 
-Contributor: **Boey**. Branch: `codex/set-01-mevn-scaffold` (uncommitted working changes; no PR). Reviewer: **Boey**.
+| ID | Priority | Task / affected areas | Dependencies | Acceptance criteria / progress |
+| --- | --- | --- | --- | --- |
+| UI-01   | P0       | Responsive application shell and navigation; shared client components         | Step 4 approval, SET-01  | Header, Bootstrap navbar, content/footer layout, keyboard navigation, and tested behaviour from 375px through XL.                                                                                                   |
+| UI-02   | P0       | Route structure and shared UI states; client router/views                     | Step 4 approval, UI-01   | Home/game hub, auth, profile/progress, cohort leaderboard, instructor, admin, forbidden, and not-found route structure; unfinished views clearly marked; no misleading success displays.                            |
+| DES-01 | P0 | Portal design system; DESIGN.md, agents.md, global CSS and image placeholders | User design specification | Exact five colours, Inter typography, capybara/monocle placeholders, rounded icons, mobile pathway, reusable widgets, and game-theme independence documented and implemented. |
+| CFG-01 | P0 | Atlas configuration; server environment/database helpers and setup docs | User's root .env | Read process.env.MONGO_URI after loading root .env; preserve private files; support Atlas URI without a database path; keep tests isolated and errors redacted. |
+
+Coordination: router, shared layout/styles, preview data, environment names, and setup documentation change together. No other active contributor is recorded. Preserve the user's untracked `.gitignore 2` and private environment files. Next action: implement and verify the UI and database configuration.
+
+
+## Accepted scaffold history
+
+Contributor: **Boey**. Branch: `codex/set-01-mevn-scaffold` (merged by Boey in `515586c`). Reviewer: **Boey**.
 
 | ID     | Priority | Task / affected areas                                                 | Dependencies    | Acceptance criteria / progress                                                                                                                                  |
 | ------ | -------- | --------------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -60,7 +72,11 @@ Coordination: shared root scripts/configuration, the single lockfile, client/ser
 - Development watcher rehearsal: database activity did not restart Express; changing a server source file did. The default frontend address and custom `CLIENT_ORIGIN=http://127.0.0.1:5175` both served the page and passed the proxied health check.
 - Additional Chromium rehearsal at widths 375, 576, 768, 992, 1200, and 1440px, plus 667×375 landscape: successful connection checks, no horizontal overflow, visible controls, and keyboard activation passed. Local development processes were stopped after verification.
 
-Next action: Boey reviews the scaffold and explicitly approves Step 4 before application features begin. A teammate's independent fresh-checkout rehearsal and the full application journey/breakpoint checks remain future QA work.
+Boey accepted the scaffold and requested the portal UI and Atlas configuration next. A teammate's independent fresh-checkout rehearsal and the full application journey/breakpoint checks remain future QA work.
+
+## Review
+
+None for the current change yet.
 
 ## Blocked
 
@@ -74,8 +90,6 @@ All tasks below are unassigned. Scaffold directories now reserve their integrati
 
 | ID      | Priority | Task / integration area                                                       | Dependencies             | Acceptance criteria                                                                                                                                                                                                 |
 | ------- | -------- | ----------------------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| UI-01   | P0       | Responsive application shell and navigation; shared client components         | Step 4 approval, SET-01  | Header, Bootstrap navbar, content/footer layout, keyboard navigation, and tested behaviour from 375px through XL.                                                                                                   |
-| UI-02   | P0       | Route structure and shared UI states; client router/views                     | Step 4 approval, UI-01   | Home/game hub, auth, profile/progress, cohort leaderboard, instructor, admin, forbidden, and not-found route structure; unfinished views clearly marked; no misleading success displays.                            |
 | AUTH-01 | P0       | Identity model and authentication; server auth, client auth store/views       | Step 4 approval, SET-02  | Registration/login/logout/current-user flows; Argon2id hashing; normalized identifiers and duplicate validation; Mongo-backed sessions; CSRF/origin controls; session rotation/expiry; safe errors and rate limits. |
 | DATA-01 | P0       | Institution, cohort, membership, and role foundations; server models/services | Step 4 approval, AUTH-01 | Global roles and per-cohort assignments; unique membership constraints; pending/active/removed membership states; explicit cohort/personal context for future activity; validated relationships.                    |
 | AUTH-02 | P0       | Permission middleware and route guards; server access services/client router  | AUTH-01, DATA-01         | Server permission and query scoping; restored-session-aware routing; staff gameplay access; direct API tests for ownership, cohort boundaries, and forged roles.                                                    |
