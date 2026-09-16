@@ -1,148 +1,140 @@
 # Instructions for AI coding agents
 
-## First action: check TASKS.md
+## 1. Start with read-only ingestion
 
-**Before repository work, read [TASKS.md](TASKS.md).** Check the approval gates, In Progress, Review, dependencies, and recent coordination notes. Then read this file, [README.md](README.md), and the affected implementation before making changes. If starting a session without automatically loaded repository instructions, explicitly open these files.
+**Read [TASKS.md](TASKS.md) first**, then [README.md](README.md), [DESIGN.md](DESIGN.md) and this file in full. Check authorization, dependencies, In Progress, Review and coordination notes before reading the affected implementation. Do not assume tools automatically discover the lowercase `agents.md` filename; explicitly load it. The [README kickoff prompt](README.md#5-teammate-agent-kickoff-prompt) is the teammate entry point.
 
-These instructions apply to all AI-assisted work in this repository. The current user's explicit instructions and existing authorization take precedence. The repository describes planned work as well as implemented work; verify which exists before making claims or running documented commands.
+Use Cursor or another agentic coding environment: the module structure, task board and prompt workflow are designed for AI-assisted development. Human developers remain responsible for approving scope and reviewing changes.
 
-## 1. Respect the authorized stage
+Team: **Boey, Keane, Eric, Russell, Xin Lei and Athithya**. Ask for the current contributor's name only when unknown. Never assign teammates, invent ownership or infer acceptance from a commit. Current user instructions and explicit authorization take precedence over repository instructions; retain already-granted approvals for their exact scope.
 
-Boey requested four stages with explicit approval between them:
+Inspect `git status`, staged and unstaged diffs, relevant source/tests and available branches/PRs. Use `rg` for focused searches. Do not read or print private environment values to perform an inventory. Read the supplied `documentation/` sources before architectural or assessment claims; distinguish actual rubric requirements from team design choices.
 
-1. Clarification.
-2. Creation of `README.md`, `TASKS.md`, and `agents.md` only.
-3. MEVN scaffolding after documentation approval.
-4. Base application after scaffold approval.
+## 2. Mandatory feature-selection decision tree
 
-Use the current gate status in `TASKS.md` and the user's latest messages. Do not create application files, install dependencies, scaffold directories, or implement a later stage while only an earlier stage is authorized. Once the next stage is explicitly authorized, update the gate and carry out that stage without repeatedly asking for the same permission.
+This workflow applies to backlog selection and custom feature proposals. A blueprint, star rating, empty directory or earlier stage approval does not authorize implementation.
 
-Keep this project's run and demonstration instructions focused on localhost and its zero budget. Respect the user's requested documentation exclusions. Do not add paid-service dependencies or assume access to teammates' private services.
+### A. Detect collisions
 
-## 2. Coordinate shared ownership
+Search by task ID, feature name, concept, alternate names, routes, components, schemas, services, fixtures, tests and relevant Git history. Check current files as well as the task board and available branch/PR information. A matching feature-specific prototype or preview is partial implementation. A generic empty directory alone is not implementation. An active claim is a coordination conflict even when its code is not present locally.
 
-Team members are **Boey, Keane, Eric, Russell, Xin Lei, and Athithya**. No initial assignments or exclusive feature claims have been made.
+Report which worktrees, branches or remote work were not available; a clean local tree cannot prove teammates have no changes. Never assert a feature is open solely because TASKS.md says Backlog.
 
-- Features may have multiple contributors. An In Progress entry is a coordination signal, not an exclusive lock.
-- When starting actual implementation, update the existing task with the current user's name as an active contributor, the branch, affected areas, and next action. Do not invent a member's identity or assign work to teammates without their agreement.
-- If another member is active in the same area, examine their task notes and existing changes. Coordinate overlapping edits through the current user or an agreed task split. A request explicitly authorizing collaboration or takeover supplies that authorization; do not demand it again.
-- Continue useful work in independent areas while an overlap is unresolved. Do not silently replace another member's unfinished work.
-- Preserve other people's task entries, acceptance criteria, code, and uncommitted changes. Make targeted tracker edits and resolve concurrent changes without dropping either contributor's information.
-- Update the task when status, scope, dependencies, or shared contracts change. Mark Review with real evidence; mark Done only after acceptance.
-- Do not treat `TASKS.md` as an atomic lock across machines. Consult available branch/PR information and use focused integration review.
+### B. Stop on existing work
 
-No initial feature ownership is required merely to review these documents. Record implementation contributors when work begins.
+**If the chosen feature has any partial or complete implementation, the agent is strictly forbidden from touching, overwriting, refactoring, deleting, replacing or continuing that feature's existing code.** Stop immediately, identify the conflicting files/tasks/branches, explain what exists and ask the user to choose another unimplemented backlog task or propose a brand-new feature.
 
-## 3. Version control and integration
+Do not silently collaborate, take over unfinished code or treat an existing contributor's absence as consent. Do not evade the guardrail by renaming the same feature, cloning its implementation or starting a competing version. Previous general statements allowing shared ownership are not permission to edit a colliding feature under this kickoff workflow. Preserve the work while the user selects another task.
 
-- Inspect `git status` and relevant diffs before editing. Existing changes may belong to the user or another agent.
-- Use a focused feature branch. For agent-created branches, use `codex/<task-id>-<description>` unless the user specifies otherwise.
-- Keep unrelated fixes out of the task. Avoid broad formatting changes that obscure a functional diff or create merge conflicts.
-- Never discard work with a destructive reset/clean, overwrite uncommitted files, rewrite shared history, or force-push without explicit authorization for that action.
-- Keep dependency changes narrow. Use pnpm and preserve a single root lockfile; do not add npm/yarn lockfiles.
-- Shared schemas, authentication, router configuration, global styles, game/result interfaces, and root tooling are integration-sensitive. Describe changes and their affected consumers in the task/PR and coordinate with those contributors.
-- Review diffs before concluding. State what changed, what was checked, and any remaining issue. Do not claim a commit, PR, merge, or test run that did not occur.
+### C. Route the user
 
-## 4. Follow the taught stack
+Offer exactly these two selection paths:
 
-- Frontend: HTML, CSS, plain JavaScript, Vue 3 single-file components with `<script setup>`, Bootstrap 5.3.x, Vue Router, Pinia, and Axios.
-- Backend: Node.js, Express, Mongoose, and MongoDB.
-- Tooling: pnpm, ESLint, Prettier, Vitest, and Playwright.
-- Confirm compatible versions during scaffolding and pin the selected versions through the runtime/package configuration and lockfile.
-- Use Vue state, computed values, props/emits, and component composition. Keep direct DOM manipulation limited to a justified integration or accessibility need.
-- Keep transient game state within its module. Put only genuinely shared state in shared stores.
-- Use a shared Axios client with relative `/api` paths and consistent failure handling. Keep database access and secrets on the server.
-- Prefer small understandable services and components. Introduce abstractions only when they clarify a shared responsibility or support an actual second use.
+1. Choose an unimplemented, unclaimed backlog feature that passes inspection.
+2. Propose a brand-new custom feature, then inspect it for collisions too.
 
-## 5. Protect module boundaries
+If every backlog feature is done, immediately ask for a new feature. If unfinished tasks exist but none are open because of partial work, claims or dependencies, explain that distinction and offer a new feature or an independently available prerequisite task. Never begin implementation with no selected task.
 
-The spine owns layout, navigation, authentication, access checks, common UI states, shared HTTP handling, game registration, and common learning-result interfaces. Games own their rules, content, state, and server-side scoring inside their own modules.
+### D. Clarify and confirm before coding
 
-- Read and reuse the existing shared interfaces before adding a game.
-- Register a stable game ID, ruleset version, route, learning objective, and topic tags through the agreed registry.
-- Use shared authentication and session handling. Do not implement a separate login system for a game.
-- Do not bypass shared result validation or modify another game's collections directly.
-- If a required contract is missing, specify the smallest necessary contract and coordinate its addition. Do not create competing shared interfaces in parallel.
-- Treat live multiplayer as optional scope. Do not add a socket server or other infrastructure without a selected feature that needs it.
-- Keep all teaching scenarios within the application's synthetic data and controlled exercises.
+For an open selected feature, conduct a dialogue and ask focused clarifying questions. Resolve its objective, difficulty, background knowledge, interaction loop, scoring, feedback, replay, failures, mobile/keyboard/touch behavior, components and props/emits, local/shared state, API payloads, validation, schemas, integration boundaries, external services and acceptance checks.
 
-## 6. Enforce data and role boundaries
+Recommend concrete defaults and explain tradeoffs. Present the final plan and **wait for explicit user approval before writing a single line of implementation code**. Silence is not approval. Before approval, do not scaffold files, install dependencies or mark the task claimed. Once approval is granted, execute that approved scope without repeatedly requesting it.
 
-- Institutions contain cohorts. Users may have multiple memberships, and instructors may be assigned multiple cohorts.
-- Registration can create only a base student account. A submitted role, institution, cohort, score, or user ID is never proof of authorization.
-- Cohort entry requires an approved membership. Pending and removed memberships do not grant class access.
-- Staff gameplay access does not broaden instructional permissions. Instructors can read learning activity only for their assigned cohorts; system administrators may review learning activity across cohorts.
-- Every attempt has one server-validated context: an eligible cohort or personal practice. Freeze the context at creation. An instructor cannot read unrelated activity just because the same student belongs to their class.
-- Scope every API query and mutation by the authenticated user's permissions. Use projection/serialization to expose only the fields required by the caller.
-- Student profile updates allow only approved profile fields. Never mass-assign request bodies into account, membership, or result documents.
-- Leaderboards expose only authorized cohort rankings with username, preset avatar, and score/rank. Exclude personal practice and staff scores.
-- Check ownership of nested resources as well as route-level roles. Tests must cover direct requests with another cohort's, student's, or attempt's ID.
-- Follow membership/account changes immediately for new requests; revoke or refresh stale sessions as needed. Do not rely on a role cached indefinitely in the browser.
+### E. Recheck, record and implement
 
-## 7. Authentication and secure coding
+Immediately before edits, reread affected task notes and inspect Git/files for changes since planning. New overlap returns to the collision guardrail. Record the task ID, real contributor, approved scope, branch, affected paths, dependencies, collision-check evidence and next action in TASKS.md. A claim coordinates people; it is not an atomic lock across machines.
 
-- Hash passwords using a maintained Argon2id implementation with per-password salts and a reviewed work factor. Never store recoverable or plaintext passwords.
-- Never return hashes in account responses, exports, logs, or admin views. Administrators do not need password material to manage users.
-- Use Mongo-backed server sessions with cookie identifiers. Apply `HttpOnly`, `SameSite`, bounded lifetimes, and session rotation/revocation. Limit the local HTTP cookie exception to the explicit localhost development configuration.
-- Apply CSRF and expected-origin checks to state-changing requests, including login/logout. Do not mutate state through GET requests.
-- Validate types, bounds, IDs, enums, and allowed fields at the server boundary. Build MongoDB filters from validated values; do not accept arbitrary query operators or update documents.
-- Rate-limit login, recovery, enrollment-code attempts, and expensive endpoints. Set request-body limits and public API timeouts.
-- Use generic authentication/recovery errors where necessary to avoid account enumeration. Give the user useful next steps without exposing stacks or internal configuration.
-- Treat external content as untrusted. Use escaped Vue interpolation for text; avoid `v-html` for user or API content. Validate external link protocols.
-- Never place secrets in the client, `VITE_*` variables, source control, screenshots, or task notes. Environment examples contain placeholders only.
-- Redact passwords, cookies, tokens, connection strings, token-bearing URLs, and sensitive request bodies from logs. Keep administrator-visible logs bounded and access-controlled.
+Use `codex/<task-id>-<description>` unless the user chooses another branch. Reuse shared infrastructure through established interfaces. Only the additive catalog/router registrations explicitly included in the approved plan may be made; preserve other entries and behavior. A missing shared contract requires a separately agreed prerequisite task, not a second implementation inside a game.
 
-Follow the [security references in README.md](README.md#authentication-and-recovery-requirements). Verify implementation-specific guidance against primary documentation when needed.
+## 3. Authorization and change boundaries
 
-### Recovery rules
+The current documentation authorization is **DOC-03**: apply Boey's approved README and update TASKS.md/agents.md. It does not authorize any of the six games, authentication or other application work. Historical stage approvals and acceptance evidence remain in TASKS.md.
 
-- Use instructor-assisted recovery after identity verification through an established school channel; no email service is required initially.
-- Confirm the instructor's assignment and the target student's active membership. Instructors cannot reset staff accounts, even if those accounts also have student membership.
-- Generate a random, expiring, single-use reset token; store its hash. Present the link once only to authorized staff for private delivery. Do not log it or return it from a public recovery endpoint.
-- Let the student choose the password. Atomically consume the token, invalidate existing sessions, and require normal login afterward.
-- Audit who initiated/completed recovery and its outcome, with no secrets. Administrator and unassigned-student recovery must have an explicit documented path.
+- Keep changes within the approved task and its declared files. Preserve other contributors' notes, acceptance criteria, code and uncommitted changes.
+- Never use destructive reset/clean, overwrite private files, rewrite shared history or force-push without explicit authorization for that action.
+- Do not stage unrelated files or create commits, pushes or PRs merely to claim completion.
+- Shared schemas, auth, router, global styles, attempt/results and root tooling are integration-sensitive. Record affected consumers and the exact minimal additions before editing.
+- Retain the zero budget and localhost demonstration. Do not introduce paid dependencies or assume access to a teammate's private service. Keep project documentation free of web-hosting discussion.
+- The approved social-engineering game is documented here; it does not authorize changes to separately managed conversational-NPC work.
 
-### Result integrity
+## 4. Stack and module contracts
 
-- The server creates attempts and determines their player, context, eligibility, and ruleset.
-- Score actions/answers on the server or validate them against authoritative state. Never accept an arbitrary browser-supplied total or achievement grant.
-- Keep secret answers and challenge flags out of public frontend bundles and API responses.
-- Enforce the attempt lifecycle, ownership, bounds, and completion rules. Duplicate completion must not create extra scores or rewards.
-- Keep game mechanics and feedback understandable. Saved topic outcomes are evidence of performance; do not claim a scientifically validated mastery score without supporting evaluation.
+Use HTML, CSS, plain JavaScript, Vue 3 SFCs with `<script setup>`, Bootstrap 5.3.x, Vue Router, Pinia, Axios, Node.js, Express, Mongoose and MongoDB. Use the pinned runtime/manifests, pnpm and the single root lockfile. Do not add npm/yarn lockfiles. The README uses npm only to install the pinned pnpm executable; it does not migrate the workspace.
 
-## 8. Make every screen responsive and accessible
+Use Vue state, computed values, props/emits and component composition. Limit direct DOM access to justified integrations/accessibility. Keep transient game state inside its module; use shared stores only for shared responsibility. Prefer small components and services over speculative abstractions.
 
-Read [DESIGN.md](DESIGN.md) before UI work. Preserve the strict visual split: modern pastel landing/login/supporting pages use the exact five root colour tokens, Inter (or Roboto), 700-weight headings/game titles, 400-weight body text, a 3D-style capybara with a monocle, and rounded icons. The student homepage is a 2D pixel-art town with pixel capybara NPCs, buildings, metadata cards and controls. All activities are available from the start; never restore linear locks. Keep the town readable inside a bounded, scrollable viewport at 375px. Retain the 3D navbar logo on every page; show “Sharlock Hub” only from 768px upward.
+The spine owns layout, navigation, authentication, access checks, common UI states, HTTP handling, registration and result contracts. Games own rules, content, local state and server scoring in `client/src/games/<game-id>/` and `server/src/modules/games/<game-id>/`.
 
-Follow [Adding a new game to the homepage](DESIGN.md#adding-a-new-game-to-the-homepage) exactly: register a unique entry in `client/src/data/gameCatalog.js`, choose/place its pixel building, supply the name, description, integer 1–3 star difficulty and background-knowledge list, and connect the actual game route. The shared map renders the building and hover/focus/tap card from that entry. Do not duplicate registries or cards. Knowledge is advisory, not an access gate. Preserve the muted-by-default `/audio/sharlock-bgm.mp3` loop, gesture-driven playback, retry and cleanup. Games may use independent scoped palettes while retaining clean typography, soft/friendly aesthetics, accessibility and full responsiveness. Label sample progress explicitly; never present preview data as saved learning records.
+Reuse `client/src/services/api.js`; its base URL already includes `/api`, so pass paths such as `/chat`, not `/api/chat`. Keep database access, model prompts and secrets on the server. Do not create another login system or write directly to another game's data. Register a stable ID, ruleset, learning objective and topic tags through the agreed contract. Live multiplayer is optional.
 
-The minimum viewport width is **375px**. Design for mobile first and scale through Bootstrap XL and larger.
+The [shared blueprint](TASKS.md#shared-implementation-blueprint) and six game schemas/endpoints are proposed; they do not exist merely because documentation describes them. Keep prototypes labeled unsaved until the authorized shared persistence/auth foundation exists.
 
-- Use the Bootstrap grid/utilities, Flexbox, and Grid with flexible dimensions. Scope game-specific styles so they do not alter the shared navbar or other games.
-- Keep text legible and primary actions visible. Do not shrink an entire desktop board into an unreadable mobile image.
-- Reflow game controls and information panels. Provide touch and keyboard alternatives for dragging and hovering.
-- Avoid page-wide horizontal scrolling. Bound intentional table scrolling within its component.
-- Use semantic buttons/links, labeled controls, visible focus, accessible names, and feedback beyond colour alone. Handle focus when opening/closing dialogs or navigation.
-- Clean up event listeners and timers when components unmount. Handle duplicate clicks, interrupted requests, and expired sessions predictably.
-- Verify widths 375, 576, 768, 992, 1200, and 1440px, plus portrait/landscape and affected breakpoint edges.
+**News identity:** G-NEWS / Cyber News Central is the existing “The daily briefing” activity: catalog ID `threat-briefing`, route `/games/threat-briefing`, `hut` at `{ x: 144, y: 480 }`. Its building/card come from the single catalog and its current page from the generic `GamePreview.vue` route. Preserve that identity and `isPreview` until an explicitly authorized implementation is verified. Do not create a `cyber-news-central` entry, parallel route, building or duplicate metadata card. The standard kickoff must flag this preview as existing work; the DOC-03 mapping correction grants no permission to continue its code. If the user later explicitly authorizes continuation, follow the approved integration plan using the existing entry, `client/src/games/threat-briefing/` and the reserved `server/src/modules/news/`.
 
-## 9. Test real user outcomes
+## 5. Data and permission boundaries
 
-- Use the rubric and README journey matrix to choose meaningful checks. Add tests alongside security-sensitive and core-journey changes.
-- Unit-test pure scoring and permission logic where useful; integration-test server authorization, sessions, validation, and persistence; E2E-test student/staff journeys.
-- Use deterministic synthetic fixtures, independent accounts where appropriate, stable role/label/test-ID selectors, and condition-based waits. Avoid fixed sleeps and test-order coupling.
-- Point tests only at an explicitly configured dedicated `_test` database. Reject missing/unsafe configuration before any reset or cleanup. Never fall back to a development URI.
-- Keep external API responses controlled in repeatable tests. Perform and record a separate live API check for the assessment requirement.
-- Check wrong-role, wrong-cohort, wrong-owner, pending/removed membership, expired/reused reset, and duplicate-result cases.
-- Run checks appropriate to the change. Documentation-only changes need accurate links, cross-file consistency, and honest status checks; they do not need a browser test suite.
-- Report exact commands and outcomes, including “not run” and its reason. Never turn placeholders, skipped tests, fixtures, or a successful build into a claim that an unimplemented journey works.
+- Institutions contain cohorts; users may have multiple memberships and instructors multiple assignments. Membership states are pending, active and removed.
+- Registration creates only a student. A submitted role, user ID, cohort ID, institution, score or achievement is never proof of authorization.
+- Cohort entry requires an active approved membership. New requests must reflect removals/account changes; revoke or refresh stale sessions.
+- Instructors may inspect only their assigned cohorts' activity. Administrators may inspect learning activity across cohorts. Staff gameplay does not expand teaching permissions.
+- Every attempt has one server-validated cohort or personal context, immutable after creation. A student's other cohort memberships do not widen access to that attempt.
+- Scope every query/mutation and nested-resource lookup to the authenticated actor. Explicitly serialize only caller-appropriate fields.
+- Profile updates allow only approved username/avatar fields; never mass-assign bodies into user, membership or result documents.
+- Leaderboards expose only authorized cohort rankings with username, preset avatar and score/rank. Exclude staff, personal practice and untimed training scores; compare the same game/ruleset.
+- Tests must request another cohort's, student's and attempt's IDs directly, including pending/removed membership cases.
 
-## 10. Maintain accurate documentation
+## 6. Authentication, recovery and secrets
 
-- `README.md`: Human/grader setup, environment, local run, actual accounts, testing, architecture, course alignment, and known limitations.
-- `TASKS.md`: Current gate, Kanban status, active contributors once work begins, dependencies, integration notes, evidence, and exploratory ideas.
-- `agents.md`: Shared directives, boundaries, and collaboration expectations.
-- Label planned scripts, variables, routes, and features until implemented and verified. Update the README in the same change that implements or changes its instructions.
-- Preserve the initial game ideas as exploratory until selected. Do not silently assign them to people or present them as finished features.
-- Keep comments useful: explain non-obvious constraints and decisions instead of narrating simple code. Credit reused code, libraries, assets, and external data in accordance with the project brief.
-- End each task with a concise account of changes, verification, and the next required action. Respect the current approval gate before proceeding further.
+Use maintained Argon2id password hashing with per-password salts and a work factor checked against primary guidance during implementation. Never store recoverable passwords or return password hashes in responses, exports, logs or administrator views.
+
+Use Mongo-backed server sessions with cookie identifiers, `HttpOnly`, `SameSite`, bounded idle/absolute lifetime and rotation/revocation. Restrict the HTTP cookie exception to explicit localhost development. Do not put auth tokens in browser local storage. Apply CSRF and expected-origin checks to state-changing requests, including login/logout; GET must not mutate state.
+
+Validate allowed fields, types, IDs, enums and bounds. Construct Mongo filters from validated values rather than accepting arbitrary operators. Rate-limit login, recovery, enrollment and expensive endpoints; bound bodies, upstream time and generated output. Use generic authentication/recovery failures where needed to prevent enumeration, with useful next steps and no stack/configuration leaks.
+
+Instructor-assisted recovery uses school-channel identity verification. Recheck the instructor's assignment and student's active membership. Instructors cannot reset staff accounts even when those accounts also have student memberships. Generate a random, expiring, single-use token; store only its hash and reveal the link once to authorized staff for private delivery. The student chooses the password. Consume the token atomically, revoke sessions and require normal login. Audit actor, outcome and time without secrets. Administrators assist staff/unassigned students; initial and emergency administrator procedures are separately documented in the recovery task.
+
+Never print, overwrite or commit root `.env` or `server/.env`. The backend reads `process.env.MONGO_URI` with shell → root `.env` → server defaults precedence. Preserve the team's `.env.example`. Keep credentials, cookies, tokens and connection strings out of client code, `VITE_*`, screenshots, notes and logs. Keep database binaries, dependencies and generated artifacts out of Git.
+
+Primary references: [password storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html), [sessions](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html), [CSRF](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html), [recovery](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html). Verify implementation-specific recommendations when choosing dependencies and policy values.
+
+## 7. Scoring and synthetic exercises
+
+The server creates attempts, selects player/context/ruleset, checks actions and calculates scores. Enforce ownership, lifecycle, deadlines, bounded action history, concurrency checks and idempotent completion. Keep answers/private state out of public bundles/responses; never accept browser totals or achievement grants. Saved outcomes are performance evidence, not scientifically validated mastery.
+
+- CLI commands operate on fictional state only; never execute a shell or change a real host/network.
+- Social-engineering chat uses synthetic training codes, server-owned prompts, bounded transcripts and no tools/account access. Prompt text is not a security boundary; the server determines outcomes. Keep real secrets out of prompts/logs.
+- Phishing email/link content is inert synthetic text. The server compares the selected ID against the private answer key.
+- SQL-injection puzzles use a bounded teaching parser and never execute vulnerable database queries or grant real administrator access.
+- Regex evaluation runs within bounded workers with termination deadlines, not unbounded `.test()` loops on the UI/server event loop. Explain false positives and limitations.
+- News uses an allowlisted upstream, bounded requests and labeled caching. Escape external text, avoid untrusted `v-html`, validate link protocols and do not proxy arbitrary URLs.
+
+## 8. Design and accessibility
+
+[DESIGN.md](DESIGN.md) is the detailed visual authority. Retain the modern pastel supporting pages, exact five root tokens, Inter/Roboto, 700-weight headings, 400-weight body, rounded icons and 3D-style monocle capybara placeholder. The town uses 2D pixel buildings/NPCs/cards/controls. The shared navbar keeps its 3D logo everywhere and displays “Sharlock Hub” only from 768px upward.
+
+Follow [building registration](DESIGN.md#adding-a-new-game-to-the-homepage). Use the single frontend `gameCatalog.js`, unique IDs, integer difficulty 1–3, background-knowledge list, concrete route and readable 192 × 200 building placement. Keep `isPreview` until playable. No duplicate registries/cards, linear locks or required learning sequence. Knowledge is advisory. Independent scoped game themes must not alter the navbar or other modules.
+
+The town remains a readable 1120 × 800 world in a bounded scrolling viewport at 375px. Preserve hover/focus/tap cards, separate activity links, Escape/Close focus restoration, arrow-key panning and Jump to. Preserve the pointer-focus handling that prevents the first tap being intercepted by an overlay.
+
+Retain muted/paused-by-default `/audio/sharlock-bgm.mp3`, gesture-driven play, rejected-play retry, no persistent unmuted preference and cleanup on departure/disposal. Keep the mobile offcanvas focus trap, dismissal restoration and resize cleanup.
+
+Use semantic controls, labels, visible focus and feedback beyond color; provide touch/keyboard alternatives to hover/drag. Keep primary controls readable and avoid page-wide horizontal scrolling. Check 375/576/768/992/1200/1440px, relevant breakpoint edges and portrait/landscape. Clean up listeners, intervals, animation frames, workers and requests. Timed games need untimed practice and reduced-motion behavior as specified. Clearly label all sample progress and achievements.
+
+## 9. Verification and completion
+
+Use [verification commands and journey coverage](TASKS.md#verification-commands-and-journey-coverage). Add meaningful tests alongside security/core-journey changes: unit tests for scoring/permissions, API integration for authorization/sessions/persistence, E2E for actual student/staff flows. Use deterministic synthetic fixtures, stable role/label/test-ID selectors and condition-based waits; avoid fixed sleeps and test-order coupling.
+
+Only reset explicitly configured disposable `_test` databases. Reject unsafe/missing configuration before cleanup and never fall back to development/Atlas. Mock external responses in repeatable tests; record a separate live API/model check where applicable.
+
+Documentation-only changes need links/anchors, synchronized specifications, truthful status and focused formatting/diff checks. Do not run application suites merely to imply the proposed games exist. Report exact commands and outcomes, including not-run checks and reasons. Review the final diff; mark Review with evidence and Done only after acceptance.
+
+## 10. Documentation maintenance
+
+- README.md retains its approved five sections: minimal setup, tooling recommendation, directory, six game blueprints and kickoff prompt.
+- TASKS.md owns authorization, availability/collision evidence, dependencies, active records, detailed feature specifications, operational verification and retained history.
+- agents.md owns the decision tree and engineering guardrails; DESIGN.md owns visual details.
+- Keep README and TASKS copies of the shared/six-game blueprints synchronized in the same change. TASKS may add coordination or implementation-detail notes without silently altering approved rules.
+- Every new feature specification includes title/concept, 1–3-star difficulty and required concepts, interaction loop, exact recommended components/props/emits, API payloads, schema/state ownership, dependencies and acceptance checks. For non-game features identify difficulty as implementation complexity. Non-feature QA/submission tasks may state that gameplay/schema additions are not applicable.
+- Preserve initial exploratory ideas and historical evidence as history, not assignments or available work. Never manufacture remote inspection, acceptance, test results, commits or pushes.
+- When setup, accounts or test requirements change, keep the five-section README accurate and resolve submission documentation requirements explicitly. Credit libraries, original/reused assets and data sources; the soundtrack still needs contributor-provided source/permission.
