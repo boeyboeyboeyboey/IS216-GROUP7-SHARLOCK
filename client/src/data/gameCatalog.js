@@ -1,4 +1,4 @@
-// This is the shared frontend registration point. It does not grant server permissions.
+// frontend display metadata is separate from server permissions
 export const TOWN_SIZE = { width: 1120, height: 800 }
 export const BUILDING_TYPES = ['cottage', 'library', 'office', 'hut', 'shed']
 

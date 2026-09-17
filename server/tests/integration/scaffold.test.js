@@ -9,7 +9,7 @@ let database
 let app
 
 beforeAll(async () => {
-  // loadEnvironment refuses missing/unsafe TEST_MONGODB_URI values before connecting.
+  // validate the test target before opening a database connection
   const config = loadEnvironment()
   if (config.nodeEnv !== 'test') throw new Error('Integration tests require NODE_ENV=test.')
   database = await connectDatabase(config.databaseUri)

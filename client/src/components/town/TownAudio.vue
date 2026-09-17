@@ -29,7 +29,7 @@ async function toggleSound() {
   starting.value = true
   audio.value.muted = false
   try {
-    // The user gesture calls play directly; report success only after it resolves.
+    // call play within the user gesture; update state only after playback starts
     await audio.value.play()
     if (!disposed) isMuted.value = false
   } catch {

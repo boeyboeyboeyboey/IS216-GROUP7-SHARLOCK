@@ -34,7 +34,7 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 - **[DESIGN.md](DESIGN.md):** Mandatory shared pixel design, exact tokens/components, game-local design freedom, responsiveness and building registration.
 - **[agents.md](agents.md):** AI operating instructions, conflict detection, overwrite restrictions and review workflow.
 
-**When adding UI:** follow the exact current [shared design contract](DESIGN.md#rules-for-new-pages-and-features): Pixelify Sans, cream/earthy-green tokens, square borders, hard shadows, pixel artwork/icons, the retained 3D navbar logo and existing town controls. Reuse the shared components. Admin/log content retains its functional-style exception. **Games may use their own design philosophy** inside their module; their styles must not change the shared navbar, town building/card or other pages. Task 3 hover-card refinement is skipped; Tasks 4–5 remain separately gated.
+**When adding UI:** follow the exact current [shared design contract](DESIGN.md#rules-for-new-pages-and-features): Pixelify Sans, cream/earthy-green tokens, square borders, hard shadows, pixel artwork/icons, the retained 3D navbar logo and existing town controls. Reuse the shared components. Admin/log content retains its functional-style exception. **Games may use their own design philosophy** inside their module; their styles must not change the shared navbar, town building/card or other pages. Task 3 hover-card refinement is skipped; database/comment audits follow the separate approvals recorded in TASKS.md.
 
 ## 4. Game Backlog
 

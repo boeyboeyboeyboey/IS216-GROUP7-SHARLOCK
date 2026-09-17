@@ -1,7 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
 
-// Preserve the team's root connection template and every existing private file.
 try {
   const rootTemplate = await readFile(new URL('../.env.example', import.meta.url), 'utf8')
   await writeFile(new URL('../.env', import.meta.url), rootTemplate, { flag: 'wx', mode: 0o600 })

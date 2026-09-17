@@ -47,7 +47,6 @@ try {
 } finally {
   process.removeListener('SIGINT', onInterrupt)
   process.removeListener('SIGTERM', onTerminate)
-  // Only the temporary server/directory created above is cleaned up. This runner
-  // never connects a cleanup routine to a configured development database.
+  // cleanup is limited to the temporary instance created for this run
   await database.stop()
 }

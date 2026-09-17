@@ -2,7 +2,6 @@ import { test, expect } from '@playwright/test'
 import { gameCatalog } from '../../client/src/data/gameCatalog.js'
 
 test.beforeEach(async ({ page }) => {
-  // Exercise offline font fallbacks without relying on Google's network availability.
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
     route.fulfill({ contentType: 'text/css', body: '' }),
   )

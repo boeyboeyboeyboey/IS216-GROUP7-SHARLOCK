@@ -3,8 +3,7 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig(({ mode }) => {
-  // Read local connection settings in the build process only. Never expose server
-  // environment values with `define` or a client-side environment prefix.
+  // server settings stay in the build process, outside the client bundle
   const env = {
     ...loadEnv(mode, fileURLToPath(new URL('../server', import.meta.url)), ''),
     ...loadEnv(mode, fileURLToPath(new URL('..', import.meta.url)), ''),

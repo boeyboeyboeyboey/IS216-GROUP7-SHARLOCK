@@ -41,7 +41,7 @@ function placeCard() {
     cardStyle.value = { left: '12px', right: '12px', bottom: '12px' }
     return
   }
-  // keep cards inside the visible frame after camera transforms.
+  // keep cards inside the visible frame after camera transforms
   const bounds = frame.value.getBoundingClientRect()
   const anchor = button.getBoundingClientRect()
   const width = card.offsetWidth
@@ -90,14 +90,14 @@ function centerBuilding(game) {
   const anchor = button.getBoundingClientRect()
   const pan = camera.getPan()
   const zoom = camera.getScale()
-  // convert the visible offset into unscaled world coordinates; panzoom clamps the result.
+  // convert the visible offset into unscaled world coordinates; panzoom clamps the result
   camera.pan(
     pan.x + (bounds.left + bounds.width / 2 - anchor.left - anchor.width / 2) / zoom,
     pan.y + (bounds.top + bounds.height / 2 - anchor.top - anchor.height / 2) / zoom,
   )
 }
 function focusReveal(game) {
-  // pointer focus must not open an overlay before the same tap reaches its building.
+  // pointer focus must not open an overlay before the same tap reaches its building
   if (pointerDown || ignoreFocus) return
   centerBuilding(game)
   reveal(game)
@@ -159,7 +159,7 @@ function startGesture(event) {
 function moveGesture(event) {
   const start = activePointers.get(event.pointerId)
   if (!start) return
-  // a drag or pinch must not trigger the click emitted when the pointer is released.
+  // a drag or pinch must not trigger the click emitted when the pointer is released
   if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 6) {
     suppressClick = true
     dragging.value = true
@@ -207,7 +207,7 @@ function resizeCamera() {
   })
 }
 onMounted(() => {
-  // panzoom owns drag, pinch, focal zoom and boundary math for the town canvas.
+  // panzoom owns drag, pinch, focal zoom and boundary math for the town canvas
   camera = Panzoom(world.value, {
     canvas: true,
     cursor: 'grab',

@@ -12,7 +12,7 @@ export function databaseNameFromUri(uri, label = 'MONGO_URI', fallbackName) {
     ) {
       throw new Error()
     }
-    // A query option must never override the database checked by the test guard.
+    // reject query overrides so the connection uses the database validated here
     if ([...parsed.searchParams.keys()].some((key) => key.toLowerCase() === 'dbname'))
       throw new Error()
     return name
@@ -28,7 +28,7 @@ export function assertSafeTestDatabaseUri(testUri, developmentUri) {
   }
   if (developmentUri) {
     const developmentName = databaseNameFromUri(developmentUri, 'MONGO_URI', 'sharlock_dev')
-    // Conservatively reject the same name even when hosts or aliases differ.
+    // compare database names even when host aliases differ
     if (testName.toLowerCase() === developmentName.toLowerCase()) {
       throw new Error('Test and development database names must be different.')
     }

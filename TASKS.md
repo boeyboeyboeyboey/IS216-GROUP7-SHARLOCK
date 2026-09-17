@@ -6,7 +6,7 @@ Team: **Boey, Keane, Eric, Russell, Xin Lei and Athithya**. No game assignments 
 
 ## Current authorization
 
-**Current authorization: DOC-04 — preserve the current design contract in team/agent documentation.** Boey explicitly skipped Task 3 (UI-06) and requested updates to README.md, DESIGN.md, TASKS.md and agents.md. New shared/non-game UI must follow the current pixel design; individual games may choose their own design philosophy within their module. Retain the existing admin/log-content exception and 3D navbar logo. This authorizes documentation only; Tasks 4 and 5 still need separate explicit permission.
+**Current authorization: CODE-01 — code-comment audit (Task 5).** Boey accepted progression from Task 4 and explicitly authorized Task 5. Review maintained source/configuration/test comments, remove unnecessary explanations and make retained logic or MEVN data-flow explanations concise and lowercase, without trailing full stops. Preserve functional directives, executable code, literals, URLs and documentation prose. Retain the Panzoom explanation while applying the comment punctuation rule; keep the current design, private environment files and contributor-maintained environment templates unchanged. Stop for review after verification. Task 3 (UI-06) remains skipped.
 
 | Gate                            | Retained decision                                                               | Current meaning                                                                             |
 | ------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
@@ -25,7 +25,7 @@ Team: **Boey, Keane, Eric, Russell, Xin Lei and Athithya**. No game assignments 
 4. **Clarify before code.** Agree learning/interaction rules, difficulty, state, components/props/emits, APIs, schemas, security, mobile accessibility, dependencies and acceptance checks. Present the plan and wait for explicit approval. Do not install, scaffold or claim while waiting.
 5. **Recheck immediately before edits.** New overlap returns to step 2. Record the real contributor, branch, approved scope, paths, dependencies and collision evidence. Reuse shared contracts; only approved additive registration edits are included. Missing contracts require a separate prerequisite task.
 
-The exact decision tree is in [agents.md](agents.md#2-mandatory-feature-selection-decision-tree). Current explicit user instructions take precedence for their stated scope. DOC-04 authorizes documentation updates only; the six game implementations remain pending.
+The exact decision tree is in [agents.md](agents.md#2-mandatory-feature-selection-decision-tree). Current explicit user instructions take precedence for their stated scope. CODE-01 authorizes comment maintenance of existing code; it does not authorize games, UI changes, database refactors or new dependencies.
 
 ## Board conventions
 
@@ -39,9 +39,24 @@ Move the task's active record rather than duplicating it across board states. Re
 
 ## In Progress
 
-None. DOC-04 is ready for review.
+None. CODE-01 is ready for review.
 
 ## Review
+
+**CODE-01 — Existing code-comment audit (Task 5)** · P0 · Status: **Review** · Contributor/reviewer: **Boey** · Branch: `codex/code-01-comment-audit`.
+
+- **Approval / scope:** Boey: “ok on to task 5”, followed by “ensure all comments don't end with a fullstop” when resuming after the usage limit. Audit existing maintained source, configuration and tests; lowercase and shorten retained explanations of complex logic or MEVN routing/data flow; remove redundant comments. Preserve all program behaviour and functional directives, including the error-handler ESLint directive and the existing Panzoom explanation. Stop for review.
+- **Concept / complexity:** ★☆☆ maintenance complexity; JavaScript/Vue syntax, configuration and comment/directive boundaries. No gameplay, new components/props/emits, state, API or schema changes.
+- **Inventory / exclusions:** 77 maintained JavaScript, Vue, CSS, HTML, SVG, JSON, workspace YAML and tooling configuration files; initially 21 explanatory line comments and one functional directive. No HTML/Vue boilerplate comments were found. Exclude dependencies, generated bundles/reports, caches, binaries, the generated lockfile, documentation prose and private environment files. Inspect only comment lines in the two protected environment examples; retain those contributor setup instructions unchanged.
+- **Affected files:** comments only in `TownAudio.vue`, `TownMap.vue`, `gameCatalog.js`, `client/vite.config.js`, `scripts/lib/mongodb.js`, `scripts/run-with-test-db.mjs`, `scripts/setup-env.mjs`, `server/src/config/database-uri.js`, `server/src/config/env.js`, `server/src/middleware/errors.js`, `server/src/server.js`, `server/tests/integration/scaffold.test.js` and `tests/e2e/portal.spec.js`; TASKS.md and agents.md for authorization/status/evidence. No shared integration or dependency changes.
+- **Dependencies / coordination:** existing accepted scaffold and UI. Rechecked TASKS, local refs/history, one worktree and staged/unstaged state. Started at `83188f4` on the Task 4 branch with its three uncommitted documents and the unrelated `.DS_Store` change; preserve them. No competing local CODE-01 claim or branch found. No fetch, live PR or teammate-machine inspection. Snapshot the maintained source before edits and compare parsed code afterward.
+- **Acceptance checks:** retained code explanations are lowercase/minimal with no trailing full stops; functional directives and non-comment syntax are identical; templates/styles and protected files are unchanged; lint, formatting, build and appropriate tests pass. Record actual results and leave acceptance to Boey.
+- **Result:** comment-only changes in 13 source/configuration/test files. Removed three redundant explanations, condensed two two-line explanations and revised retained comments. All 16 remaining explanatory code comments are lowercase with no trailing full stop; the one functional ESLint directive is unchanged. The Panzoom purpose and gesture/coordinate explanations remain. No template/style, executable-code, identifier, literal, URL, dependency or database changes.
+- **Verification (17 September 2026):** `node /private/tmp/sharlock-code01-audit.mjs` passed across all 77 maintained files. The temporary audit helper uses the installed JavaScript and Vue parsers to compare pre-edit/current syntax without comments and checks directive equality, comment case/punctuation, exact template/style content and protected-file hashes. `pnpm test:unit` — **40 passed**; `pnpm lint`, `pnpm format:check` and `pnpm build` passed. The source snapshot/audit helper live only in `/private/tmp`, with no new repository dependency or permanent test.
+- **Documentation/final diff:** a one-off `python3` stdin check passed: 37 local links/anchors, five README sections, synchronized shared/six-game blueprints and one active/history record each for CODE-01 and DB-01. `pnpm exec prettier --write TASKS.md agents.md`, the focused Prettier check and `git diff --check` passed. Reviewed every changed source hunk and the documentation diff; only comments changed in maintained code.
+- **Preservation:** README.md, DESIGN.md, the lockfile, both protected environment examples and the unrelated `.DS_Store` match their pre-Task-5 snapshots. Task 4 findings and evidence remain in the accepted-work record, with its acceptance recorded from Boey's message. Private `.env` files were not edited or printed. No staging, commits, pushes or PRs.
+- **Not run / limits:** integration/E2E and a separate visual rehearsal were not repeated for comment-only edits; parsed syntax, templates/styles and directives are unchanged. Task 4's **6 integration / 24 E2E** passes remain prior evidence, not new Task 5 results. No setup script or persistent development database was started. Protected environment-template setup prose remains unchanged, outside the code-comment style edits.
+- **Next action:** Boey reviews CODE-01; do not mark it Done without acceptance. No further task in this five-task sequence is started automatically.
 
 **DOC-04 — Shared design contract and game-theme exception** · P0 · Status: **Review** · Contributor/reviewer: **Boey** · Branch: `codex/doc-04-design-contract`.
 
@@ -74,14 +89,11 @@ None. DOC-04 is ready for review.
 
 ## Pending staged approvals
 
-| Order | Task                                                                                                                                                                   | Gate                                                                                                          |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| 4     | DB-01 — Audit localhost test-database code; delete obsolete tests or explain/retain required isolated testing. Review any remote configuration change before using it. | Requires separate explicit approval; Task 3 is skipped. Never redirect destructive tests to development data. |
-| 5     | CODE-01 — Audit all existing code comments for lowercase, minimal complex-logic or routing/MVC explanations.                                                           | Requires explicit approval after Task 4 review.                                                               |
+None in the five-task sequence. Task 5 is ready for review; acceptance is still pending.
 
 ## Skipped stages
 
-**UI-06 / Task 3 — Offset building hover cards:** skipped at Boey's explicit request on 17 September 2026. Keep the existing clamped desktop placement and bottom overlay on narrow viewports, with camera synchronization. This is not implemented or Done; do not revive it as an automatic follow-up. Tasks 4 and 5 remain pending authorization.
+**UI-06 / Task 3 — Offset building hover cards:** skipped at Boey's explicit request on 17 September 2026. Keep the existing clamped desktop placement and bottom overlay on narrow viewports, with camera synchronization. This is not implemented or Done; do not revive it as an automatic follow-up. Task 4 is accepted; Task 5 has separate approval.
 
 ## Design contract for every UI task
 
@@ -736,6 +748,22 @@ The server's test-mode validation rejects a missing test URI, a name without `_t
 
 Playwright starts its own services on API port **3001** and frontend port **5174** and refuses to reuse existing servers. Close conflicting processes you own before running it. Browser reports go to ignored `playwright-report/`; failure traces/screenshots go to `test-results/`. First-run downloads need network access. Tests use a temporary local database, never Atlas. Browser tests control font responses and exercise the system-font fallback; no public data API is called.
 
+### Database audit decisions — DB-01
+
+Task 4 inspected the maintained test files, database helpers, environment validation and their actual callers. **No obsolete localhost database files were found.** Keep the following paths; no remote-configuration refactor is needed because normal development already uses `MONGO_URI` and tests select their separate guarded URI.
+
+| Paths / category                                                                                                           | Caller and reason to retain                                                                                                                                                                                                                                                                                                                                |
+| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server/tests/unit/environment.test.js` — synthetic URI fixtures                                                           | Selected by the Vitest `server` project. Localhost and example SRV strings are inputs to pure validation functions; they open no database connection. They verify test/development separation, invalid names, overrides and redacted errors.                                                                                                               |
+| `server/tests/integration/scaffold.test.js` — real disposable database                                                     | Selected by `pnpm test:integration`. Loads the guarded test configuration, checks real persistence/health and safe HTTP failures, deletes only its own UUID-tagged fixture and closes connections. It has no hardcoded database target.                                                                                                                    |
+| `tests/e2e/scaffold.spec.js`, `tests/e2e/portal.spec.js`, `playwright.config.js` — browser and HTTP loopback services      | Selected by `pnpm test:e2e`. The scaffold journey checks the Vue → Vite proxy → Express → MongoDB path and retry; portal tests share those test services. Ports 3001/5174 are application listeners, not leftover MongoDB connections. Existing servers are not reused.                                                                                    |
+| `scripts/run-with-test-db.mjs` and `scripts/lib/mongodb.js` — isolated test lifecycle                                      | Root integration/E2E scripts call the runner, which starts a real loopback MongoDB on a dynamic port with a random `_test` name, overrides any supplied test URI, provides a fresh secret and stops its own temporary instance in `finally`. Keep this isolation so test writes/cleanup need no Atlas access and cannot target the development connection. |
+| `scripts/start-local-db.mjs` — optional local development                                                                  | Still called by `pnpm db:local` and documented as an opt-in alternative to Atlas. Uses the shared binary helper, fixed port 27018 and persistent ignored `.local/mongodb/`; shutdown deliberately retains that development data. Neither normal Atlas startup nor the test runner calls this script.                                                       |
+| `server/src/config/env.js`, `database-uri.js`, `database.js`, `server/src/server.js` — environment and connection boundary | Normal startup connects using `MONGO_URI`; test startup selects validated `TEST_MONGODB_URI` without falling back to development. Preserve explicit non-system `_test` names, rejection of database overrides and development-name collisions, environment precedence and safe errors.                                                                     |
+| Root package scripts, `vitest.config.js`, `client/vite.config.js`, `scripts/setup-env.mjs` — wiring and setup              | Retain suite discovery, the two test-runner entry points, the optional development command, HTTP proxy and non-overwriting environment setup. Client connection unit tests mock Axios and do not open MongoDB. `.cache/`, `.local/` and generated test reports remain ignored.                                                                             |
+
+The local database is required by the current self-contained test workflow; the optional persistent development database is a separate supported choice. A remote test alternative would require its own explicitly disposable `_test` database and equivalent safeguards. Do not substitute the development Atlas `MONGO_URI`, remove real persistence coverage or delete the optional helper merely because this workstation uses Atlas. No private environment values, dependencies, development database contents or application code were changed for this audit. The separate code-comment audit remains Task 5.
+
 ### Required application journey coverage — pending
 
 | Journey              | Expected evidence                                                                                                              |
@@ -868,6 +896,22 @@ These original ideas are retained as history, not selectable open tasks or team 
 | Global competition                 | Optional competition across institutions without exposing private learning records.                                   | Deferred.                                                                               | Opt-in, signed-in leaderboard with agreed eligibility/scoring rules. |
 
 ## Accepted work
+
+### Accepted DB-01 database audit
+
+**DB-01 — Localhost test-database audit (Task 4)** · P0 · Status: **Done** · Contributor/reviewer: **Boey** · Branch: `codex/db-01-test-database-audit`.
+
+- **Approval / scope:** Boey: “ok lets go to task 4. go-ahead”. Trace localhost MongoDB references and callers, remove only confirmed obsolete files, explain necessary local tests, verify the result and stop for review. Task 5 remains paused.
+- **Concept / complexity:** ★★☆ maintenance complexity; environment precedence, test isolation and process cleanup. No gameplay, UI components/props/emits, production API or schema additions.
+- **Inspection scope / dependencies:** existing scaffold, root package scripts, Vitest/Playwright configuration, `scripts/`, `server/src/config/`, server startup/health, `server/tests/`, `tests/e2e/`, client connection tests and Vite proxy. Distinguish synthetic URI fixtures, disposable test MongoDB, optional persistent local development MongoDB and HTTP loopback services.
+- **Affected files:** TASKS.md, README.md and agents.md for current authorization, audit decisions and evidence. No source/configuration deletions or refactors were justified; existing interfaces, manifests and lockfile are unchanged.
+- **Coordination:** started from `main` at `83188f4`; local branches, one worktree, staged/unstaged state, callers and relevant history inspected. The only initial change is an unrelated tracked `.DS_Store`, which is preserved. No competing DB-01 claim or local audit branch found. No fetch, live PR inspection or access to teammates' machines; locally recorded remote refs cannot establish their current state. Earlier UI-04/UI-05/DOC-04 uncommitted notes are historical; their code/documents are now in `83188f4`, without inferring additional review acceptance.
+- **Acceptance checks:** every retained local database path has a concrete purpose/caller; no development-data cleanup; unit validation, real isolated integration and E2E journeys pass; documentation and final diff are checked. Do not read private environment values for the audit or change them.
+- **Findings:** no obsolete localhost database files found. The [audit decisions](#database-audit-decisions--db-01) trace every retained path to its caller and distinguish required disposable testing from optional persistent local development and HTTP loopback services. Normal development already uses `MONGO_URI`; no remote refactor is needed. Existing comments were left for Task 5.
+- **Verification (17 September 2026):** Node.js `v24.12.0`, pnpm `12.3.4`; `pnpm test:unit` — **40 passed**; `pnpm test:integration` — **6 passed**; `pnpm test:e2e` — **24 passed** across mobile/desktop Chromium. Integration/E2E used the existing disposable local MongoDB runner, not Atlas. The first integration attempt could not open a listener inside the sandbox (`EPERM`); the unchanged command passed with listener permission, as did E2E.
+- **Documentation/diff checks:** `pnpm exec prettier --write README.md TASKS.md agents.md`, `pnpm exec prettier --check README.md TASKS.md agents.md` and `git diff --check` passed. A one-off `python3` stdin check passed: 37 local links/anchors, five README sections, identical shared/six-game blueprints, unchanged DESIGN.md and only the three audit documents plus the initial `.DS_Store` in the unstaged diff. `shasum -a 256 .DS_Store` matched the before-edit value; no files are staged. Reviewed the final documentation diff; source/configuration, tests, manifests and lockfile remain unchanged.
+- **Not run / boundaries:** lint/build and a separate visual audit are unnecessary for the final documentation-only diff; the existing application suites were run specifically to verify the retained database/test workflow. No development Atlas connection check, optional persistent `db:local` startup, environment setup or dependency installation was needed. No private values were printed, development records modified, or files deleted. No commits, staging, pushes or PRs.
+- **Acceptance:** Boey replied “ok on to task 5” after the review handoff, accepting progression from Task 4 and explicitly authorizing CODE-01. Its documentation changes remain uncommitted and are carried forward on the Task 5 branch.
 
 ### Accepted UI-04 global pixel design
 

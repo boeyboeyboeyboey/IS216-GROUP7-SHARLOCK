@@ -69,7 +69,7 @@ export function validateEnvironment(env) {
 }
 
 export function loadEnvironment() {
-  // Existing shell values win; the root file overrides legacy server defaults.
+  // shell values take precedence over root settings and server defaults
   const fileValues = { ...readEnvironmentFile(), ...readEnvironmentFile(rootEnvironmentPath) }
   for (const [key, value] of Object.entries(fileValues)) {
     if (process.env[key] === undefined) process.env[key] = value

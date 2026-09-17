@@ -35,7 +35,7 @@ try {
   })
   for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, shutdown)
 } catch (error) {
-  // Configuration errors contain variable names and fixed guidance only.
+  // startup errors contain only fixed guidance, never connection details
   console.error(error.message)
   await shutdown()
   process.exitCode = 1

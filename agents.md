@@ -49,7 +49,7 @@ Use `codex/<task-id>-<description>` unless the user chooses another branch. Reus
 
 ## 3. Authorization and change boundaries
 
-The current authorization is **DOC-04**: update README.md, DESIGN.md, TASKS.md and agents.md so teammates and agents preserve the current shared pixel design while games may use their own design philosophy. Boey explicitly skipped Task 3 (UI-06); do not implement or automatically resume hover-card refinement. Preserve all existing uncommitted UI-04/UI-05 code. Tasks 4 and 5 still require separate explicit permission. This turn authorizes no application code, dependency, database or full comment-audit changes.
+The current authorization is **CODE-01 / Task 5**: audit existing comments in maintained source, configuration and tests. Make retained complex-logic or MEVN routing/data-flow explanations concise and lowercase without trailing full stops; remove redundant comments. Preserve executable code, identifiers, strings, URLs, functional directives, the Panzoom explanation, documentation prose and protected environment templates. Boey accepted progression from Task 4 and explicitly authorized this comment maintenance; no further plan approval is needed for that scope. Preserve the uncommitted Task 4 documents and unrelated working-tree changes. Record evidence in TASKS.md and stop for review. Task 3 (UI-06) remains skipped; no games, redesign, database refactors or new dependencies are authorized.
 
 - Keep changes within the approved task and its declared files. Preserve other contributors' notes, acceptance criteria, code and uncommitted changes.
 - Never use destructive reset/clean, overwrite private files, rewrite shared history or force-push without explicit authorization for that action.
@@ -74,7 +74,7 @@ The [shared blueprint](TASKS.md#shared-implementation-blueprint) and six game sc
 
 ### Code comments
 
-Every new or edited code comment must be strictly lowercase and minimal. Comment only to explain complex computational logic or clarify MEVN routing/MVC data flow for teammates and instructors. Do not annotate standard HTML/Vue boilerplate. Task 5 will audit existing comments repository-wide; do not claim that audit has been completed during earlier stages.
+Every new or edited code comment must be strictly lowercase and minimal, with no trailing full stop. Comment only to explain complex computational logic or clarify MEVN routing/MVC data flow for teammates and instructors. Do not annotate standard HTML/Vue boilerplate. CODE-01 records the Task 5 audit scope and evidence; earlier stages did not complete that audit.
 
 ## 5. Data and permission boundaries
 
