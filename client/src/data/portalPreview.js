@@ -1,9 +1,8 @@
-// Illustrative UI data only. Replace with authorized APIs when learning records exist.
 export const previewProfile = {
   username: 'Curious detective',
   title: 'Novice Sleuth',
   points: 120,
-  avatar: '/images/sharlock-placeholder.svg',
+  avatar: '/images/town/capybara-mint.svg',
 }
 
 export const previewCompletedGameIds = ['integrity-detective']

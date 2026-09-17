@@ -79,17 +79,23 @@ test('opens details by pointer, touch, and keyboard and restores focus on Escape
   await expect(building).toBeFocused()
 })
 
-test('keeps map scrolling bounded and supports keyboard panning', async ({ page }) => {
+test('keeps the camera bounded and supports keyboard panning', async ({ page }) => {
   await page.goto('/dashboard')
-  const map = page.getByRole('region', { name: 'Scrollable town map' })
+  const map = page.getByRole('region', { name: 'Interactive town map' })
+  const offset = () =>
+    map.evaluate(
+      (el) =>
+        el.querySelector('.town-world').getBoundingClientRect().top -
+        el.getBoundingClientRect().top,
+    )
   await map.focus()
   await page.keyboard.press('ArrowDown')
-  await expect.poll(() => map.evaluate((el) => el.scrollTop)).toBeGreaterThan(0)
+  await expect.poll(offset).toBeLessThan(-50)
   await page.getByLabel('Jump to').selectOption('red-blue')
   await expect(
     page.getByRole('region', { name: 'Think like a defender', exact: true }),
   ).toBeVisible()
-  await expect.poll(() => map.evaluate((el) => el.scrollTop)).toBeGreaterThan(100)
+  await expect.poll(offset).toBeLessThan(-100)
 })
 
 test('plays the repository soundtrack only after a click and stops on departure', async ({
@@ -149,9 +155,20 @@ test('navigates to the profile and handles mobile focus and dismissal', async ({
   await expect(page.getByRole('heading', { name: 'Your trophy case' })).toBeVisible()
 })
 
-test('retains modern landing/login branding and recovers from a missing page', async ({ page }) => {
+test('uses pixel page artwork, keeps the 3D navbar logo, and recovers from a missing page', async ({
+  page,
+}) => {
   await page.goto('/')
-  await expect(page.locator('.portal-shell')).not.toHaveClass(/is-town/)
+  await expect(page.locator('.navbar-mascot')).toHaveAttribute(
+    'alt',
+    /3D-style capybara mascot wearing a monocle/,
+  )
+  await expect(page.locator('.navbar-mascot')).toHaveCSS('image-rendering', 'auto')
+  await expect(page.locator('.hero-mascot')).toHaveAttribute(
+    'alt',
+    /pixel-art capybara wearing a mint scarf/,
+  )
+  await expect(page.locator('.hero-mascot')).toHaveCSS('image-rendering', 'pixelated')
   const trigger = page.getByRole('button', { name: 'Tip from Sharlock' })
   await trigger.click()
   await expect(page.getByRole('tooltip').getByRole('img')).toBeVisible()
@@ -159,7 +176,10 @@ test('retains modern landing/login branding and recovers from a missing page', a
   await expect(page.getByRole('tooltip')).toBeHidden()
   await page.goto('/login')
   await expect(page.locator('.auth-mascot')).toBeVisible()
-  await expect(page.locator('.portal-shell')).not.toHaveClass(/is-town/)
+  await expect(page.locator('.auth-mascot')).toHaveAttribute(
+    'alt',
+    /pixel-art capybara wearing a mint scarf/,
+  )
   await page.goto('/a-missing-clue')
   await expect(page.getByRole('heading', { name: 'A little off the trail?' })).toBeVisible()
   await page.getByRole('link', { name: 'Back to town' }).click()
@@ -186,17 +206,177 @@ test('fits supported breakpoints with readable pixel buildings and responsive br
     await page.setViewportSize({ width, height })
     const layout = await page.locator('.town-viewport').evaluate((el) => ({
       fits: document.documentElement.scrollWidth <= innerWidth,
-      scrolling: el.scrollWidth > el.clientWidth,
+      clipping: getComputedStyle(el).overflow,
+      nativeScroll: el.scrollTop + el.scrollLeft,
       worldWidth: el.querySelector('.town-world').getBoundingClientRect().width,
       animation: getComputedStyle(el.querySelector('.building-sprite')).animationName,
     }))
     expect(layout.fits, `overflow at ${width}px`).toBe(true)
     expect(layout.worldWidth).toBe(1120)
     expect(layout.animation).toBe('none')
-    if (width < 1200) expect(layout.scrolling).toBe(true)
+    expect(layout.clipping).toBe('clip')
+    expect(layout.nativeScroll).toBe(0)
     await expect(page.locator('.navbar-mascot')).toBeVisible()
     if (width < 768) await expect(page.locator('.brand-title')).toBeHidden()
     else await expect(page.locator('.brand-title')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Turn on town sound' })).toBeVisible()
   }
+})
+
+test('zooms with controls and keyboard, resets the camera, and keeps buildings reachable', async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  const map = page.getByRole('region', { name: 'Interactive town map' })
+  const zoomIn = page.getByRole('button', { name: 'Zoom in', exact: true })
+  const zoomOut = page.getByRole('button', { name: 'Zoom out', exact: true })
+  const level = page.getByLabel('Map zoom level')
+  await expect(level).toHaveText('100%')
+  await expect(zoomOut).toBeDisabled()
+  for (let i = 0; i < 4; i++) await zoomIn.click()
+  await expect(level).toHaveText('200%')
+  await expect(zoomIn).toBeDisabled()
+  await map.focus()
+  const limitTransform = await page.locator('.town-world').getAttribute('style')
+  await page.keyboard.press('+')
+  await expect(page.locator('.town-world')).toHaveAttribute('style', limitTransform)
+  for (const game of gameCatalog) {
+    await page.getByLabel('Jump to').selectOption(game.id)
+    const heading = page.getByRole('heading', { name: game.name, exact: true })
+    await expect(heading).toBeFocused()
+    const button = page.getByRole('button', { name: `Explore ${game.name}`, exact: true })
+    await expect
+      .poll(() =>
+        button.evaluate((el) => {
+          const b = el.getBoundingClientRect()
+          const v = el.closest('.town-viewport').getBoundingClientRect()
+          return b.right > v.left && b.left < v.right && b.bottom > v.top && b.top < v.bottom
+        }),
+      )
+      .toBe(true)
+    await page.keyboard.press('Escape')
+    await expect(button).toBeFocused()
+  }
+  await zoomOut.click()
+  await expect(level).toHaveText('175%')
+  await map.focus()
+  await page.keyboard.press('-')
+  await expect(level).toHaveText('150%')
+  await page.keyboard.press('+')
+  await expect(level).toHaveText('175%')
+  await page.keyboard.press('0')
+  await expect(level).toHaveText('100%')
+  await page.keyboard.press('ArrowDown')
+  await page.getByRole('button', { name: 'Reset view' }).click()
+  await expect
+    .poll(() =>
+      map.evaluate((el) => {
+        const world = el.querySelector('.town-world').getBoundingClientRect()
+        const bounds = el.getBoundingClientRect()
+        return Math.abs(world.top - bounds.top) + Math.abs(world.left - bounds.left)
+      }),
+    )
+    .toBeLessThan(1)
+})
+
+test('drags without opening a building and still selects with a fresh tap or click', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/dashboard')
+  const map = page.getByRole('region', { name: 'Interactive town map' })
+  await map.scrollIntoViewIfNeeded()
+  const building = page.getByRole('button', { name: 'Explore Integrity detective', exact: true })
+  const before = await building.boundingBox()
+  const start = { x: before.x + before.width / 2, y: before.y + before.height / 2 }
+  const mobile = testInfo.project.name === 'mobile-chromium'
+  if (mobile) {
+    const session = await page.context().newCDPSession(page)
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ ...start, id: 1 }],
+    })
+    for (let step = 1; step <= 6; step++) {
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: start.x - step * 10, y: start.y - step * 10, id: 1 }],
+      })
+    }
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    await session.detach()
+  } else {
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await page.mouse.move(start.x - 60, start.y - 60, { steps: 6 })
+    await page.mouse.up()
+  }
+  await expect.poll(async () => (await building.boundingBox()).y).toBeLessThan(before.y - 40)
+  await expect(page.locator('.game-info-card')).toHaveCount(0)
+  if (mobile) await building.tap()
+  else await building.click()
+  await expect(
+    page.getByRole('heading', { name: 'Integrity detective', exact: true }),
+  ).toBeFocused()
+})
+
+test('supports pinch zoom and wheel panning while retaining camera bounds after resize', async ({
+  page,
+}) => {
+  await page.goto('/dashboard')
+  const map = page.getByRole('region', { name: 'Interactive town map' })
+  await map.scrollIntoViewIfNeeded()
+  const bounds = await map.boundingBox()
+  const x = bounds.x + bounds.width / 2
+  const y = bounds.y + bounds.height / 2
+  const session = await page.context().newCDPSession(page)
+  const points = (distance) => [
+    { x: x - distance, y, id: 1 },
+    { x: x + distance, y, id: 2 },
+  ]
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points(25) })
+  for (const distance of [40, 60, 80, 100]) {
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: points(distance),
+    })
+    await page.evaluate(() => new Promise(requestAnimationFrame))
+  }
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await session.detach()
+  await expect.poll(() => page.getByLabel('Map zoom level').textContent()).not.toBe('100%')
+  await expect(page.locator('.game-info-card')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Reset view' }).click()
+  await expect(page.getByLabel('Map zoom level')).toHaveText('100%')
+  await map.hover({ position: { x: 20, y: 20 } })
+  await page.mouse.wheel(5000, 5000)
+  await expect
+    .poll(() =>
+      map.evaluate(
+        (el) =>
+          el.querySelector('.town-world').getBoundingClientRect().top -
+          el.getBoundingClientRect().top,
+      ),
+    )
+    .toBeLessThan(-100)
+  for (const width of [1440, 375, 768]) {
+    await page.setViewportSize({ width, height: 900 })
+    await expect
+      .poll(() =>
+        map.evaluate((el) => {
+          const world = el.querySelector('.town-world').getBoundingClientRect()
+          const view = el.getBoundingClientRect()
+          return (
+            world.left <= view.left + 1 &&
+            world.top <= view.top + 1 &&
+            world.right >= view.right - 1 &&
+            world.bottom >= view.bottom - 1 &&
+            document.documentElement.scrollWidth <= innerWidth
+          )
+        }),
+      )
+      .toBe(true)
+  }
+  await page.goto('/profile')
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await page.goto('/dashboard')
+  await expect(page.getByLabel('Map zoom level')).toHaveText('100%')
 })

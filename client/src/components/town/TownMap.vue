@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import Panzoom from '@panzoom/panzoom'
 import { TOWN_SIZE } from '../../data/gameCatalog.js'
 import PixelIcon from './PixelIcon.vue'
 import TownScenery from './TownScenery.vue'
@@ -9,6 +10,15 @@ import GameInfoCard from './GameInfoCard.vue'
 const props = defineProps({ games: { type: Array, required: true } })
 const frame = ref(null)
 const viewport = ref(null)
+const world = ref(null)
+const scale = ref(1)
+const dragging = ref(false)
+const minScale = 1
+const maxScale = 2
+const activePointers = new Map()
+let camera
+let suppressClick = false
+let resizeFrame
 const infoCard = ref(null)
 const selectedId = ref(null)
 const selectedGame = computed(() => props.games.find((game) => game.id === selectedId.value))
@@ -31,7 +41,7 @@ function placeCard() {
     cardStyle.value = { left: '12px', right: '12px', bottom: '12px' }
     return
   }
-  // Keep hover cards inside the visible map, independent of its scroll position.
+  // keep cards inside the visible frame after camera transforms.
   const bounds = frame.value.getBoundingClientRect()
   const anchor = button.getBoundingClientRect()
   const width = card.offsetWidth
@@ -71,51 +81,167 @@ function focusLeft(event) {
   if (!frame.value?.contains(event.relatedTarget) && !pinned) dismiss()
 }
 function pointerReveal(event, game) {
-  if (event.pointerType === 'mouse') reveal(game)
+  if (event.pointerType === 'mouse' && !pointerDown) reveal(game)
+}
+function centerBuilding(game) {
+  const button = buildingButtons.get(game.id)
+  if (!camera || !button) return
+  const bounds = viewport.value.getBoundingClientRect()
+  const anchor = button.getBoundingClientRect()
+  const pan = camera.getPan()
+  const zoom = camera.getScale()
+  // convert the visible offset into unscaled world coordinates; panzoom clamps the result.
+  camera.pan(
+    pan.x + (bounds.left + bounds.width / 2 - anchor.left - anchor.width / 2) / zoom,
+    pan.y + (bounds.top + bounds.height / 2 - anchor.top - anchor.height / 2) / zoom,
+  )
 }
 function focusReveal(game) {
-  // Touch focuses before click. Opening the overlay then can steal that same tap.
-  if (!pointerDown) reveal(game)
+  // pointer focus must not open an overlay before the same tap reaches its building.
+  if (pointerDown || ignoreFocus) return
+  centerBuilding(game)
+  reveal(game)
 }
-function selectBuilding(game) {
-  pointerDown = false
+function selectBuilding(event, game) {
+  if (suppressClick && event.detail !== 0) return
   reveal(game, true)
 }
-async function findBuilding(event) {
+function findBuilding(event) {
   const game = props.games.find((item) => item.id === event.target.value)
   if (!game) return
-  viewport.value.scrollTo({
-    left: game.building.x - (viewport.value.clientWidth - 192) / 2,
-    top: game.building.y - 80,
-    behavior: 'instant',
+  centerBuilding(game)
+  reveal(game, true)
+}
+function zoomBy(step) {
+  if (!camera) return
+  const target = Math.max(minScale, Math.min(maxScale, camera.getScale() + step))
+  if (target === camera.getScale()) return
+  const bounds = viewport.value.getBoundingClientRect()
+  camera.zoomToPoint(target, {
+    clientX: bounds.left + bounds.width / 2,
+    clientY: bounds.top + bounds.height / 2,
   })
-  await reveal(game, true)
+}
+function resetCamera() {
+  dismiss()
+  camera?.reset({ animate: false })
 }
 function panWithKeyboard(event) {
   if (event.target !== viewport.value) return
   const offsets = {
-    ArrowLeft: [-64, 0],
-    ArrowRight: [64, 0],
-    ArrowUp: [0, -64],
-    ArrowDown: [0, 64],
+    ArrowLeft: [64, 0],
+    ArrowRight: [-64, 0],
+    ArrowUp: [0, 64],
+    ArrowDown: [0, -64],
   }
-  if (!offsets[event.key]) return
+  if (offsets[event.key]) {
+    event.preventDefault()
+    dismiss()
+    camera?.pan(offsets[event.key][0] / scale.value, offsets[event.key][1] / scale.value, {
+      relative: true,
+    })
+  } else if (['+', '=', '-', '0'].includes(event.key)) {
+    event.preventDefault()
+    if (event.key === '0') resetCamera()
+    else zoomBy(event.key === '-' ? -0.25 : 0.25)
+  }
+}
+function startGesture(event) {
+  if (event.button !== 0 || !camera) return
+  if (!activePointers.size) suppressClick = false
+  activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
+  pointerDown = true
+  if (activePointers.size > 1) suppressClick = true
+  dismiss()
+  viewport.value.focus({ preventScroll: true })
+  camera.handleDown(event)
+}
+function moveGesture(event) {
+  const start = activePointers.get(event.pointerId)
+  if (!start) return
+  // a drag or pinch must not trigger the click emitted when the pointer is released.
+  if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 6) {
+    suppressClick = true
+    dragging.value = true
+  }
+  camera.handleMove(event)
+}
+function endGesture(event) {
+  if (!activePointers.has(event.pointerId)) return
+  camera.handleUp(event)
+  activePointers.delete(event.pointerId)
+  if (event.type === 'pointercancel') suppressClick = true
+  if (!activePointers.size) {
+    pointerDown = false
+    dragging.value = false
+  }
+}
+function cancelGestures() {
+  for (const pointerId of activePointers.keys()) {
+    endGesture(new PointerEvent('pointercancel', { pointerId }))
+  }
+}
+function wheelCamera(event) {
+  if (!camera) return
+  dismiss()
   event.preventDefault()
-  viewport.value.scrollBy({
-    left: offsets[event.key][0],
-    top: offsets[event.key][1],
-    behavior: 'instant',
+  if (event.ctrlKey || event.metaKey) camera.zoomWithWheel(event)
+  else {
+    const unit =
+      event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.value.clientHeight : 1
+    const x = event.shiftKey && !event.deltaX ? event.deltaY : event.deltaX
+    const y = event.shiftKey && !event.deltaX ? 0 : event.deltaY
+    camera.pan((-x * unit) / scale.value, (-y * unit) / scale.value, { relative: true })
+  }
+}
+function cameraChanged(event) {
+  scale.value = event.detail.scale
+  placeCard()
+}
+function resizeCamera() {
+  cancelAnimationFrame(resizeFrame)
+  resizeFrame = requestAnimationFrame(() => {
+    const pan = camera.getPan()
+    camera.pan(pan.x, pan.y)
+    placeCard()
   })
 }
 onMounted(() => {
-  if (typeof ResizeObserver !== 'undefined') {
-    resizeObserver = new ResizeObserver(placeCard)
-    resizeObserver.observe(frame.value)
-  }
+  // panzoom owns drag, pinch, focal zoom and boundary math for the town canvas.
+  camera = Panzoom(world.value, {
+    canvas: true,
+    cursor: 'grab',
+    contain: 'outside',
+    minScale,
+    maxScale,
+    animate: false,
+    noBind: true,
+    overflow: 'clip',
+    handleStartEvent: (event) => event.preventDefault(),
+  })
+  world.value.addEventListener('panzoomchange', cameraChanged)
+  viewport.value.addEventListener('wheel', wheelCamera, { passive: false })
+  document.addEventListener('pointermove', moveGesture)
+  document.addEventListener('pointerup', endGesture)
+  document.addEventListener('pointercancel', endGesture)
+  document.addEventListener('pointerleave', cancelGestures)
+  window.addEventListener('blur', cancelGestures)
+  resizeObserver = new ResizeObserver(resizeCamera)
+  resizeObserver.observe(viewport.value)
 })
 onBeforeUnmount(() => {
   cancelClose()
+  cancelAnimationFrame(resizeFrame)
   resizeObserver?.disconnect()
+  cancelGestures()
+  document.removeEventListener('pointermove', moveGesture)
+  document.removeEventListener('pointerup', endGesture)
+  document.removeEventListener('pointercancel', endGesture)
+  document.removeEventListener('pointerleave', cancelGestures)
+  window.removeEventListener('blur', cancelGestures)
+  viewport.value.removeEventListener('wheel', wheelCamera)
+  world.value.removeEventListener('panzoomchange', cameraChanged)
+  camera?.destroy()
 })
 </script>
 
@@ -129,6 +255,28 @@ onBeforeUnmount(() => {
       </div>
       <TownAudio />
     </div>
+    <div class="map-zoom-controls" role="group" aria-label="Map zoom">
+      <button
+        class="pixel-button zoom-step"
+        type="button"
+        aria-label="Zoom out"
+        :disabled="scale <= minScale + 0.001"
+        @click="zoomBy(-0.25)"
+      >
+        −
+      </button>
+      <output aria-label="Map zoom level" aria-live="off">{{ Math.round(scale * 100) }}%</output>
+      <button
+        class="pixel-button zoom-step"
+        type="button"
+        aria-label="Zoom in"
+        :disabled="scale >= maxScale - 0.001"
+        @click="zoomBy(0.25)"
+      >
+        +
+      </button>
+      <button class="pixel-button reset-view" type="button" @click="resetCamera">Reset view</button>
+    </div>
     <div
       ref="frame"
       class="map-frame"
@@ -139,15 +287,17 @@ onBeforeUnmount(() => {
       <div
         ref="viewport"
         class="town-viewport"
+        :class="{ 'is-dragging': dragging }"
         tabindex="0"
         role="region"
-        aria-label="Scrollable town map"
+        aria-label="Interactive town map"
         aria-describedby="map-instructions"
-        @scroll="placeCard"
         @keydown="panWithKeyboard"
-        @pointerdown.self="dismiss()"
+        @pointerdown="startGesture"
+        @dragstart.prevent
       >
         <div
+          ref="world"
           class="town-world"
           :style="{ width: `${TOWN_SIZE.width}px`, height: `${TOWN_SIZE.height}px` }"
         >
@@ -174,11 +324,8 @@ onBeforeUnmount(() => {
                 :aria-controls="selectedId === game.id ? `game-card-${game.id}` : undefined"
                 @pointerenter="pointerReveal($event, game)"
                 @pointerleave="scheduleClose"
-                @pointerdown="pointerDown = true"
-                @pointercancel="pointerDown = false"
-                @blur="pointerDown = false"
                 @focus="focusReveal(game)"
-                @click="selectBuilding(game)"
+                @click="selectBuilding($event, game)"
               >
                 <img
                   class="building-sprite"
@@ -205,7 +352,8 @@ onBeforeUnmount(() => {
     </div>
     <div class="map-controls">
       <p id="map-instructions">
-        <span class="map-key">↔ ↕</span> Scroll or swipe to explore. Select any building.
+        <span class="map-key">↔ ↕</span> Drag or swipe to explore. Pinch or use +/− to zoom.
+        <span class="map-keyboard-help">Keyboard: arrows to pan, +/− to zoom, 0 to reset.</span>
       </p>
       <label for="find-building"
         >Jump to

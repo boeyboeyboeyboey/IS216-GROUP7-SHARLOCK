@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { PhFlagCheckered } from '@phosphor-icons/vue'
+import PixelIcon from '../town/PixelIcon.vue'
 const props = defineProps({
   completed: { type: Number, default: 0 },
   total: { type: Number, default: 0 },
@@ -20,7 +20,7 @@ const percentage = computed(() =>
 
 <template>
   <section class="curriculum-progress" aria-label="Curriculum progress">
-    <PhFlagCheckered class="progress-icon" weight="duotone" :size="27" aria-hidden="true" />
+    <PixelIcon name="chart" class="progress-icon" :size="27" aria-hidden="true" />
     <div class="flex-grow-1 min-width-0">
       <div class="d-flex justify-content-between gap-3 mb-2">
         <span class="small"

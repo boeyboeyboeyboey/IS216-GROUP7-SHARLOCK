@@ -1,7 +1,6 @@
 <script setup>
 defineOptions({ name: 'SharlockNavbar' })
 import { ref } from 'vue'
-import { PhList, PhArrowUpRight, PhSparkle } from '@phosphor-icons/vue'
 import PixelIcon from '../town/PixelIcon.vue'
 defineProps({
   town: { type: Boolean, default: false },
@@ -27,14 +26,14 @@ defineExpose({ focusMenu: () => menuButton.value?.focus() })
       ><RouterLink to="/profile">Profile</RouterLink><RouterLink to="/progress">Progress</RouterLink
       ><RouterLink to="/leaderboard">Leaderboard</RouterLink>
     </nav>
-    <div v-else class="header-note d-none d-lg-flex">
+    <div v-else class="header-note d-none d-xl-flex">
       <span class="tiny-dot"></span> A little curiosity. A safer digital world.
     </div>
     <div class="d-flex align-items-center gap-2">
       <RouterLink v-if="!town" to="/" class="header-link d-none d-md-inline-flex"
-        >Meet Sharlock <PhArrowUpRight :size="16" aria-hidden="true" /></RouterLink
+        >Meet Sharlock <PixelIcon name="arrow" :size="16" /></RouterLink
       ><span :class="town ? 'town-preview-tag' : 'preview-tag d-none d-sm-inline-flex'"
-        ><PhSparkle v-if="!town" :size="14" aria-hidden="true" />{{
+        ><PixelIcon v-if="!town" name="star" :size="16" />{{
           town ? 'TOWN PREVIEW' : 'Portal preview'
         }}</span
       ><button
@@ -46,11 +45,7 @@ defineExpose({ focusMenu: () => menuButton.value?.focus() })
         :aria-expanded="menuOpen"
         @click="$emit('openMenu')"
       >
-        <PixelIcon v-if="town" name="menu" :size="24" /><PhList
-          v-else
-          :size="27"
-          aria-hidden="true"
-        />
+        <PixelIcon name="menu" :size="24" />
       </button>
     </div>
   </header>

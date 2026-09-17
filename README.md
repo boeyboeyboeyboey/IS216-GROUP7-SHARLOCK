@@ -18,7 +18,7 @@ pnpm dev
 
 Open **http://localhost:5173**. The existing workspace and scripts require pnpm; retain the single `pnpm-lock.yaml`.
 
-**Current implementation:** MEVN scaffold, modern portal, pixel town, activity previews and database health check. Authentication, permissions, playable games and persistent learning records remain pending. Localhost demonstration; zero project budget.
+**Current implementation:** MEVN scaffold, pixel-styled portal and town, activity previews and database health check. Authentication, permissions, playable games and persistent learning records remain pending. Localhost demonstration; zero project budget.
 
 ## 2. Tooling Recommendation
 
@@ -31,8 +31,10 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 ## 3. Documentation Directory
 
 - **[TASKS.md](TASKS.md):** Feature specifications, availability checks, task claims, dependencies, contributors and verification evidence. Claim only after the collision check and plan approval.
-- **[DESIGN.md](DESIGN.md):** Pixel-town/3D-portal aesthetics, responsive behavior and building registration.
+- **[DESIGN.md](DESIGN.md):** Mandatory shared pixel design, exact tokens/components, game-local design freedom, responsiveness and building registration.
 - **[agents.md](agents.md):** AI operating instructions, conflict detection, overwrite restrictions and review workflow.
+
+**When adding UI:** follow the exact current [shared design contract](DESIGN.md#rules-for-new-pages-and-features): Pixelify Sans, cream/earthy-green tokens, square borders, hard shadows, pixel artwork/icons, the retained 3D navbar logo and existing town controls. Reuse the shared components. Admin/log content retains its functional-style exception. **Games may use their own design philosophy** inside their module; their styles must not change the shared navbar, town building/card or other pages. Task 3 hover-card refinement is skipped; Tasks 4–5 remain separately gated.
 
 ## 4. Game Backlog
 
@@ -48,6 +50,7 @@ The following proposed contract applies to the five scored games. It depends on 
 - Backend: `server/src/modules/games/<game-id>/`, containing routes, validators, scoring and private scenario data.
 - Requests: reuse `client/src/services/api.js`; its base URL already contains `/api`.
 - State: keep gameplay in a module composable using `ref`, `reactive` and `computed`. Reserve Pinia for shared account/context state.
+- Visual boundary: follow [DESIGN.md](DESIGN.md#rules-for-new-pages-and-features). Game modules may choose their own design philosophy and scoped fonts/artwork/controls; shared navigation, town registration/cards and shared pages retain the exact hub scheme. Verify accessibility/responsiveness and no style leakage.
 - Town integration: new activities without existing implementation add a unique catalog entry and concrete route through the procedure in DESIGN.md. Include name, description, difficulty, background knowledge and building placement. Preserve existing entries; no completion locks. Cyber News Central is the existing `threat-briefing` activity described below, so it must not receive a second registration or building.
 
 **Proposed shared API**
@@ -324,6 +327,14 @@ Read TASKS.md first, then README.md, DESIGN.md and agents.md in full.
 Inspect git status, staged/unstaged diffs, relevant source, tests and
 available branch/PR information. Preserve all existing changes.
 Ask my name if it is not already known; never invent a contributor.
+Treat DESIGN.md as mandatory for every new shared UI surface. Inspect
+its referenced styles/components and the existing pages before planning.
+Preserve the exact current shared pixel scheme and 3D navbar logo.
+Game screens may have their own design philosophy, fonts and artwork,
+but must isolate styles within their module; the shared navbar, town
+building/card and other pages keep the hub scheme. Retain the existing
+admin/log-content exception. Task 3 hover-card refinement is skipped;
+do not restart it or advance to Tasks 4–5 without explicit authorization.
 
 2. DETECT COLLISIONS
 Inspect the implementation before trusting a task's status.
@@ -368,6 +379,7 @@ conduct a dialogue with me. Finalize:
 - Gameplay rules, scoring, feedback, replay and failure behavior.
 - Mobile, touch, keyboard and reduced-motion behavior.
 - Exact files, Vue components, props/emits and state ownership.
+- Shared design reuse or game-local theme, CSS isolation and leakage checks.
 - API requests/responses, validation, schemas and result integrity.
 - Shared dependencies, town placement and minimal integration changes.
 - External services, zero-cost feasibility and test/acceptance criteria.

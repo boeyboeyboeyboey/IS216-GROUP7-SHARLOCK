@@ -2,15 +2,6 @@
 import { computed, ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import Offcanvas from 'bootstrap/js/dist/offcanvas'
-import {
-  PhX,
-  PhPath,
-  PhMedal,
-  PhChartBar,
-  PhUsersThree,
-  PhArrowUpRight,
-  PhSparkle,
-} from '@phosphor-icons/vue'
 import ProfileWidget from '../components/portal/ProfileWidget.vue'
 import Navbar from '../components/portal/Navbar.vue'
 import PixelIcon from '../components/town/PixelIcon.vue'
@@ -25,10 +16,10 @@ let offcanvas
 let media
 let routeChanged = false
 const navigation = [
-  { to: '/dashboard', label: 'Town map', icon: PhPath },
-  { to: '/profile', label: 'Detective profile', icon: PhMedal },
-  { to: '/progress', label: 'Learning progress', icon: PhChartBar },
-  { to: '/leaderboard', label: 'Cohort leaderboard', icon: PhUsersThree },
+  { to: '/dashboard', label: 'Town map', icon: 'map' },
+  { to: '/profile', label: 'Detective profile', icon: 'trophy' },
+  { to: '/progress', label: 'Learning progress', icon: 'chart' },
+  { to: '/leaderboard', label: 'Cohort leaderboard', icon: 'people' },
 ]
 function openMenu() {
   offcanvas?.show()
@@ -83,7 +74,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="portal-shell" :class="{ 'is-town': isTown }">
+  <div
+    class="portal-shell"
+    :class="{ 'is-town': isTown, 'is-utility': route.meta.theme === 'utility' }"
+  >
     <a href="#main-content" class="skip-link">Skip to content</a>
     <Navbar ref="navbar" :town="isTown" :menu-open="menuOpen" @open-menu="openMenu" />
     <aside
@@ -96,11 +90,7 @@ onBeforeUnmount(() => {
       <div class="offcanvas-header">
         <h2 id="menu-title" class="h5 mb-0">Your detective desk</h2>
         <button type="button" class="icon-button" aria-label="Close navigation" @click="closeMenu">
-          <PixelIcon v-if="isTown" name="close" :size="24" /><PhX
-            v-else
-            :size="24"
-            aria-hidden="true"
-          />
+          <PixelIcon name="close" :size="24" />
         </button>
       </div>
       <div class="offcanvas-body">
@@ -119,28 +109,17 @@ onBeforeUnmount(() => {
         <p class="nav-caption">YOUR EXPLORER'S KIT</p>
         <nav class="nav flex-column portal-nav" aria-label="Main navigation">
           <RouterLink v-for="item in navigation" :key="item.to" :to="item.to" class="nav-link"
-            ><PixelIcon
-              v-if="isTown"
-              :name="item.to === '/dashboard' ? 'map' : 'star'"
-              :size="20" /><component
-              :is="item.icon"
-              v-else
-              :size="22"
-              weight="duotone"
-              aria-hidden="true" />{{ item.label
+            ><PixelIcon :name="item.icon" :size="20" />{{ item.label
             }}<span class="active-nav-dot" aria-hidden="true"></span
           ></RouterLink>
         </nav>
         <div v-if="!isTown" class="sidebar-note">
-          <PhSparkle weight="duotone" :size="25" aria-hidden="true" />
+          <PixelIcon name="star" :size="24" />
           <p>Every expert starts<br />with a little curiosity.</p>
           <span>You've got this, detective.</span>
         </div>
         <RouterLink to="/about" class="sidebar-about"
-          >What is Sharlock? <PixelIcon v-if="isTown" name="arrow" :size="15" /><PhArrowUpRight
-            v-else
-            :size="15"
-            aria-hidden="true"
+          >What is Sharlock? <PixelIcon name="arrow" :size="16"
         /></RouterLink>
       </div>
     </aside>

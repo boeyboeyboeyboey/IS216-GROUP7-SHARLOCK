@@ -1,27 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap');
-
-/* The public portal keeps its modern tokens. Only the town opts into this theme. */
-.navbar-mascot {
-  flex: 0 0 52px;
-  object-fit: contain;
-}
-.brand-title {
-  font-size: 1.4rem;
-  white-space: nowrap;
-}
-.auth-mascot {
-  margin: 0 auto 1.5rem;
-}
 .is-town {
-  --town-ink: #334155;
-  --town-edge: #50634d;
-  --town-paper: #fff8df;
-  --town-grass: #a8c98a;
-  --town-grass-dark: #91b575;
-  --town-sky: #dfead6;
-  --town-gold: #996b24;
   background: var(--town-sky);
-  font-family: 'Pixelify Sans', 'Courier New', monospace;
+  font-family: var(--font-pixel);
   color: var(--town-ink);
   line-height: 1.4;
 }
@@ -45,8 +24,8 @@
   gap: 16px;
 }
 .is-town .brand-title {
-  font-family: 'Inter', system-ui, sans-serif;
-  letter-spacing: -0.045em;
+  font-family: var(--font-pixel);
+  letter-spacing: 0;
 }
 .town-top-nav {
   align-items: stretch;
@@ -248,17 +227,16 @@
   position: relative;
   background: var(--town-grass);
   height: clamp(360px, 62svh, 620px);
-  overflow: auto;
+  overflow: clip;
   overscroll-behavior: contain;
-  scrollbar-color: var(--town-edge) var(--town-paper);
-  scrollbar-width: auto;
+  touch-action: none;
 }
 .town-viewport:focus-visible {
   outline-offset: -5px;
 }
 .town-world {
   position: relative;
-  margin-inline: auto;
+  margin: 0;
   isolation: isolate;
   overflow: hidden;
   background-color: var(--town-grass);
@@ -646,6 +624,13 @@
     gap: 12px;
   }
 }
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .town-top-nav a {
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 1rem;
+  }
+}
 @media (max-width: 767.98px) {
   .town-intro {
     gap: 16px;
@@ -699,4 +684,43 @@
   .game-info-card {
     width: auto;
   }
+}
+
+.town-canvas {
+  max-width: 1126px;
+  margin-inline: auto;
+}
+.map-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 13px;
+  border-bottom: 3px solid var(--town-edge);
+  background: var(--town-paper);
+}
+.map-zoom-controls output {
+  min-width: 4ch;
+  text-align: center;
+  font-size: 16px;
+}
+.zoom-step {
+  width: 44px;
+  padding: 4px;
+  font-size: 24px;
+}
+.map-zoom-controls button:disabled {
+  cursor: default;
+  box-shadow: none;
+  opacity: 0.5;
+}
+.reset-view {
+  margin-left: auto;
+}
+.town-viewport.is-dragging,
+.town-viewport.is-dragging .building-button {
+  cursor: grabbing !important;
+}
+.map-keyboard-help {
+  display: block;
+  margin-top: 6px;
 }

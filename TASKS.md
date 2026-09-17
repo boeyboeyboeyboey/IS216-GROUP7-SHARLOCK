@@ -6,7 +6,7 @@ Team: **Boey, Keane, Eric, Russell, Xin Lei and Athithya**. No game assignments 
 
 ## Current authorization
 
-**DOC-03 is the only current task authorization:** Boey approved the README draft and requested the next documentation step, including the correction that Cyber News Central and the existing Daily briefing preview are the same activity. Authorized files: `README.md`, `TASKS.md`, `agents.md`. No application implementation, dependency change, commit or push is included.
+**Current authorization: DOC-04 — preserve the current design contract in team/agent documentation.** Boey explicitly skipped Task 3 (UI-06) and requested updates to README.md, DESIGN.md, TASKS.md and agents.md. New shared/non-game UI must follow the current pixel design; individual games may choose their own design philosophy within their module. Retain the existing admin/log-content exception and 3D navbar logo. This authorizes documentation only; Tasks 4 and 5 still need separate explicit permission.
 
 | Gate                            | Retained decision                                                               | Current meaning                                                                             |
 | ------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
@@ -14,7 +14,7 @@ Team: **Boey, Keane, Eric, Russell, Xin Lei and Athithya**. No game assignments 
 | 2 — Initial documentation       | README, TASKS and agents approved; scaffold authorized.                         | Completed DOC-02 history.                                                                   |
 | 3 — MEVN scaffold               | Accepted by Boey; merged in `515586c`.                                          | Existing infrastructure; do not recreate it.                                                |
 | 4 — Base application            | Portal/town work implemented; UI-03 remains recorded in Review.                 | Authentication/RBAC and learning persistence are still pending. A commit is not acceptance. |
-| DOC-03 — Workflow documentation | README approved; TASKS/agents overhaul and news identity correction authorized. | Documentation only; completed change is ready for Boey's review.                            |
+| DOC-03 — Workflow documentation | README approved; TASKS/agents overhaul and news identity correction authorized. | Accepted by Boey; retained in the accepted-work record.                                     |
 | Future feature implementation   | No game implementation plan approved here.                                      | Inspect collisions, select an open task, clarify and obtain explicit plan approval first.   |
 
 ## Mandatory selection and overwrite rules
@@ -25,7 +25,7 @@ Team: **Boey, Keane, Eric, Russell, Xin Lei and Athithya**. No game assignments 
 4. **Clarify before code.** Agree learning/interaction rules, difficulty, state, components/props/emits, APIs, schemas, security, mobile accessibility, dependencies and acceptance checks. Present the plan and wait for explicit approval. Do not install, scaffold or claim while waiting.
 5. **Recheck immediately before edits.** New overlap returns to step 2. Record the real contributor, branch, approved scope, paths, dependencies and collision evidence. Reuse shared contracts; only approved additive registration edits are included. Missing contracts require a separate prerequisite task.
 
-The exact decision tree is in [agents.md](agents.md#2-mandatory-feature-selection-decision-tree). Current explicit user instructions take precedence for their stated scope; the DOC-03 approval and news naming correction do not authorize game code.
+The exact decision tree is in [agents.md](agents.md#2-mandatory-feature-selection-decision-tree). Current explicit user instructions take precedence for their stated scope. DOC-04 authorizes documentation updates only; the six game implementations remain pending.
 
 ## Board conventions
 
@@ -39,26 +39,61 @@ Move the task's active record rather than duplicating it across board states. Re
 
 ## In Progress
 
-None. DOC-03 is ready for review below.
+None. DOC-04 is ready for review.
 
 ## Review
 
-**DOC-03 — Documentation, backlog and AI workflow overhaul** · P0 · Status: **Review** · Contributor: **Boey** · Branch: `codex/doc-03-ai-workflow` · Reviewer: **Boey**.
+**DOC-04 — Shared design contract and game-theme exception** · P0 · Status: **Review** · Contributor/reviewer: **Boey** · Branch: `codex/doc-04-design-contract`.
 
-- **Approved scope:** apply the approved five-section README, refactor this board and agents.md, synchronize the shared/six-game specifications and preserve prior acceptance/verification history.
-- **News correction:** G-NEWS is `threat-briefing`, `/games/threat-briefing`, “The daily briefing”, using the existing hut and shared preview framework. No duplicate game registration or building.
-- **Affected paths:** `README.md`, `TASKS.md`, `agents.md` only. DESIGN.md, application code, manifests, lockfile and private configuration stay outside this change.
-- **Starting state:** the current branch already contained uncommitted approved README/agents drafts and a DOC-03 task note. These were read and continued within Boey's explicit documentation authorization, not discarded.
-- **Collision/coordination evidence:** inspected local status, staged/unstaged changes, branches, the one available worktree, feature-module history, catalog, router and generic preview. No application edits are needed. Remote refs are locally recorded; no fetch, live PR inspection or access to teammates' machines occurred.
-- **Verification:** `pnpm exec prettier --write README.md TASKS.md agents.md` and `pnpm exec prettier --check README.md TASKS.md agents.md` passed. `python3 /private/tmp/sharlock-doc03-check.py` (one-off documentation audit) passed: 30 local links/anchors, five README sections, six identical game/shared blueprint copies, all 14 prerequisite specification fields, historical verification/task retention, actual news catalog mapping and only three changed files. `git diff --check` passed after replacing Markdown trailing-space line breaks. Source/diff review confirmed the news framework is unchanged.
-- **Not run:** application unit/integration/E2E suites, lint/build, live database/model/public-API checks; this task changes documents only. Prior application counts remain explicitly historical. No commit, push or PR created; changes remain uncommitted.
-- **Next action:** Boey reviews the completed TASKS.md/agents.md and the README news-identity correction. Approval of the earlier README draft is retained; acceptance of this completed documentation change is not inferred. No application work is started.
+- **Approval / scope:** Boey skipped Task 3 and requested clear design instructions for teammates and their agents. Edit README.md, DESIGN.md, TASKS.md and agents.md only; preserve the current application and uncommitted UI-04/UI-05 work.
+- **Concept / complexity:** ★☆☆ documentation complexity; shared CSS/component boundaries, responsive design and AI workflow. No gameplay, learner prerequisite, API, schema or application-state changes.
+- **Interaction / blueprint:** teammate reads README/kickoff → agent reads DESIGN and existing presentation source → plan distinguishes shared UI from game-local design → implement only the separately approved feature using existing shared components/tokens. DESIGN owns exact values/behavior; README, kickoff, task acceptance and agent rules link to that authority. Games may choose their own fonts, palette, artwork and visual language without changing the shared shell or another module.
+- **Coordination:** inspected current task notes, Git status/staged state/worktree and relevant documentation/source references. Existing changes are the prior UI work; no staged changes. Recorded a before-edit snapshot for preserving non-document changes. No live remote/teammate inspection. No commits/pushes requested.
+- **Verification (17 September 2026):** `python3 /private/tmp/sharlock-doc04-check.py` passed: 36 local links/anchors, five README sections, identical shared/six-game blueprints, existing news identity, all 14 foundation specifications and historical evidence retained. Documented palette/shadow/font values match the current CSS. All 21 pre-existing non-document edits remain byte-for-byte unchanged; no new code or staged files. `pnpm exec prettier --check README.md TASKS.md DESIGN.md agents.md` and `git diff --check` passed; reviewed the four-document diff against the DOC-04 starting snapshot.
+- **Not run / boundaries:** application unit, E2E, lint and build checks were not rerun for this documentation-only update. UI-05 results below are historical task evidence. Task 3 is skipped; Tasks 4 and 5 have not begun. No commits or pushes.
+- **Next action:** Boey reviews the documented design contract and game exception.
+
+**UI-05 — Map pan and zoom (Task 2)** · P0 · Status: **Review** · Contributor/reviewer: **Boey** · Branch: `codex/ui-05-map-panzoom`.
+
+- **Approval:** Boey: “approved! authorise task 2”; continuation of the existing map is explicitly authorized. Task 1 is accepted.
+- **Concept / complexity / concepts:** ★★☆ UI implementation complexity; pointer gestures, coordinate transforms and keyboard accessibility. No cybersecurity/gameplay rules change.
+- **Interaction:** drag/pan the bounded map; use +/− controls, pinch or keyboard +/− to zoom from 100% to 200%; Reset view/0 returns to the initial camera. Buildings retain native readable size at minimum zoom. Arrow keys, wheel/trackpad panning and Jump to remain alternatives. A drag must never activate a building; a tap/click still pins its card.
+- **Blueprint:** added pinned `@panzoom/panzoom` **4.6.2** (MIT) using pnpm/the root lockfile. `Dashboard.vue` supplies the responsive map boundary; `TownMap.vue` owns the package instance, transient camera refs, gesture/click distinction and unmount cleanup. Keep its `games` prop, shared catalog, `GameInfoCard` and audio contracts. The package owns pan/scale/containment math; explain its purpose in a minimal lowercase comment. No APIs, schemas, new shared state or persistence.
+- **Affected paths:** `client/package.json`, `pnpm-lock.yaml`, `Dashboard.vue`, `TownMap.vue`, `town.css`, `tests/e2e/portal.spec.js`, TASKS.md, DESIGN.md and agents.md. These are the nine Task 2 files; other uncommitted changes belong to accepted Task 1.
+- **Coordination:** local branches/worktree inspected; no pan/zoom integration found. The accepted UI-04 uncommitted changes are retained exactly as the starting baseline; no staged changes or other new overlaps were present. Remote/teammate work was not live-inspected. No commits/pushes requested.
+- **Acceptance checks:** drag/pinch/zoom limits/reset; no accidental selection after dragging; tap/Enter/Space still open cards; keyboard/wheel/Jump to; card focus/clip and audio regressions; resize/reduced motion; 375–1440px plus edges/landscape without page overflow; dispose listeners/observers on route departure.
+- **Boundary:** retain the current card placement, synchronized with camera transforms. Boey subsequently skipped Task 3 (UI-06); do not resume offset-card refinement automatically. Database cleanup and full comment audit remain separately gated Tasks 4 and 5.
+- **Automated verification (16 September 2026):** `pnpm test:unit` — **40 passed**; `pnpm test:e2e` — **24 passed** on mobile/desktop Chromium using the existing disposable local test MongoDB, never Atlas. Added drag-versus-click, real touch/pinch, zoom limits/reset, camera bounds, resize and building reachability coverage; existing audio/card/focus/navigation/API checks pass. `pnpm lint`, `pnpm build`, `pnpm format:check` and `git diff --check` passed. The zoom-limit test also checks that an extra keyboard zoom command cannot move the camera at 200%.
+- **Responsive/visual evidence:** `node /private/tmp/sharlock-ui05-visual.mjs` passed **68 checks**: 100%/200% zoom with loaded and offline-fallback fonts across 375/576/768/992/1200/1440px, breakpoint edges and 667 × 375 landscape. No page overflow, camera-bound failures or undersized zoom controls; reduced-motion camera transforms remain immediate. Tab/Space/Escape worked through all five buildings with both fonts. Desktop/mobile screenshots were visually inspected.
+- **Lifecycle evidence (17 September 2026):** `node /private/tmp/sharlock-ui05-cleanup.mjs` passed four repeated SPA departures during a drag: application pointer/window listeners and resize observers returned to the empty baseline, with no browser exceptions. An initial audit counted Playwright's own hit-target interceptor; its source/stack identified it, and the final audit excludes that test-driver listener. The final rerun was temporarily interrupted by automatic approval review reaching the account usage limit, then completed after Boey resumed the task.
+- **Documentation/diff evidence:** `python3 /private/tmp/sharlock-ui05-doc-check.py` passed: 32 local links/anchors, synchronized shared/six-game blueprints, retained news identity/history/prerequisites, and accepted Task 1 files preserved outside the nine declared edits. Card/audio/catalog contracts, original assets, backend/database scripts and root configuration are unchanged. Camera comments are lowercase and explain package purpose or gesture/coordinate logic.
+- **Not run / boundaries:** no separate backend integration rerun because no server behavior changed; the E2E suite retained its isolated real API/health checks. Offset-card refinement, database cleanup and full comment audit have not begun. No new games, auth or persistence. No staging, commits, pushes or PRs; accepted Task 1 and Task 2 changes remain uncommitted on this branch.
+- **Next action:** retain the current map/design as the documentation reference. Task 3 was explicitly skipped on 17 September; the documentation request does not start Tasks 4 or 5. UI-05 remains in Review.
 
 **UI-03 — Open-world pixel town pivot** · Contributor/reviewer: **Boey**. Implementation is now present in `04bdf8e` (`home page and design`), shared by local `main`, `codex/ui-03-pixel-town` and locally recorded matching origin refs. The earlier “uncommitted” note describes its original review handoff, not current Git state. Acceptance is still not recorded. See the [town UI review record](#town-ui-review-record) for preserved verification.
 
+## Pending staged approvals
+
+| Order | Task                                                                                                                                                                   | Gate                                                                                                          |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 4     | DB-01 — Audit localhost test-database code; delete obsolete tests or explain/retain required isolated testing. Review any remote configuration change before using it. | Requires separate explicit approval; Task 3 is skipped. Never redirect destructive tests to development data. |
+| 5     | CODE-01 — Audit all existing code comments for lowercase, minimal complex-logic or routing/MVC explanations.                                                           | Requires explicit approval after Task 4 review.                                                               |
+
+## Skipped stages
+
+**UI-06 / Task 3 — Offset building hover cards:** skipped at Boey's explicit request on 17 September 2026. Keep the existing clamped desktop placement and bottom overlay on narrow viewports, with camera synchronization. This is not implemented or Done; do not revive it as an automatic follow-up. Tasks 4 and 5 remain pending authorization.
+
+## Design contract for every UI task
+
+[DESIGN.md](DESIGN.md#rules-for-new-pages-and-features) is mandatory for teammates and agents. Shared/non-game pages extend the current Pixelify Sans, cream/earthy-green, square-border, hard-shadow design using existing tokens/components; the retained 3D navbar logo and current pan/zoom town interactions are part of that contract. Admin/log content retains its documented functional-style exception.
+
+Individual games may use their own design philosophy, fonts, colours, artwork and layout inside their module; they do not have to use pixel art. Their shared navbar, town building/card and shared pages still follow DESIGN.md. Game styles must not affect `:root`, the app shell or another module; responsiveness, accessibility, authentication and result-service rules still apply.
+
+Every UI plan names the applicable surface, reused components/tokens, any game-local styles, and responsive/keyboard/touch checks. Review must check for style leakage and compare shared surfaces with the existing implementation. Historical pastel/Inter notes describe earlier work and do not override the current contract. A new shared feature is not authorization to redesign the shared shell.
+
 ## Blocked
 
-No active implementation task is claimed. The availability/dependency table below identifies work that cannot be selected automatically; these are not reports of failed implementation.
+No active task is blocked. The availability/dependency table below identifies work that cannot be selected automatically; these are not reports of failed implementation.
 
 ## Backlog availability and dependencies
 
@@ -93,6 +128,7 @@ The following proposed contract applies to the five scored games. It depends on 
 - Backend: `server/src/modules/games/<game-id>/`, containing routes, validators, scoring and private scenario data.
 - Requests: reuse `client/src/services/api.js`; its base URL already contains `/api`.
 - State: keep gameplay in a module composable using `ref`, `reactive` and `computed`. Reserve Pinia for shared account/context state.
+- Visual boundary: follow [DESIGN.md](DESIGN.md#rules-for-new-pages-and-features). Game modules may choose their own design philosophy and scoped fonts/artwork/controls; shared navigation, town registration/cards and shared pages retain the exact hub scheme. Verify accessibility/responsiveness and no style leakage.
 - Town integration: new activities without existing implementation add a unique catalog entry and concrete route through the procedure in DESIGN.md. Include name, description, difficulty, background knowledge and building placement. Preserve existing entries; no completion locks. Cyber News Central is the existing `threat-briefing` activity described below, so it must not receive a second registration or building.
 
 **Proposed shared API**
@@ -599,7 +635,7 @@ Recommended provider references for future validation: [official Hacker News API
 ## Operational notes and known limitations
 
 - Local API: Express on loopback port 3000; Vite on 5173 proxies `/api`; `/api/health` performs a real MongoDB ping. The health check is not the mandatory public external API integration.
-- Current domain directories are reserved; Pinia is installed but authentication/business state is not implemented. The town and modern screens use clearly labeled samples. Public `/dashboard` access does not prove RBAC.
+- Current domain directories are reserved; Pinia is installed but authentication/business state is not implemented. The town and supporting screens use clearly labeled samples. Public `/dashboard` access does not prove RBAC.
 - `threat-briefing` already represents Cyber News Central. The four other illustrative catalog entries remain untouched; the five new scored blueprints do not automatically replace them. Plan each new building's position without colliding with existing buildings/scenery.
 - Private environment values were not inspected in DOC-03. Preserve root/server `.env`, the team's `.env.example`, ignored database/cache files and the single root lockfile.
 - Existing audio remains `/audio/sharlock-bgm.mp3`; its creator/license is still needed for final asset credits. See DESIGN.md for the current illustration/font/icon credits.
@@ -645,9 +681,9 @@ No local database helper is needed when using Atlas. To opt into the existing lo
 
 ### Portal preview boundaries
 
-The dashboard is an open-world pixel-art town. All five buildings are available from the start and open activity previews. Hover/focus shows the required metadata; click/tap pins the card and reveals the activity link. Scroll/swipe inside the bounded map or use its keyboard arrows and Jump to selector. The corner sound button starts the looping `/audio/sharlock-bgm.mp3` soundtrack only after interaction; every visit begins muted and paused. Sample scores, progress, and achievements never create or update database records. The selected curriculum is illustrative. Assets are original, replaceable local SVG placeholders; modern pages retain the 3D-style mascot and pastel palette.
+The dashboard is an open-world pixel-art town. All five buildings are available from the start and open activity previews. Hover/focus shows the required metadata; click/tap pins the card and reveals the activity link. Drag/swipe inside the bounded pan/zoom canvas, use its zoom/reset buttons or pinch gesture, or navigate with keyboard arrows and Jump to. UI-05 uses pinned `@panzoom/panzoom` 4.6.2; the existing card placement is retained because Boey skipped Task 3. The corner sound button starts the looping `/audio/sharlock-bgm.mp3` soundtrack only after interaction; every visit begins muted and paused. Sample scores, progress, and achievements never create or update database records. The selected curriculum is illustrative. Assets are original local SVG artwork/placeholders. UI-04 extends the town's retro pixel aesthetic to public and supporting pages; the 3D-style monocle capybara remains only in the shared navbar. Admin content may retain functional styling.
 
-`/login`, `/register`, `/leaderboard`, `/instructor`, `/admin`, and `/forbidden` show honest pending-feature messages. They expose no account or cohort data and grant no access. Authentication and server-enforced RBAC remain separate pending tasks. Google Fonts supplies Inter for modern pages and Pixelify Sans for the town; local font fallbacks keep the UI usable offline. Phosphor Vue supplies modern rounded icons, while the town uses original pixel icons. See [DESIGN.md](DESIGN.md) for exact visual rules, module boundaries, and asset credits.
+`/login`, `/register`, `/leaderboard`, `/instructor`, `/admin`, and `/forbidden` show honest pending-feature messages. They expose no account or cohort data and grant no access. Authentication and server-enforced RBAC remain separate pending tasks. Google Fonts supplies Pixelify Sans globally, with monospace fallbacks for offline use. Shared templates use original pixel icons. The installed Phosphor dependency is retained. UI-05 adds the MIT-licensed Panzoom package to the client and single root lockfile. See [DESIGN.md](DESIGN.md) for exact visual rules, module boundaries, and asset credits.
 
 ### Troubleshooting
 
@@ -682,17 +718,17 @@ The planned seed provides synthetic SMU and NUS institutions, multiple cohorts, 
 
 The commands below check the scaffold and portal UI. Full authentication, role/cohort, recovery, and game journeys remain pending and are tracked separately in `TASKS.md`.
 
-| Command                                 | Current check                                                                                                                                                                      |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm lint`                             | JavaScript/Vue lint checks.                                                                                                                                                        |
-| `pnpm format:check`                     | Formatting validation without edits.                                                                                                                                               |
-| `pnpm format`                           | Apply formatting to repository source and Markdown.                                                                                                                                |
-| `pnpm test:unit`                        | Environment/test-database validation, connection retry, progress bounds, catalog/card metadata, audio failure/cleanup, and empty trophy state.                                     |
-| `pnpm test:integration`                 | Real MongoDB round-trip, readiness, unavailable database, safe 404, malformed JSON, and request size limit.                                                                        |
-| `pnpm exec playwright install chromium` | One-time installation of the browser used by E2E tests.                                                                                                                            |
-| `pnpm test:e2e`                         | Connection/retry plus all town buildings, metadata, touch/keyboard/hover access, bounded scrolling, real soundtrack playback, profile, offcanvas, branding, and responsive checks. |
-| `pnpm test`                             | The unit, integration, and E2E suites.                                                                                                                                             |
-| `pnpm build`                            | Verify the client build.                                                                                                                                                           |
+| Command                                 | Current check                                                                                                                                                                                                 |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm lint`                             | JavaScript/Vue lint checks.                                                                                                                                                                                   |
+| `pnpm format:check`                     | Formatting validation without edits.                                                                                                                                                                          |
+| `pnpm format`                           | Apply formatting to repository source and Markdown.                                                                                                                                                           |
+| `pnpm test:unit`                        | Environment/test-database validation, connection retry, progress bounds, catalog/card metadata, audio failure/cleanup, and empty trophy state.                                                                |
+| `pnpm test:integration`                 | Real MongoDB round-trip, readiness, unavailable database, safe 404, malformed JSON, and request size limit.                                                                                                   |
+| `pnpm exec playwright install chromium` | One-time installation of the browser used by E2E tests.                                                                                                                                                       |
+| `pnpm test:e2e`                         | Connection/retry plus all town buildings, metadata, touch/keyboard/hover access, bounded pan/zoom, drag-versus-click handling, real soundtrack playback, profile, offcanvas, branding, and responsive checks. |
+| `pnpm test`                             | The unit, integration, and E2E suites.                                                                                                                                                                        |
+| `pnpm build`                            | Verify the client build.                                                                                                                                                                                      |
 
 The integration/E2E scripts create their own real, temporary MongoDB process with a random `sharlock_<run-id>_test` database name and a fresh test secret. They stop and remove only that temporary instance afterward. They do not require `pnpm db:local`, a development server, or a manually configured test database. They ignore a supplied test URI in favour of their own instance.
 
@@ -833,13 +869,42 @@ These original ideas are retained as history, not selectable open tasks or team 
 
 ## Accepted work
 
+### Accepted UI-04 global pixel design
+
+**UI-04 — Global pixel typography and styling (Task 1)** · P0 · Status: **Done** · Contributor/reviewer: **Boey** · Branch: `codex/ui-04-global-pixel`.
+
+- **Approval:** Boey selected “use recommendations” after the scope/font/palette/artwork dialogue; existing design code may be refactored within this task.
+- **Scope:** globally use Pixelify Sans and cream/earthy-green pixel styling; square controls/hard shadows; reuse the existing 2D capybaras and pixel icon system outside the unchanged 3D navbar logo. Admin/log content may remain clean/functional. Keep current routes, preview labels, mobile branding and accessibility.
+- **Affected areas:** `client/src/assets/styles/`, portal layout/components, relevant views and preview avatar metadata, existing pixel icons, router presentation metadata, affected UI verification, README.md, DESIGN.md, agents.md and TASKS.md. No domain/API/schema changes or dependencies.
+- **Coordination:** initial worktree was clean on `main` at `379d70b`; the existing UI is Boey's explicitly authorized refactor target. Local branches/worktree inspected; no other active task recorded. No live remote/PR or teammate-machine inspection. The focused branch was created without discarding changes.
+- **Stage boundary:** map panning/zooming and hover-card position remain unchanged. Backend/test database cleanup and repository-wide comment changes wait for their own stage. Any comments added now are minimal, lowercase and limited to complex logic or routing/MVC data flow.
+- **Implementation blueprint:** ★☆☆ implementation complexity; CSS, Vue composition and accessibility knowledge, with no learner cybersecurity prerequisite. Existing page/navigation interactions and component props/emits remain intact. `main.css` owns the palette/font/shared square controls; `town.css` consumes shared tokens and retains map styling. Existing `PixelIcon` paths and capybara assets supply page art. The router's `/admin` presentation metadata opts into `.is-utility` through `PortalLayout.vue`. No APIs, Mongoose schemas or persistence/state contracts are added.
+- **Verification:** `pnpm test:unit` — **40 passed**; `pnpm test:e2e` — **18 passed** on mobile/desktop Chromium with the existing disposable test MongoDB, never Atlas. `pnpm lint`, `pnpm build`, `pnpm format:check` and `git diff --check` passed. Browser/server checks required the normal sandbox escalation for local listeners/Chromium.
+- **Responsive/visual evidence:** temporary Playwright scripts checked 13 routes with loaded Google Pixelify Sans and with offline font responses at 375/576/767/768/992/1200/1440px, 667 × 375 landscape and adjacent breakpoint widths. No page overflow or browser exceptions remained. Screenshots of landing, login, profile, town and admin were visually inspected. The navbar logo retains its 52px footprint and smooth rendering; mobile title hiding, pixel artwork, keyboard/touch cards, menu focus handling and audio behavior passed. The first E2E run exposed a 768px fallback-font navbar overflow and an over-specific SVG URL assertion; both were corrected before the successful run.
+- **Documentation evidence:** `python3 /private/tmp/sharlock-ui04-doc-check.py` passed: 32 local links/anchors, five README sections, synchronized shared/six-game blueprints, retained prerequisite/history records and the original news identity. Diff checks confirm map interaction/card/audio code, catalog, original public artwork, backend/database scripts, manifests, lockfile and environment example are unchanged.
+- **Not run / limitations:** no separate backend integration rerun, because this is a presentation refactor; E2E retained its real isolated API/health checks. Accounts, staff dashboards, learning records and playable games remain pending. No new dependencies, commits, pushes or PRs; the branch changes are uncommitted. The repository-wide comment audit remains Task 5.
+- **Acceptance:** Boey explicitly approved Task 1 and authorized Task 2. The accepted changes remain uncommitted and are preserved on the new UI-05 working branch; no commit was created by the agent.
+
+### Accepted DOC-03 workflow overhaul
+
+**DOC-03 — Documentation, backlog and AI workflow overhaul** · P0 · Status: **Done** · Contributor: **Boey** · Branch: `codex/doc-03-ai-workflow` · Reviewer: **Boey**.
+
+- **Approved scope:** apply the approved five-section README, refactor this board and agents.md, synchronize the shared/six-game specifications and preserve prior acceptance/verification history.
+- **News correction:** G-NEWS is `threat-briefing`, `/games/threat-briefing`, “The daily briefing”, using the existing hut and shared preview framework. No duplicate game registration or building.
+- **Affected paths:** `README.md`, `TASKS.md`, `agents.md` only. DESIGN.md, application code, manifests, lockfile and private configuration stay outside this change.
+- **Starting state:** the current branch already contained uncommitted approved README/agents drafts and a DOC-03 task note. These were read and continued within Boey's explicit documentation authorization, not discarded.
+- **Collision/coordination evidence:** inspected local status, staged/unstaged changes, branches, the one available worktree, feature-module history, catalog, router and generic preview. No application edits are needed. Remote refs are locally recorded; no fetch, live PR inspection or access to teammates' machines occurred.
+- **Verification:** `pnpm exec prettier --write README.md TASKS.md agents.md` and `pnpm exec prettier --check README.md TASKS.md agents.md` passed. `python3 /private/tmp/sharlock-doc03-check.py` (one-off documentation audit) passed: 30 local links/anchors, five README sections, six identical game/shared blueprint copies, all 14 prerequisite specification fields, historical verification/task retention, actual news catalog mapping and only three changed files. `git diff --check` passed after replacing Markdown trailing-space line breaks. Source/diff review confirmed the news framework is unchanged.
+- **Not run:** application unit/integration/E2E suites, lint/build, live database/model/public-API checks; this task changes documents only. Prior application counts remain explicitly historical. No commit, push or PR created; changes remain uncommitted.
+- **Acceptance:** Boey explicitly completed review and approved DOC-03 before requesting the five-stage design/refactor sequence. The accepted documents are recorded in `379d70b`; acceptance follows Boey's message, not the commit alone.
+
 | Task                   | Acceptance / retained evidence                                                                        |
 | ---------------------- | ----------------------------------------------------------------------------------------------------- |
 | DISC-01                | Initial source review and clarification accepted; approved localhost/zero-budget defaults.            |
 | DOC-02                 | Initial three-document stage accepted before scaffolding. Historical document checks retained in Git. |
 | SET-01, SET-02, SET-03 | Scaffold accepted by Boey and merged in `515586c`; actual checks are retained above.                  |
 
-DOC-03 and UI-03 are not marked Done solely because code/documents exist or a commit is present.
+DOC-03 was explicitly accepted by Boey. UI-03 remains recorded in Review; a commit alone does not establish acceptance.
 
 ## Decisions and unresolved choices
 
@@ -847,14 +912,14 @@ DOC-03 and UI-03 are not marked Done solely because code/documents exist or a co
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Delivery and stack  | Localhost, zero budget; Vue 3/Bootstrap/plain JavaScript, Express/Mongoose/MongoDB, pnpm and one root lockfile.                                                                                      |
 | Workflow            | Agentic environment recommended; collision detection and plan approval mandatory. No automatic takeover under the standard kickoff.                                                                  |
-| News identity       | Cyber News Central = The daily briefing = `threat-briefing`; retain existing catalog/building/route. Current authorization changes documentation only.                                               |
+| News identity       | Cyber News Central = The daily briefing = `threat-briefing`; retain existing catalog/building/route. News functionality remains unapproved; UI-04 only restyles the shared preview presentation.     |
 | Assignments         | Six game blueprints approved for documentation; no implementation ownership or plan approval assigned by this file.                                                                                  |
 | Data and roles      | Multiple cohort memberships; assigned-cohort instructor access; administrator cross-cohort review; immutable attempt context; staff can practice without gaining broader teaching rights.            |
 | Enrollment/recovery | Code request plus instructor approval; staff-assisted recovery after external identity verification; no email service dependency.                                                                    |
 | Rankings            | Same-game/ruleset cohort rankings; exclude staff, personal practice and untimed training; equal scores share rank. Global competition remains deferred.                                              |
 | Public API/model    | Hacker News and local Ollama are proposed adapters. Provider terms, live behavior, model selection/hardware and limits still need task-specific verification.                                        |
 | Policy constants    | Finalize exact session/reset/enrollment lifetimes, rate limits, password bounds/work factor, history caps and log retention during approved prerequisite planning. Do not guess values while coding. |
-| Verification        | Town/scaffold evidence is historical. DOC-03 checks cover documents only; no claim of playable games, authentication or saved records.                                                               |
+| Verification        | UI-04/UI-05 record pixel-design and camera checks; town/scaffold and DOC-03 records retain historical evidence. No playable games, authentication or saved records are claimed.                      |
 
 ## Active task record template
 

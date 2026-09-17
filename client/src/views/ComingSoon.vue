@@ -1,5 +1,5 @@
 <script setup>
-import { PhBinoculars, PhArrowLeft } from '@phosphor-icons/vue'
+import PixelIcon from '../components/town/PixelIcon.vue'
 defineProps({
   title: { type: String, required: true },
   description: { type: String, required: true },
@@ -11,13 +11,13 @@ defineProps({
     <img
       v-if="showMascot"
       class="mascot-image auth-mascot"
-      src="/images/sharlock-placeholder.svg"
-      width="220"
-      height="208"
-      alt="Sharlock, a friendly 3D-style capybara wearing a sleuthing monocle, welcoming you to the hub; artwork placeholder"
+      src="/images/town/capybara-mint.svg"
+      width="224"
+      height="168"
+      alt="Sharlock, a pixel-art capybara wearing a mint scarf, welcoming you to the hub"
     />
     <span v-else class="coming-soon-icon"
-      ><PhBinoculars :size="64" weight="duotone" aria-hidden="true"
+      ><PixelIcon name="map" :size="64" aria-hidden="true"
     /></span>
     <p class="eyebrow">ON THE HORIZON</p>
     <h1 tabindex="-1">{{ title }}</h1>
@@ -26,7 +26,8 @@ defineProps({
       This feature is being prepared. The portal currently uses sample data.
     </p>
     <RouterLink to="/dashboard" class="btn btn-primary"
-      ><PhArrowLeft :size="19" aria-hidden="true" /> Explore the town</RouterLink
+      ><PixelIcon name="arrow" class="icon-back" :size="19" aria-hidden="true" /> Explore the
+      town</RouterLink
     >
   </section>
 </template>

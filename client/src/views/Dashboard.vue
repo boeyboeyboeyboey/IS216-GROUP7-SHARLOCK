@@ -29,7 +29,7 @@ import { previewProfile } from '../data/portalPreview.js'
         >
       </RouterLink>
     </section>
-    <TownMap :games="gameCatalog" />
+    <TownMap class="town-canvas" :games="gameCatalog" />
     <p class="town-footnote">
       <PixelIcon name="star" :size="16" /> A place to explore at your own pace. Activities currently
       open as previews; points are illustrative.

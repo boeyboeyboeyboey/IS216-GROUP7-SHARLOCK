@@ -1,6 +1,6 @@
 <script setup>
 defineOptions({ name: 'SharlockProfile' })
-import { PhStar, PhArrowRight } from '@phosphor-icons/vue'
+import PixelIcon from '../components/town/PixelIcon.vue'
 import { gameCatalog } from '../data/gameCatalog.js'
 import TrophyCase from '../components/portal/TrophyCase.vue'
 import GlobalProgressBar from '../components/portal/GlobalProgressBar.vue'
@@ -28,7 +28,7 @@ import {
           class="avatar-image"
           width="144"
           height="144"
-          alt="Custom avatar placeholder: Sharlock the friendly capybara detective with a monocle"
+          alt="Sample avatar: a pixel-art capybara wearing a mint scarf"
         />
       </div>
       <div>
@@ -36,12 +36,12 @@ import {
         <h2>{{ previewProfile.username }}</h2>
         <p>Always looking for the next clue.</p>
         <span class="points-pill"
-          ><PhStar :size="20" weight="duotone" aria-hidden="true" />
-          {{ previewProfile.points }} total points</span
+          ><PixelIcon name="star" :size="20" aria-hidden="true" /> {{ previewProfile.points }} total
+          points</span
         >
       </div>
       <RouterLink to="/dashboard" class="btn btn-secondary"
-        >Town map <PhArrowRight :size="18" aria-hidden="true"
+        >Town map <PixelIcon name="arrow" :size="18" aria-hidden="true"
       /></RouterLink>
     </section>
     <GlobalProgressBar :completed="previewCompletedGameIds.length" :total="gameCatalog.length" />

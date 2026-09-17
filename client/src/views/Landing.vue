@@ -1,6 +1,6 @@
 <script setup>
 defineOptions({ name: 'SharlockLanding' })
-import { PhArrowRight, PhFingerprint, PhPath, PhMedal } from '@phosphor-icons/vue'
+import PixelIcon from '../components/town/PixelIcon.vue'
 import SharlockTip from '../components/portal/SharlockTip.vue'
 </script>
 <template>
@@ -11,7 +11,7 @@ import SharlockTip from '../components/portal/SharlockTip.vue'
     <section class="landing-hero">
       <div class="landing-copy">
         <h1 tabindex="-1">
-          The internet has<br />its mysteries.<br /><span class="mint-underline"
+          The internet has<br />its mysteries.<br /><span class="pixel-underline"
             >Let's solve them.</span
           >
         </h1>
@@ -20,19 +20,18 @@ import SharlockTip from '../components/portal/SharlockTip.vue'
           little adventures worth figuring out.
         </p>
         <RouterLink to="/dashboard" class="btn btn-primary"
-          >Explore the town <PhArrowRight :size="20" aria-hidden="true" /></RouterLink
+          >Explore the town <PixelIcon name="arrow" :size="20" aria-hidden="true" /></RouterLink
         ><span class="landing-preview-note">Try the portal preview · no account needed</span>
       </div>
       <div class="hero-art">
         <span class="art-label art-label-top"
-          ><PhFingerprint :size="20" weight="duotone" aria-hidden="true" /> Trust your
-          curiosity.</span
+          ><PixelIcon name="shield" :size="20" aria-hidden="true" /> Trust your curiosity.</span
         ><img
-          src="/images/sharlock-placeholder.svg"
+          src="/images/town/capybara-mint.svg"
           class="mascot-image hero-mascot"
-          width="360"
-          height="340"
-          alt="Sharlock mascot placeholder: a friendly, softly rounded 3D-style capybara wearing a sleuthing monocle and mint detective waistcoat, smiling and ready to investigate"
+          width="320"
+          height="240"
+          alt="Sharlock, a friendly pixel-art capybara wearing a mint scarf"
         /><span class="art-label art-label-bottom">Your trusty sidekick, Sharlock.</span>
       </div>
     </section>
@@ -51,17 +50,17 @@ import SharlockTip from '../components/portal/SharlockTip.vue'
     </section>
     <div class="landing-benefits">
       <div>
-        <PhPath :size="29" weight="duotone" aria-hidden="true" />
+        <PixelIcon name="map" :size="29" aria-hidden="true" />
         <h3>Find your own “aha!”</h3>
         <p>Follow a friendly trail through the fundamentals.</p>
       </div>
       <div>
-        <PhFingerprint :size="29" weight="duotone" aria-hidden="true" />
+        <PixelIcon name="shield" :size="29" aria-hidden="true" />
         <h3>Put ideas into practice</h3>
         <p>Make decisions in short, controlled exercises.</p>
       </div>
       <div>
-        <PhMedal :size="29" weight="duotone" aria-hidden="true" />
+        <PixelIcon name="trophy" :size="29" aria-hidden="true" />
         <h3>Celebrate the little wins</h3>
         <p>Watch your skills grow, one completed case at a time.</p>
       </div>

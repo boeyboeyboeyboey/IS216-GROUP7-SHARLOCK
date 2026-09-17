@@ -50,7 +50,7 @@ export const routes = [
     path: `/${path}`,
     component: ComingSoon,
     props: { title, description, showMascot: ['login', 'register'].includes(path) },
-    meta: { title },
+    meta: { title, ...(path === 'admin' ? { theme: 'utility' } : {}) },
   })),
   {
     path: '/:pathMatch(.*)*',

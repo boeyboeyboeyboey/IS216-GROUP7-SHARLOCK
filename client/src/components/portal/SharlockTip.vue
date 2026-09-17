@@ -1,6 +1,6 @@
 <script setup>
 import { ref, useId } from 'vue'
-import { PhQuestion } from '@phosphor-icons/vue'
+import PixelIcon from '../town/PixelIcon.vue'
 defineProps({ text: { type: String, required: true } })
 const open = ref(false)
 const dismissed = ref(false)
@@ -32,15 +32,15 @@ function dismiss() {
       @blur="dismiss"
       @click="toggle"
     >
-      <PhQuestion :size="22" weight="duotone" aria-hidden="true" />
+      <PixelIcon name="question" :size="22" aria-hidden="true" />
     </button>
     <span :id="id" role="tooltip" class="tip-bubble" :class="{ 'is-open': open }"
       ><img
-        src="/images/sharlock-placeholder.svg"
+        src="/images/town/capybara-blue.svg"
         class="mascot-image tip-mascot"
         width="64"
-        height="64"
-        alt="Sharlock, a friendly 3D-style capybara with a sleuthing monocle, offering a clue; artwork placeholder"
+        height="48"
+        alt="A pixel-art capybara wearing a blue scarf, offering a clue"
       /><span
         ><strong>Sharlock's clue</strong><span>{{ text }}</span></span
       ></span
