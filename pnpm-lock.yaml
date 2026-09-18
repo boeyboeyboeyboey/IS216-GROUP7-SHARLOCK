@@ -203,6 +203,9 @@ importers:
       mongoose:
         specifier: 9.10.1
         version: 9.10.1
+      parse5:
+        specifier: 8.0.1
+        version: 8.0.1
     devDependencies:
       nodemon:
         specifier: 3.1.14

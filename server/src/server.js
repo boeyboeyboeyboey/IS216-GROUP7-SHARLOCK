@@ -1,14 +1,18 @@
+import { initializeNewsStorage } from './modules/news/models.js'
+import { createNewsStore } from './modules/news/store.js'
 import { createApp } from './app.js'
 import { loadEnvironment } from './config/env.js'
 import { connectDatabase } from './config/database.js'
 
 let database
 let server
+let newsCleanup
 let shuttingDown = false
 
 async function shutdown() {
   if (shuttingDown) return
   shuttingDown = true
+  clearInterval(newsCleanup)
   const timeout = setTimeout(() => process.exit(1), 5000).unref()
   if (server) await new Promise((resolve) => server.close(resolve))
   if (database) await database.close()
@@ -24,7 +28,25 @@ try {
   } catch {
     throw new Error('MongoDB connection failed. Check MONGO_URI and database network access.')
   }
-  server = createApp(database).listen(config.port, '127.0.0.1')
+  try {
+    await initializeNewsStorage(database)
+  } catch {
+    throw new Error('News storage could not initialize. Check database access and restart.')
+  }
+  const newsStore = createNewsStore(database)
+  newsCleanup = setInterval(
+    () =>
+      newsStore.cleanup().catch(() => {
+        console.error('News expiry cleanup will retry.')
+      }),
+    60000,
+  ).unref()
+  server = createApp(database, {
+    news: {
+      apiKey: config.nodeEnv === 'test' ? undefined : config.guardianApiKey,
+      store: newsStore,
+    },
+  }).listen(config.port, '127.0.0.1')
   server.on('listening', () =>
     console.log(`SHARLOCK API ready at http://localhost:${config.port}/api/health`),
   )

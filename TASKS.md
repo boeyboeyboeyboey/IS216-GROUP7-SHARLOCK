@@ -6,7 +6,7 @@ Team: **Boey, Keane, Eric, Russell, Xin Lei and Athithya**. No game assignments 
 
 ## Current authorization
 
-**Current authorization: CODE-01 — code-comment audit (Task 5).** Boey accepted progression from Task 4 and explicitly authorized Task 5. Review maintained source/configuration/test comments, remove unnecessary explanations and make retained logic or MEVN data-flow explanations concise and lowercase, without trailing full stops. Preserve functional directives, executable code, literals, URLs and documentation prose. Retain the Panzoom explanation while applying the comment punctuation rule; keep the current design, private environment files and contributor-maintained environment templates unchanged. Stop for review after verification. Task 3 (UI-06) remains skipped.
+**Current authorization: G-NEWS / API-01 — implement The Sharlock Gazette in this chat.** Boey confirmed the complete plan and then explicitly changed delivery: “scrap the handover plan. let's implement it directly in this chat. you have the go ahead to action everything”. Continue the known news preview and declared town/router/About integrations. Reuse the approved architecture below; no additional product approval is needed. Preserve unrelated work, keep Task 3 skipped and Tasks 4–5 accepted.
 
 | Gate                            | Retained decision                                                               | Current meaning                                                                             |
 | ------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
@@ -15,7 +15,7 @@ Team: **Boey, Keane, Eric, Russell, Xin Lei and Athithya**. No game assignments 
 | 3 — MEVN scaffold               | Accepted by Boey; merged in `515586c`.                                          | Existing infrastructure; do not recreate it.                                                |
 | 4 — Base application            | Portal/town work implemented; UI-03 remains recorded in Review.                 | Authentication/RBAC and learning persistence are still pending. A commit is not acceptance. |
 | DOC-03 — Workflow documentation | README approved; TASKS/agents overhaul and news identity correction authorized. | Accepted by Boey; retained in the accepted-work record.                                     |
-| Future feature implementation   | No game implementation plan approved here.                                      | Inspect collisions, select an open task, clarify and obtain explicit plan approval first.   |
+| G-NEWS continuation             | Boey confirmed the news/home/About plan on 18 September 2026.                   | Direct implementation in this chat is authorized; other features still need approval.       |
 
 ## Mandatory selection and overwrite rules
 
@@ -25,7 +25,7 @@ Team: **Boey, Keane, Eric, Russell, Xin Lei and Athithya**. No game assignments 
 4. **Clarify before code.** Agree learning/interaction rules, difficulty, state, components/props/emits, APIs, schemas, security, mobile accessibility, dependencies and acceptance checks. Present the plan and wait for explicit approval. Do not install, scaffold or claim while waiting.
 5. **Recheck immediately before edits.** New overlap returns to step 2. Record the real contributor, branch, approved scope, paths, dependencies and collision evidence. Reuse shared contracts; only approved additive registration edits are included. Missing contracts require a separate prerequisite task.
 
-The exact decision tree is in [agents.md](agents.md#2-mandatory-feature-selection-decision-tree). Current explicit user instructions take precedence for their stated scope. CODE-01 authorizes comment maintenance of existing code; it does not authorize games, UI changes, database refactors or new dependencies.
+The exact decision tree is in [agents.md](agents.md#2-mandatory-feature-selection-decision-tree). Current explicit user instructions take precedence for their stated scope. Boey explicitly replaced the DOC-05 handover-only instruction with direct G-NEWS implementation in this chat. The existing preview and declared integrations are authorized; new overlaps and other features remain subject to the guardrails.
 
 ## Board conventions
 
@@ -39,24 +39,34 @@ Move the task's active record rather than duplicating it across board states. Re
 
 ## In Progress
 
-None. CODE-01 is ready for review.
+No active implementation task. The Gazette is ready for review.
 
 ## Review
 
-**CODE-01 — Existing code-comment audit (Task 5)** · P0 · Status: **Review** · Contributor/reviewer: **Boey** · Branch: `codex/code-01-comment-audit`.
+**G-NEWS / API-01 — The Sharlock Gazette** · P0 · Status: **Review** · Contributor/reviewer: **Boey** · Branch: `codex/g-news-sharlock-gazette`
 
-- **Approval / scope:** Boey: “ok on to task 5”, followed by “ensure all comments don't end with a fullstop” when resuming after the usage limit. Audit existing maintained source, configuration and tests; lowercase and shorten retained explanations of complex logic or MEVN routing/data flow; remove redundant comments. Preserve all program behaviour and functional directives, including the error-handler ESLint directive and the existing Panzoom explanation. Stop for review.
-- **Concept / complexity:** ★☆☆ maintenance complexity; JavaScript/Vue syntax, configuration and comment/directive boundaries. No gameplay, new components/props/emits, state, API or schema changes.
-- **Inventory / exclusions:** 77 maintained JavaScript, Vue, CSS, HTML, SVG, JSON, workspace YAML and tooling configuration files; initially 21 explanatory line comments and one functional directive. No HTML/Vue boilerplate comments were found. Exclude dependencies, generated bundles/reports, caches, binaries, the generated lockfile, documentation prose and private environment files. Inspect only comment lines in the two protected environment examples; retain those contributor setup instructions unchanged.
-- **Affected files:** comments only in `TownAudio.vue`, `TownMap.vue`, `gameCatalog.js`, `client/vite.config.js`, `scripts/lib/mongodb.js`, `scripts/run-with-test-db.mjs`, `scripts/setup-env.mjs`, `server/src/config/database-uri.js`, `server/src/config/env.js`, `server/src/middleware/errors.js`, `server/src/server.js`, `server/tests/integration/scaffold.test.js` and `tests/e2e/portal.spec.js`; TASKS.md and agents.md for authorization/status/evidence. No shared integration or dependency changes.
-- **Dependencies / coordination:** existing accepted scaffold and UI. Rechecked TASKS, local refs/history, one worktree and staged/unstaged state. Started at `83188f4` on the Task 4 branch with its three uncommitted documents and the unrelated `.DS_Store` change; preserve them. No competing local CODE-01 claim or branch found. No fetch, live PR or teammate-machine inspection. Snapshot the maintained source before edits and compare parsed code afterward.
-- **Acceptance checks:** retained code explanations are lowercase/minimal with no trailing full stops; functional directives and non-comment syntax are identical; templates/styles and protected files are unchanged; lint, formatting, build and appropriate tests pass. Record actual results and leave acceptance to Boey.
-- **Result:** comment-only changes in 13 source/configuration/test files. Removed three redundant explanations, condensed two two-line explanations and revised retained comments. All 16 remaining explanatory code comments are lowercase with no trailing full stop; the one functional ESLint directive is unchanged. The Panzoom purpose and gesture/coordinate explanations remain. No template/style, executable-code, identifier, literal, URL, dependency or database changes.
-- **Verification (17 September 2026):** `node /private/tmp/sharlock-code01-audit.mjs` passed across all 77 maintained files. The temporary audit helper uses the installed JavaScript and Vue parsers to compare pre-edit/current syntax without comments and checks directive equality, comment case/punctuation, exact template/style content and protected-file hashes. `pnpm test:unit` — **40 passed**; `pnpm lint`, `pnpm format:check` and `pnpm build` passed. The source snapshot/audit helper live only in `/private/tmp`, with no new repository dependency or permanent test.
-- **Documentation/final diff:** a one-off `python3` stdin check passed: 37 local links/anchors, five README sections, synchronized shared/six-game blueprints and one active/history record each for CODE-01 and DB-01. `pnpm exec prettier --write TASKS.md agents.md`, the focused Prettier check and `git diff --check` passed. Reviewed every changed source hunk and the documentation diff; only comments changed in maintained code.
-- **Preservation:** README.md, DESIGN.md, the lockfile, both protected environment examples and the unrelated `.DS_Store` match their pre-Task-5 snapshots. Task 4 findings and evidence remain in the accepted-work record, with its acceptance recorded from Boey's message. Private `.env` files were not edited or printed. No staging, commits, pushes or PRs.
-- **Not run / limits:** integration/E2E and a separate visual rehearsal were not repeated for comment-only edits; parsed syntax, templates/styles and directives are unchanged. Task 4's **6 integration / 24 E2E** passes remain prior evidence, not new Task 5 results. No setup script or persistent development database was started. Protected environment-template setup prose remains unchanged, outside the code-comment style edits.
-- **Next action:** Boey reviews CODE-01; do not mark it Done without acceptance. No further task in this five-task sequence is started automatically.
+- **Approval:** direct implementation of the confirmed newsstand, routed newspaper, Guardian API, town-first entry and landing/About consolidation in this chat, replacing the handover-only instruction
+- **Scope / architecture:** the synchronized G-NEWS blueprint below; reading only, 7/30-day sections, local search and ten-story pages, bounded Guardian adapter, persistent edition cache/quota and accessible native modal
+- **Feature files:** `client/src/games/threat-briefing/`, `client/src/features/about/`, `server/src/modules/news/`; grouped client/server unit/integration tests, `tests/e2e/news.spec.js` and module documentation
+- **Minimal shared edits / consumers:** router and Dashboard mount the newspaper over the same town; PortalLayout coordinates route/modal focus; TownMap adds only news activation and focus restoration; catalog registers the newsstand sprite and readiness; GameInfoCard supports the newspaper action; Navbar/return links target `/`; About becomes the adapter for moved landing content; server app/startup/environment initialize the news module and optional server key; server manifest/root lockfile add one pinned HTML parser; affected existing route/catalog/journey tests and the four project documents stay synchronized
+- **Coordination (18 September 2026):** local HEAD `3e6f559`, one worktree, all available refs/history and staged/unstaged changes checked. Only prior DOC-05 documents and unrelated `.DS_Store` differed; dedicated news modules were empty and no competing implementation/claim was found locally. Those baseline previews are explicitly authorized. No live PR, unfetched remote or teammate-machine inspection
+- **Dependencies:** existing Vue/Express/Mongoose scaffold and Boey's registered Guardian key, now verified privately. No auth/result/game foundation dependency, paid service or model dependency
+- **Delivered:** original capybara newsstand; routed pixel newspaper with mobile Browse & search, two sections, 7/30-day editions, local search/paging, safe publisher links and loading/empty/error/stale states; town-first entry and feature-grouped About content. Feature READMEs trace the complete client/server flow; future browser-local headline Q&A remains deferred
+- **Automated verification (18 September 2026):** `pnpm test:unit` — **63 passed**; `pnpm test:integration` — **17 passed**; `pnpm test:e2e` — **34 passed** across mobile/desktop Chromium. Integration/E2E used disposable local `_test` databases, never development or Atlas data. Coverage includes safe content/links, validation, cancellation/expiry, cache/coalescing, atomic quota and midnight/restart pacing, routed modal history/focus, touch/keyboard, town/audio preservation, failure recovery, breakpoint edges and landscape
+- **Registered-key live verification (18 September 2026):** adapter check returned 5 cybersecurity and 39 technology week stories. A separate real Express → isolated Mongo cache → Guardian rehearsal returned HTTP 200 for cybersecurity week/month (5/16 stories) and technology week/month (39/50), all without normalization omissions. Repeated reads reused each edition timestamp; four persisted editions and four upstream reservations were verified. Temporary data was disposed; no credentials or publisher responses were retained in logs/fixtures
+- **Final checks:** `pnpm test:e2e tests/e2e/portal.spec.js --grep 'uses pixel page artwork|fits supported breakpoints'` — **4 passed** after adding the town’s About link. `pnpm lint`, `pnpm format:check`, `pnpm build` and `git diff --check` passed. `node /private/tmp/sharlock-gazette-visual.mjs` confirmed the loaded Pixelify font, zero browser exceptions and four visually inspected desktop/mobile newspaper, newsstand and About screenshots. A concurrent preview rehearsal initially hit a transient Vite module-loading failure; the final sequential check with an isolated preview cache passed
+- **Documentation/security checks:** `python3 /private/tmp/sharlock-news-check.py` passed 40 local links/anchors, five README sections, synchronized shared/six-game blueprints, 14 foundation specifications, news identity and retained task records. All 13 comments in affected code are lowercase without trailing full stops. The pre-existing `.DS_Store` and both environment templates match their starting hashes; nothing is staged. A private in-memory comparison found no configured Guardian key in the built client output. Reviewed the final scoped source/documentation diff
+- **Boundaries / next action:** no accounts, scoring, LLM integration or Task 3 refinement; no development database cleanup, private environment edits, staging, commits, pushes or PRs. Local checks and live rehearsals are complete; a teammate’s fresh-checkout rehearsal and Boey’s acceptance remain pending. Boey reviews the implemented feature
+
+**DOC-05 — Feature organization and news planning notes** · Status: **Review** · Contributor/reviewer: **Boey** · Branch: `codex/doc-05-feature-organization`.
+
+- **Approval / scope:** Boey requested feature-based file organization and markdown guidance for teammates/agents, and accepted CODE-01. Documentation only: README.md, TASKS.md and agents.md. No new frontend/backend module or application edit is included.
+- **Concept / complexity:** ★☆☆ documentation complexity; module ownership and traceable feature data flow. No gameplay, components, API or schema implementation.
+- **Coordination:** inspected TASKS, local status/diffs, branches, the sole worktree and relevant feature history at `main` / `3e6f559`. The unrelated `.DS_Store` change is preserved. News has an existing catalog entry, hut and generic preview; dedicated frontend news code is absent and the reserved backend news directory contains only `.gitkeep`. Landing/About/routes also exist and need explicit continuation in the final plan. No live PR, unfetched remote or teammate-machine inspection.
+- **Changes:** record CODE-01 acceptance; document the feature-folder convention and confirmed news planning decisions. Synchronize the approved news blueprint in README/TASKS and record the continuation scope; application implementation remains absent.
+- **Verification (18 September 2026):** `python3 /private/tmp/sharlock-doc05-check.py` passed: 39 local links/anchors, five README sections, identical shared/six-game blueprints, existing news identity, all 14 foundation specifications and single retained CODE-01/DB-01 records. Only the three declared documents changed; the pre-existing `.DS_Store` is byte-for-byte preserved and no files are staged or newly untracked. Focused Prettier and `git diff --check` passed; reviewed the documentation diff.
+- **Not run / boundaries:** no application suites, build or live news API check for this documentation-only change. No application files, dependencies, environment templates or private configuration were edited. The copy-ready handover is the current deliverable; provider integration remains future work.
+- **Confirmation / handover:** Boey replied “Confirmed! generate the comprehensive implementation handover in a nicely formatted markdown codeblock.” The approved plan is synchronized below; this chat delivers the detailed blueprint without starting application work. Boey subsequently cancelled that handover and authorized direct implementation in this chat; the G-NEWS/API-01 record supersedes this delivery note.
 
 **DOC-04 — Shared design contract and game-theme exception** · P0 · Status: **Review** · Contributor/reviewer: **Boey** · Branch: `codex/doc-04-design-contract`.
 
@@ -89,11 +99,11 @@ None. CODE-01 is ready for review.
 
 ## Pending staged approvals
 
-None in the five-task sequence. Task 5 is ready for review; acceptance is still pending.
+The five-task sequence has no remaining implementation work: Tasks 4 and 5 are accepted; Task 3 was skipped. The news/homepage implementation is authorized in this chat and recorded separately.
 
 ## Skipped stages
 
-**UI-06 / Task 3 — Offset building hover cards:** skipped at Boey's explicit request on 17 September 2026. Keep the existing clamped desktop placement and bottom overlay on narrow viewports, with camera synchronization. This is not implemented or Done; do not revive it as an automatic follow-up. Task 4 is accepted; Task 5 has separate approval.
+**UI-06 / Task 3 — Offset building hover cards:** skipped at Boey's explicit request on 17 September 2026. Keep the existing clamped desktop placement and bottom overlay on narrow viewports, with camera synchronization. This is not implemented or Done; do not revive it as an automatic follow-up. Tasks 4 and 5 are accepted.
 
 ## Design contract for every UI task
 
@@ -113,22 +123,50 @@ No active task is blocked. The availability/dependency table below identifies wo
 
 Available local branches were the documentation branch, `main`, scaffold, portal and town branches. Feature-module Git history on those refs showed scaffold changes only. There is one local worktree. Unfetched remote changes, live PRs, separately managed work and teammates' working trees were not inspected; none of the rows below certifies global availability.
 
-| Task                                                       | Local state / selection constraint                                                                                                             | Dependencies                                                                                                     |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| G-CLI                                                      | No dedicated CLI game found; recheck other work before selection.                                                                              | AUTH-01, DATA-01, AUTH-02, GAME-01 for persistent play; agreed town placement.                                   |
-| G-SOC                                                      | No dedicated simulator found; separately managed NPC work is uninspected and must remain outside scope.                                        | Same scored-game foundation; verified local model/hardware; no assumed paid access.                              |
-| G-PHISH                                                    | No dedicated email investigation found; recheck before selection.                                                                              | Same scored-game foundation; authored case and private answer key.                                               |
-| G-SQL                                                      | No dedicated SQL simulation found; recheck existing CTF-related work by concept.                                                               | Same scored-game foundation; bounded parser and synthetic cases.                                                 |
-| G-REGEX                                                    | No dedicated regex game found; recheck before selection.                                                                                       | Same scored-game foundation; bounded browser/server workers.                                                     |
-| G-NEWS / API-01                                            | **Existing partial feature:** Daily briefing, `threat-briefing`. Standard kickoff must stop and redirect; do not create a second news feature. | Separate explicit authorization for continuation; provider verification; existing town/catalog/router preserved. |
-| AUTH-01, PRO-01, LEARN-01, BOARD-01, INST-01, ADMIN-01     | Domain services remain pending, but related UI routes/previews exist. Inspect and report collisions; no automatic replacement.                 | Detailed prerequisites below.                                                                                    |
-| DATA-01, AUTH-02, SEED-01, COH-01, GAME-01, REC-01, LOG-01 | Proposed shared work; inspect existing shell, middleware and integration-sensitive consumers before defining an independent scope.             | Detailed prerequisites below.                                                                                    |
+| Task                                                       | Local state / selection constraint                                                                                                                       | Dependencies                                                                        |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| G-CLI                                                      | No dedicated CLI game found; recheck other work before selection.                                                                                        | AUTH-01, DATA-01, AUTH-02, GAME-01 for persistent play; agreed town placement.      |
+| G-SOC                                                      | No dedicated simulator found; separately managed NPC work is uninspected and must remain outside scope.                                                  | Same scored-game foundation; verified local model/hardware; no assumed paid access. |
+| G-PHISH                                                    | No dedicated email investigation found; recheck before selection.                                                                                        | Same scored-game foundation; authored case and private answer key.                  |
+| G-SQL                                                      | No dedicated SQL simulation found; recheck existing CTF-related work by concept.                                                                         | Same scored-game foundation; bounded parser and synthetic cases.                    |
+| G-REGEX                                                    | No dedicated regex game found; recheck before selection.                                                                                                 | Same scored-game foundation; bounded browser/server workers.                        |
+| G-NEWS / API-01                                            | **Existing feature:** Daily briefing, `threat-briefing`; implemented under explicit G-NEWS continuation, awaiting review. Do not duplicate or take over. | Existing implementation and claim; further changes require scoped authorization.    |
+| AUTH-01, PRO-01, LEARN-01, BOARD-01, INST-01, ADMIN-01     | Domain services remain pending, but related UI routes/previews exist. Inspect and report collisions; no automatic replacement.                           | Detailed prerequisites below.                                                       |
+| DATA-01, AUTH-02, SEED-01, COH-01, GAME-01, REC-01, LOG-01 | Proposed shared work; inspect existing shell, middleware and integration-sensitive consumers before defining an independent scope.                       | Detailed prerequisites below.                                                       |
 
 No feature is assigned by this table. Explicitly approved, unsaved prototypes can be a separate scope, but they cannot bypass a collision or claim persistent scores/authentication.
 
+## Feature organization
+
+New work must be grouped by feature within the frontend and backend so teammates can present a clear end-to-end flow. Keep the established workspace boundaries; do not put server code or secrets in the client.
+
+- Games use `client/src/games/<game-id>/` and `server/src/modules/games/<game-id>/`. Other new frontend features use `client/src/features/<feature-id>/` and their agreed `server/src/modules/<feature-id>/` module. Existing module identities take precedence: Cyber News Central uses `client/src/games/threat-briefing/` and the reserved `server/src/modules/news/`, with the existing `threat-briefing` catalog ID and route.
+- Keep feature-only entry components, child components, composables, request wrappers, styles and assets together. Request wrappers reuse the shared Axios client. Group server routes, controllers, services, validation, provider adapters and feature-owned models within that feature module; create only layers the feature needs.
+- Keep shared layout/navigation, authentication, HTTP handling and genuinely shared models/services in their existing shared locations. Register a feature through small explicit integration points; never duplicate the shell, auth, registry or results service to make a folder self-contained.
+- Group tests by feature while respecting existing discovery: frontend `__tests__/` under the module, server `server/tests/unit/<feature-id>/` and `server/tests/integration/<feature-id>/`, browser `tests/e2e/<feature-id>.spec.js`. A different placement requires an approved matching test-configuration change.
+- Each feature plan and final handover must list its client/server files, shared edits, tests and request/data flow. A short module README may explain this map for presentation. Do not create empty speculative layers or move unrelated existing features as part of this convention.
+
+## Confirmed newsstand plan
+
+**18 September 2026 · Boey · G-NEWS / API-01 continuation discussion.** Boey confirmed the plan, then cancelled the separate handover and authorized direct implementation here. Confirmed choices:
+
+- A large newspaper popup over the town, with a shareable URL. Preserve the existing news activity identity instead of adding another news building/card/route identity.
+- Cream pixel newspaper titled **The Sharlock Gazette**, with a capybara newsstand vendor. This is the newspaper masthead; the existing catalog identity remains `threat-briefing` / The daily briefing. The approved plan replaces the existing hut sprite with one newsstand and opens the paper directly on selection, retaining hover/focus metadata.
+- Cybersecurity first, with a separate technology section.
+- Show publisher headlines and short excerpts; open full articles at the publisher in a new tab.
+- Default to the past seven days, with a clearly labelled option to browse older stories. Boey manually confirmed the recommended option after the question interface was interrupted by a usage limit.
+- Reading and browsing only for the initial version: no reflections, quizzes, rewards, saved reading progress or account dependency. The earlier reflection/Hacker News proposal is superseded by the synchronized blueprint below.
+- A free developer API key is acceptable; keep it server-side. The Guardian is selected for version one; module documentation records its adapter and limits, with registered-key verification recorded in the task evidence.
+- Open the website directly on the town map; integrate current landing content into About. Use `/` for the town, redirect `/dashboard`, keep the existing news URL and preserve the mounted town while the newspaper is open.
+- Use feature-grouped files following the convention above. The implementation groups new feature files and confines shared edits to the declared integrations.
+- **Deferred idea:** optional future headline Q&A/clarification, inspired by conversational assistants beside social posts. Boey will separately investigate local LLMs running in a browser tab. Do not add a model dependency, model download, chat UI, inference adapter or assumption that browser-local inference is feasible in this version. Keep this idea in feature documentation as future, unapproved scope.
+- **Delivery change:** Boey cancelled the copy/paste handover and authorized implementation in this chat. The feature READMEs provide the architecture/file walkthrough for teammates and instructors.
+
+**Confirmed defaults:** use The Guardian Open Platform for the first version, with a separate server provider adapter; keep the town mounted beneath the newspaper through a nested route; redirect `/dashboard` to `/`; use an accessible modal with explicit Close and Escape behaviour; search within the fetched edition and paginate locally; offer a past-month archive window; cache editions on the server. Registered-key verification on 18 September 2026 passed for both sections and both date ranges, including HTTP responses and Mongo cache reuse. Feature READMEs document filters, limits, retention, field handling and attribution. Future AI use requires a fresh review of source permissions as well as browser feasibility.
+
 ## Game backlog
 
-The following shared contract and six blueprints are synchronized with README section 4. They are implementation proposals pending a task-specific dialogue and approval. Stars are **learner difficulty**. The [foundation backlog](#foundation-and-application-backlog) defines prerequisite services; older exploratory ideas remain in history.
+The following shared contract and six blueprints are synchronized with README section 4. The five scored games are implementation proposals pending a task-specific dialogue and approval; G-NEWS is implemented and awaiting review. Stars are **learner difficulty**. The [foundation backlog](#foundation-and-application-backlog) defines prerequisite services; older exploratory ideas remain in history.
 
 ### Shared implementation blueprint
 
@@ -363,51 +401,47 @@ Cancel animation frames, timers and workers on departure. Reduced-motion mode us
 
 ### G-NEWS — Cyber News Central
 
-**Concept:** Browse current technology/security stories, filter relevant topics and connect a story to a cybersecurity concept.
+**Concept:** Read **The Sharlock Gazette**, a cream pixel newspaper opened from the existing Daily briefing building, redesigned as a capybara newsstand. Cybersecurity is the default section; Technology is separate. This is reading and browsing only, without scoring, reflections, accounts or saved learning progress.
 
-**Difficulty:** ★☆☆
+**Difficulty:** ★☆☆ learner difficulty; ★★☆ implementation complexity.
 
-**Required concepts:** Common threat categories, source credibility, publication/submission dates and distinguishing reporting from verified technical evidence.
+**Required concepts:** No prerequisite blocks access. Common cyber threats, source credibility and publication dates help readers interpret reporting.
 
 **Gameplay / interaction loop**
 
-1. Load today’s technology/security feed.
-2. Filter by topic and search titles.
-3. Inspect the headline, source domain, timestamp and source link.
-4. Open the original article and use a local reflection prompt: “What is threatened, and which control could help?”
-5. Refresh or retry when necessary. Empty days remain honestly empty; cached material shows its age.
-
-This is an unscored learning dashboard. Reading an article does not automatically award points or imply mastery.
+1. Enter the town directly at `/` and select the newsstand; hover/focus still reveals its shared metadata card.
+2. Open the newspaper over the mounted town at `/games/threat-briefing`.
+3. Browse the past seven days, switch section, search the fetched edition and use ten-story pages. The older-stories option expands to the past 30 days.
+4. Read publisher headlines, short excerpts, bylines and publication dates; open the publisher's full article in a new tab.
+5. Refresh or retry with honest empty/error/cache-age feedback. Close or use Escape to return to the same town camera position and restore focus.
 
 **Architectural blueprint**
 
-- Existing route/ID: `/games/threat-briefing` / `threat-briefing`. **Cyber News Central and “The daily briefing” are the same activity.** Keep the current catalog ID, route, display name and `hut` at `{ x: 144, y: 480 }`; its metadata card is already rendered by the shared town framework.
-- Current framework: `client/src/data/gameCatalog.js` registers the entry, `TownMap.vue` renders its building/card, and the generic `/games/:gameId` route opens `GamePreview.vue`. Keep `isPreview: true` until a separately authorized, verified implementation is ready.
-- Future integration, only after explicit authorization to continue this existing feature: place `CyberNewsCentral.vue` and its components under `client/src/games/threat-briefing/`, use the reserved `server/src/modules/news/` for `/api/news`, and connect the concrete `/games/threat-briefing` route to the module. Preserve the generic preview route for other entries. Do not add a `cyber-news-central` catalog ID, parallel route, second hut or custom copy of the shared metadata card.
-- `CyberNewsCentral.vue`: owns filters and loading state.
-- `NewsFilters.vue`: props `{ topic, query }`; emits `update:topic`, `update:query` and `refresh`.
-- `NewsGrid.vue`: props `{ articles }`.
-- `NewsCard.vue`: props `{ article }`; displays safe external links.
-- `NewsStatus.vue`: props `{ loading, error, stale, fetchedAt, partial }`; emits `retry`.
-- `ReflectionPrompt.vue`: props `{ articleTitle }`; keeps the learner’s unsaved draft locally.
-- `useCyberNews.js`: owns articles, filters, status and cancellation. Debounce search by 300ms and ignore responses for superseded requests.
-- `GET /api/news?topic=all|cyber&query=<text>&page=<integer>`; query maximum 80 characters, page minimum 1, fixed page size 20.
-- Return `{ articles, page, total, fetchedAt, stale, partial, timezone: "Asia/Singapore" }`.
-- Recommended initial public provider: official Hacker News API. Server fetches `/v0/newstories.json` and then `/v0/item/:id.json` from the fixed Firebase API origin. No provider key is needed for this candidate.
-- Bound each refresh to the latest 100 IDs, four concurrent item requests, two seconds per request and an eight-second overall deadline. Skip deleted/dead/non-story items.
-- Filter by the current Singapore calendar day using the story submission timestamp. Label it **Submitted today**; do not describe it as the publisher’s original publication date.
-- Normalize articles to `{ id, title, url, sourceHost, submittedAt, topic }`. Classify `cyber` through a versioned keyword list covering phishing, ransomware, malware, vulnerabilities, breaches and authentication. State that this is title-based filtering.
-- Cache normalized results for five minutes and coalesce simultaneous refreshes. On upstream failure, return explicitly stale data from the same day when available; otherwise return a retryable 503.
-- Mongoose `NewsCache`: `{ cacheKey, dateKey, articles, fetchedAt, freshUntil, expiresAt, partial }`; unique `cacheKey`, TTL index on `expiresAt`. Application code checks freshness independently of TTL cleanup.
-- Escape all provider text and allow only HTTP(S) article links. Never fetch arbitrary article URLs through the backend. If a different provider needs a key, keep it in server environment configuration.
+- Existing identity remains `threat-briefing`, `/games/threat-briefing`, **The daily briefing**, at `{ x: 144, y: 480 }`. The implemented entry uses `newsstand`, direct activation and `isPreview: false` following registered-key verification. The other catalog entries and generic previews remain intact; do not create a second news activity.
+- Frontend module: `client/src/games/threat-briefing/`; backend module: `server/src/modules/news/`. Reuse the shared Axios client, catalog, town, shell, pixel tokens and icons.
+- `NewsDialog.vue` owns the native modal lifecycle and emits `request-close`; `CyberNewsCentral.vue` owns newspaper composition; `NewsFilters.vue({ section, range, query, loading, canRefresh })` emits section/range/query updates and `refresh`; `NewsArticle.vue({ article, featured })` renders safe publisher links; `SafeInline.vue({ nodes })` renders validated text/link/break nodes without `v-html`; `NewsPagination.vue({ page, pageCount })` emits `update:page`; `NewsStatus.vue({ loading, error, stale, partial, fetchedAt, refreshAvailableAt, canRefresh })` emits `retry`.
+- `useCyberNews.js` owns requests, cancellation and edition state. `useNewsLocation.js` owns canonical URL filters, local literal search and ten-item pagination. Query/page changes never trigger provider requests. URL query fields are `section=cybersecurity|technology`, `range=week|month`, `q` of at most 80 characters and a valid local page number; changes replace the current newspaper history entry.
+- Make `Dashboard.vue` the persistent `/` route parent with a nested absolute `/games/threat-briefing` child. Redirect `/dashboard` to `/`. Keep the town unkeyed while the child changes; explicitly coordinate modal focus with PortalLayout's current route-heading focus and mobile offcanvas. Opening from town pushes one history entry; Close goes Back for that entry, while direct-link Close replaces with `/`.
+- Merge landing content into the existing About page through a feature-owned `client/src/features/about/` module and a thin `About.vue` route adapter. Preserve team information, honest sample-data labels and `ConnectionStatus`; retire the unused Landing route/component after moving its content.
+- Public endpoint: `GET /api/news?section=cybersecurity|technology&range=week|month`. Defaults are cybersecurity/week; reject unknown, repeated, array/object or invalid values. Search and pagination are browser-only. No URL/body/provider override parameters.
+- Return `{ provider, section, range, dateKey, timezone, window, editionLimit, articles, fetchedAt, freshUntil, expiresAt, refreshAvailableAt, stale, partial }`; ISO UTC timestamps, `timezone: "Asia/Singapore"`, fixed `editionLimit: 50`. Each article has stable ID, title, original URL, publication date and validated inline byline/excerpt content. Explicit DTOs omit secrets, raw provider HTML and database internals.
+- Use The Guardian Open Platform through a fixed server adapter. A free developer key is approved; optional server setting `GUARDIAN_API_KEY` must never enter client configuration. The registered-key check on 18 September 2026 verified all four editions through Express and isolated MongoDB; exact adapter fields/filters and limits are documented in `server/src/modules/news/README.md`.
+- Define week/month as the current Singapore calendar day plus the preceding 6/29 days. Query broad enough upstream date bounds, then enforce exact UTC instants server-side. Use publication dates, never invented freshness or submission dates.
+- Cache at most 50 normalized stories per section/range/date/version in MongoDB for 30 minutes. Coalesce refreshes, bound upstream size/time, pace starts at least 1.1 seconds apart and reserve a persistent 450-request UTC-day budget. Fresh cache hits, local search and local pagination spend no provider quota. Failure cooldown is at least 60 seconds; no force-refresh bypass.
+- Feature-owned `NewsCache` stores key, section/range/date/version, edition bounds, articles, fetched/fresh/expiry timestamps and partial status. Use a unique cache key and TTL expiry; enforce expiry in application code. Use a conservative 23-hour content lifetime, startup/periodic expiry cleanup and no durable browser storage. `NewsQuota` stores UTC-day counters plus an independent pacing timestamp that survives midnight/restarts, with short housekeeping expiry; it contains no publisher text.
+- Build feature models on the passed Mongoose connection, not the global default connection. Initialize only the two feature collections/indexes; do not synchronize/drop unrelated indexes or reset development databases.
+- Parse bounded provider fragments with a pinned server HTML parser; emit only text, safe HTTP(S) links and line breaks. Vue renders normal text/anchor nodes. Fetch only the fixed provider API, never arbitrary article URLs. Missing-key/upstream/quota failures use safe feature responses and retry metadata.
+- Styling stays in the news module and reuses Pixelify Sans and shared cream/green tokens. Use a readable desktop newspaper grid and a single-column, internally scrolling mobile dialog. Preserve native focus containment, Close/Escape, reduced motion, town gesture handling and normal audio lifecycle.
 
-**Collision note:** This feature already has a preview implementation. Under the standard kickoff workflow, an agent must report that existing work and route the developer to another open task or a new feature. Boey's confirmation that the names refer to the same activity corrects the documentation; it does not authorize editing the preview or implementing the news module. Any future explicit authorization to continue this feature must retain its existing registration and framework.
+**Continuation authorization and status:** Boey confirmed the plan and then explicitly authorized direct implementation in this chat, cancelling the separate handover. G-NEWS / API-01 is implemented and awaiting review; TASKS.md records exact evidence. This permission covers the known news preview and declared town/router/About integrations only. It does not grant takeover rights over new teammate work or other features.
 
-**Acceptance:** Test loading, filtering, empty results, unsafe links, date boundaries, partial upstream failures, cache expiry and retry with controlled responses. Separately verify a real public-API request, attribution and provider terms before claiming the external-API requirement is satisfied.
+**Deferred:** optional future headline Q&A using a browser-local LLM, subject to Boey's separate feasibility and source-permission investigation. No AI UI, model download, inference dependency, LLM request or speculative adapter in this version.
+
+**Acceptance:** verify real public HTTP/JSON with the registered key separately from deterministic fixtures. Test provider normalization, malicious content/links, exact date boundaries, request coalescing/budgets, Mongo persistence/expiry, empty/failure/retry states, direct links/history/focus, local search/pagination, mobile layout and regressions in town gestures/audio/navigation. The news preview flag is removed following verification; retain actual evidence in the review record.
 
 ## Foundation and application backlog
 
-All entries below are **proposed, unassigned specifications**, not implemented APIs or commands. For these non-game features, stars describe **implementation complexity**; the interaction loop is the user/operator workflow. The brief requires a useful responsive application, backend storage, a meaningful public asynchronous API and core E2E testing. These particular models/security policies are team design choices, not invented rubric mandates.
+Except API-01, implemented through the G-NEWS task, entries below are **proposed, unassigned specifications**, not implemented APIs or commands. For these non-game features, stars describe **implementation complexity**; the interaction loop is the user/operator workflow. The brief requires a useful responsive application, backend storage, a meaningful public asynchronous API and core E2E testing. These particular models/security policies are team design choices, not invented rubric mandates.
 
 Common API rules for the proposed endpoints: use the shared Axios client with paths relative to `/api`; reject unknown fields and malformed ObjectIds; JSON responses use explicit public DTOs; errors use `{ error: { code, message, fieldErrors? }, requestId }` with no internal details. List endpoints use `page >= 1`, fixed default limit 20 and maximum 50. Return 400 for invalid shape, 401 for no valid session, 403 for a forbidden capability and 404 for an absent/out-of-scope resource when revealing existence is unnecessary. Mutations require CSRF/origin checks. Agree policy constants during planning and record their values before implementation.
 
@@ -614,13 +648,13 @@ Common API rules for the proposed endpoints: use the shared Axios client with pa
 
 ### API-01 — Meaningful public API integration through Daily briefing
 
-**Concept / difficulty / concepts:** P0 · ★★☆ implementation complexity. Verify the public API requirement through G-NEWS rather than create a competing feed. Concepts: asynchronous HTTP, external-data trust, timeouts and cache freshness. **Dependencies:** G-NEWS continuation authorization and provider validation; current `threat-briefing` preview is an explicit collision.
+**Concept / difficulty / concepts:** P0 · ★★☆ implementation complexity. Verify the public API requirement through G-NEWS rather than create a competing feed. Concepts: asynchronous HTTP, external-data trust, timeouts and cache freshness. **Dependencies:** G-NEWS continuation was explicitly approved and its registered provider key verified. The implemented `threat-briefing` feature is protected existing work for future selection.
 
-**Interaction loop:** request today's feed → handle loading/success/empty/partial/failure → inspect source/time → filter and retry → complete an unsaved reflection. See [G-NEWS](#g-news--cyber-news-central) for the exact components, props/emits, `/api/news` payloads, NewsCache schema and state handling; that specification is part of this acceptance scope.
+**Interaction loop:** open the Gazette → browse cybersecurity/technology editions → inspect publisher/date/excerpt → search/page locally or expand to 30 days → open the original article or retry. See [G-NEWS](#g-news--cyber-news-central) for the exact components, props/emits, `/api/news` payloads, NewsCache schema and state handling; that specification is part of this acceptance scope.
 
-**Architectural blueprint:** one implementation in the reserved `server/src/modules/news/`, one `client/src/games/threat-briefing/` module, existing catalog/route/building retained. Proposed provider is the official Hacker News API, subject to current terms and live verification. No keys in client code and no parallel API-01 news registry/cache. Record endpoint origin, attribution, request limits, freshness policy and actual live-check date/status; controlled fixtures do not satisfy the live check.
+**Architectural blueprint:** one implementation in the reserved `server/src/modules/news/`, one `client/src/games/threat-briefing/` module, existing catalog/route/building retained. The approved provider is The Guardian Open Platform, with a backend-only free key and registered-key verification before completion. No keys in client code and no parallel API-01 news registry/cache. Record endpoint origin, attribution, request limits, freshness policy and actual live-check date/status; controlled fixtures do not satisfy the live check.
 
-**Acceptance:** accepted G-NEWS journey plus documented zero-cost availability/terms, real asynchronous HTTP/JSON evidence and repeatable mocked success/empty/timeout/error cases. Provider selection is proposed, not verified implementation. API-01 is an integration/assessment work item referencing the same feature, not a second task claim authorizing duplicate code.
+**Acceptance:** accepted G-NEWS journey plus documented zero-cost availability/terms, real asynchronous HTTP/JSON evidence and repeatable mocked success/empty/timeout/error cases. The Guardian integration is implemented and live-verified on 18 September 2026; G-NEWS/API-01 is awaiting Boey’s review. API-01 is an integration/assessment work item referencing the same feature, not a second task claim authorizing duplicate code.
 
 ## Verification and assessment backlog
 
@@ -642,20 +676,20 @@ The final presentation/deliverables rubric allocates 20% to problem solving, 27%
 
 The brief requires setup, run and test instructions in the submission README, plus account details if applicable and the public repository URL when applicable. The approved five-section README deliberately prioritizes onboarding; QA-03 must reconcile those final-submission requirements within that structure. There are currently no working account credentials or seed command to publish.
 
-Recommended provider references for future validation: [official Hacker News API](https://github.com/HackerNews/API), [Ollama chat API](https://docs.ollama.com/api/chat), [RegExp](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp), [Web Worker termination](https://developer.mozilla.org/en-US/docs/Web/API/Worker/terminate) and [Node worker threads](https://nodejs.org/docs/latest-v24.x/api/worker_threads.html). References support the proposed integration approach; they are not evidence of a live implementation check.
+Provider references for implementation validation: [Guardian access](https://open-platform.theguardian.com/access/), [Guardian content API](https://open-platform.theguardian.com/documentation/search), [Guardian terms](https://www.theguardian.com/open-platform/terms-and-conditions), [Ollama chat API](https://docs.ollama.com/api/chat), [RegExp](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp), [Web Worker termination](https://developer.mozilla.org/en-US/docs/Web/API/Worker/terminate) and [Node worker threads](https://nodejs.org/docs/latest-v24.x/api/worker_threads.html). References support the agreed or separately proposed integrations; they are not evidence of a live implementation check.
 
 ## Operational notes and known limitations
 
 - Local API: Express on loopback port 3000; Vite on 5173 proxies `/api`; `/api/health` performs a real MongoDB ping. The health check is not the mandatory public external API integration.
-- Current domain directories are reserved; Pinia is installed but authentication/business state is not implemented. The town and supporting screens use clearly labeled samples. Public `/dashboard` access does not prove RBAC.
+- News has implemented client/server modules and persistent cache/quota records. Other domain directories remain reserved; Pinia is installed but authentication/business state is not implemented. The town and supporting screens use clearly labeled samples. Public town access does not prove RBAC.
 - `threat-briefing` already represents Cyber News Central. The four other illustrative catalog entries remain untouched; the five new scored blueprints do not automatically replace them. Plan each new building's position without colliding with existing buildings/scenery.
 - Private environment values were not inspected in DOC-03. Preserve root/server `.env`, the team's `.env.example`, ignored database/cache files and the single root lockfile.
 - Existing audio remains `/audio/sharlock-bgm.mp3`; its creator/license is still needed for final asset credits. See DESIGN.md for the current illustration/font/icon credits.
-- No accounts, `db:seed`, saved results, authoritative game registry, live news feed or LLM simulator are currently working features. Proposed routes/schemas in this board are explicitly future work.
+- The live Guardian feed is implemented through `GET /api/news` and verified with a registered key. Accounts, `db:seed`, saved results, authoritative game registry and LLM simulator remain future work; their proposed routes/schemas are not working features.
 
 ## Detailed local setup and environment
 
-Run the following commands from the repository root. The scaffold does not require API keys or user accounts.
+Run the following commands from the repository root. The core app requires no user account. Live Gazette stories additionally require a free Guardian key in the server environment; automated tests use synthetic responses.
 
 ### Prerequisites
 
@@ -683,7 +717,7 @@ With `MONGO_URI` configured in root `.env`, start the frontend and backend:
 pnpm dev
 ```
 
-Open `http://localhost:5173/` for the landing page, then **Explore the town**. Direct routes include `/dashboard`, `/profile`, `/progress`, `/about`, and `/games/<preview-id>`. The profile and progress routes share the sample learning overview. `/about` includes a real API/database connection check with retry. The API listens on `http://localhost:3000`; `GET /api/health` returns 200 after a successful database ping or 503 if unavailable.
+Open `http://localhost:5173/` directly on the town map. `/dashboard` redirects to `/`. Select the newsstand to open The Sharlock Gazette at `/games/threat-briefing`; its URL preserves section, date range, search and page. **About Sharlock** opens `/about`, which combines the former landing content, team introduction and real API/database connection check with retry. `/profile` and `/progress` share the sample learning overview; other `/games/<preview-id>` routes remain previews. The API listens on `http://localhost:3000`; `GET /api/health` returns 200 after a successful database ping or 503 if unavailable.
 
 The backend loads environment files before connecting with `process.env.MONGO_URI`. Precedence is **existing shell variables → root `.env` → `server/.env` defaults**. An explicit database name in the URI is used; an Atlas URI without one selects `sharlock_dev`. For a shared cluster, use a separate database name per member. Configure database credentials and network access in Atlas; keep credentials only in ignored environment files. [Atlas connection guidance](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/)
 
@@ -693,7 +727,7 @@ No local database helper is needed when using Atlas. To opt into the existing lo
 
 ### Portal preview boundaries
 
-The dashboard is an open-world pixel-art town. All five buildings are available from the start and open activity previews. Hover/focus shows the required metadata; click/tap pins the card and reveals the activity link. Drag/swipe inside the bounded pan/zoom canvas, use its zoom/reset buttons or pinch gesture, or navigate with keyboard arrows and Jump to. UI-05 uses pinned `@panzoom/panzoom` 4.6.2; the existing card placement is retained because Boey skipped Task 3. The corner sound button starts the looping `/audio/sharlock-bgm.mp3` soundtrack only after interaction; every visit begins muted and paused. Sample scores, progress, and achievements never create or update database records. The selected curriculum is illustrative. Assets are original local SVG artwork/placeholders. UI-04 extends the town's retro pixel aesthetic to public and supporting pages; the 3D-style monocle capybara remains only in the shared navbar. Admin content may retain functional styling.
+The homepage is an open-world pixel-art town. All five buildings are available from the start. Four open activity previews; the Daily briefing newsstand opens the routed Gazette directly. Hover/focus and Jump to retain shared metadata cards; other buildings still pin their card on click/tap. Closing the newspaper restores newsstand focus and preserves the mounted camera/audio. Drag/swipe inside the bounded pan/zoom canvas, use its zoom/reset buttons or pinch gesture, or navigate with keyboard arrows and Jump to. UI-05 uses pinned `@panzoom/panzoom` 4.6.2; the existing card placement is retained because Boey skipped Task 3. The corner sound button starts the looping `/audio/sharlock-bgm.mp3` soundtrack only after interaction; every visit begins muted and paused. Sample scores, progress, and achievements never create or update database records. The selected curriculum is illustrative. Assets are original local SVG artwork/placeholders. UI-04 extends the town's retro pixel aesthetic to public and supporting pages; the 3D-style monocle capybara remains only in the shared navbar. Admin content may retain functional styling.
 
 `/login`, `/register`, `/leaderboard`, `/instructor`, `/admin`, and `/forbidden` show honest pending-feature messages. They expose no account or cohort data and grant no access. Authentication and server-enforced RBAC remain separate pending tasks. Google Fonts supplies Pixelify Sans globally, with monospace fallbacks for offline use. Shared templates use original pixel icons. The installed Phosphor dependency is retained. UI-05 adds the MIT-licensed Panzoom package to the client and single root lockfile. See [DESIGN.md](DESIGN.md) for exact visual rules, module boundaries, and asset credits.
 
@@ -718,7 +752,7 @@ The dashboard is an open-world pixel-art town. All five buildings are available 
 | `TEST_MONGODB_URI` | Set automatically by the integration/E2E runners to their disposable database. Leave blank in the local file for normal use. Direct test execution must supply an explicit safe URI. |
 | `SESSION_SECRET`   | Random hexadecimal secret of at least 64 characters; generated by `pnpm setup:env`, validated at startup, reserved for Step 4 sessions.                                              |
 
-The root `.env.example` remains the team’s connection template; `server/.env.example` contains optional defaults and a secret placeholder. Neither private `.env` file belongs in Git. Shell variables override root `.env`, which overrides `server/.env`. Missing, malformed, or unsafe values stop startup with redacted guidance. Public API variables will be documented when the provider is chosen. Frontend `VITE_*` variables are public and must contain no secrets. Any future seed-specific inputs must be added here before their command is documented as working.
+The root `.env.example` remains the team’s connection template; `server/.env.example` contains optional defaults and a secret placeholder. Neither private `.env` file belongs in Git. Shell variables override root `.env`, which overrides `server/.env`. Missing, malformed, or unsafe values stop startup with redacted guidance. Optional server-only `GUARDIAN_API_KEY` enables live Gazette stories. Missing configuration leaves the rest of the app usable; configure the private value outside chat and restart the backend. Environment templates remain intact. Test server startup deliberately disables live credentials. Frontend `VITE_*` variables are public and must contain no secrets. Any future seed-specific inputs must be added here before their command is documented as working.
 
 ### Seed data and grader accounts
 
@@ -897,6 +931,23 @@ These original ideas are retained as history, not selectable open tasks or team 
 
 ## Accepted work
 
+### Accepted CODE-01 comment audit
+
+**CODE-01 — Existing code-comment audit (Task 5)** · P0 · Status: **Done** · Contributor/reviewer: **Boey** · Branch: `codex/code-01-comment-audit`.
+
+- **Approval / scope:** Boey: “ok on to task 5”, followed by “ensure all comments don't end with a fullstop” when resuming after the usage limit. Audit existing maintained source, configuration and tests; lowercase and shorten retained explanations of complex logic or MEVN routing/data flow; remove redundant comments. Preserve all program behaviour and functional directives, including the error-handler ESLint directive and the existing Panzoom explanation. Stop for review.
+- **Concept / complexity:** ★☆☆ maintenance complexity; JavaScript/Vue syntax, configuration and comment/directive boundaries. No gameplay, new components/props/emits, state, API or schema changes.
+- **Inventory / exclusions:** 77 maintained JavaScript, Vue, CSS, HTML, SVG, JSON, workspace YAML and tooling configuration files; initially 21 explanatory line comments and one functional directive. No HTML/Vue boilerplate comments were found. Exclude dependencies, generated bundles/reports, caches, binaries, the generated lockfile, documentation prose and private environment files. Inspect only comment lines in the two protected environment examples; retain those contributor setup instructions unchanged.
+- **Affected files:** comments only in `TownAudio.vue`, `TownMap.vue`, `gameCatalog.js`, `client/vite.config.js`, `scripts/lib/mongodb.js`, `scripts/run-with-test-db.mjs`, `scripts/setup-env.mjs`, `server/src/config/database-uri.js`, `server/src/config/env.js`, `server/src/middleware/errors.js`, `server/src/server.js`, `server/tests/integration/scaffold.test.js` and `tests/e2e/portal.spec.js`; TASKS.md and agents.md for authorization/status/evidence. No shared integration or dependency changes.
+- **Dependencies / coordination:** existing accepted scaffold and UI. Rechecked TASKS, local refs/history, one worktree and staged/unstaged state. Started at `83188f4` on the Task 4 branch with its three uncommitted documents and the unrelated `.DS_Store` change; preserve them. No competing local CODE-01 claim or branch found. No fetch, live PR or teammate-machine inspection. Snapshot the maintained source before edits and compare parsed code afterward.
+- **Acceptance checks:** retained code explanations are lowercase/minimal with no trailing full stops; functional directives and non-comment syntax are identical; templates/styles and protected files are unchanged; lint, formatting, build and appropriate tests pass. Record actual results and leave acceptance to Boey.
+- **Result:** comment-only changes in 13 source/configuration/test files. Removed three redundant explanations, condensed two two-line explanations and revised retained comments. All 16 remaining explanatory code comments are lowercase with no trailing full stop; the one functional ESLint directive is unchanged. The Panzoom purpose and gesture/coordinate explanations remain. No template/style, executable-code, identifier, literal, URL, dependency or database changes.
+- **Verification (17 September 2026):** `node /private/tmp/sharlock-code01-audit.mjs` passed across all 77 maintained files. The temporary audit helper uses the installed JavaScript and Vue parsers to compare pre-edit/current syntax without comments and checks directive equality, comment case/punctuation, exact template/style content and protected-file hashes. `pnpm test:unit` — **40 passed**; `pnpm lint`, `pnpm format:check` and `pnpm build` passed. The source snapshot/audit helper live only in `/private/tmp`, with no new repository dependency or permanent test.
+- **Documentation/final diff:** a one-off `python3` stdin check passed: 37 local links/anchors, five README sections, synchronized shared/six-game blueprints and one active/history record each for CODE-01 and DB-01. `pnpm exec prettier --write TASKS.md agents.md`, the focused Prettier check and `git diff --check` passed. Reviewed every changed source hunk and the documentation diff; only comments changed in maintained code.
+- **Preservation:** README.md, DESIGN.md, the lockfile, both protected environment examples and the unrelated `.DS_Store` match their pre-Task-5 snapshots. Task 4 findings and evidence remain in the accepted-work record, with its acceptance recorded from Boey's message. Private `.env` files were not edited or printed. No staging, commits, pushes or PRs.
+- **Not run / limits:** integration/E2E and a separate visual rehearsal were not repeated for comment-only edits; parsed syntax, templates/styles and directives are unchanged. Task 4's **6 integration / 24 E2E** passes remain prior evidence, not new Task 5 results. No setup script or persistent development database was started. Protected environment-template setup prose remains unchanged, outside the code-comment style edits.
+- **Acceptance:** Boey explicitly said “Ok this is done” on 18 September 2026. The changes are now recorded in `3e6f559` on local `main`; acceptance follows the message, not the commit. Earlier uncommitted-state notes above describe the original handoff.
+
 ### Accepted DB-01 database audit
 
 **DB-01 — Localhost test-database audit (Task 4)** · P0 · Status: **Done** · Contributor/reviewer: **Boey** · Branch: `codex/db-01-test-database-audit`.
@@ -952,18 +1003,18 @@ DOC-03 was explicitly accepted by Boey. UI-03 remains recorded in Review; a comm
 
 ## Decisions and unresolved choices
 
-| Topic               | Decision / remaining action                                                                                                                                                                          |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Delivery and stack  | Localhost, zero budget; Vue 3/Bootstrap/plain JavaScript, Express/Mongoose/MongoDB, pnpm and one root lockfile.                                                                                      |
-| Workflow            | Agentic environment recommended; collision detection and plan approval mandatory. No automatic takeover under the standard kickoff.                                                                  |
-| News identity       | Cyber News Central = The daily briefing = `threat-briefing`; retain existing catalog/building/route. News functionality remains unapproved; UI-04 only restyles the shared preview presentation.     |
-| Assignments         | Six game blueprints approved for documentation; no implementation ownership or plan approval assigned by this file.                                                                                  |
-| Data and roles      | Multiple cohort memberships; assigned-cohort instructor access; administrator cross-cohort review; immutable attempt context; staff can practice without gaining broader teaching rights.            |
-| Enrollment/recovery | Code request plus instructor approval; staff-assisted recovery after external identity verification; no email service dependency.                                                                    |
-| Rankings            | Same-game/ruleset cohort rankings; exclude staff, personal practice and untimed training; equal scores share rank. Global competition remains deferred.                                              |
-| Public API/model    | Hacker News and local Ollama are proposed adapters. Provider terms, live behavior, model selection/hardware and limits still need task-specific verification.                                        |
-| Policy constants    | Finalize exact session/reset/enrollment lifetimes, rate limits, password bounds/work factor, history caps and log retention during approved prerequisite planning. Do not guess values while coding. |
-| Verification        | UI-04/UI-05 record pixel-design and camera checks; town/scaffold and DOC-03 records retain historical evidence. No playable games, authentication or saved records are claimed.                      |
+| Topic               | Decision / remaining action                                                                                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Delivery and stack  | Localhost, zero budget; Vue 3/Bootstrap/plain JavaScript, Express/Mongoose/MongoDB, pnpm and one root lockfile.                                                                                               |
+| Workflow            | Agentic environment recommended; collision detection and plan approval mandatory. No automatic takeover under the standard kickoff.                                                                           |
+| News identity       | Cyber News Central = The daily briefing = `threat-briefing`; retain existing catalog/building/route. The Gazette now uses that entry, a newsstand and a nested newspaper route; implementation awaits review. |
+| Assignments         | Six game blueprints approved for documentation; no implementation ownership or plan approval assigned by this file.                                                                                           |
+| Data and roles      | Multiple cohort memberships; assigned-cohort instructor access; administrator cross-cohort review; immutable attempt context; staff can practice without gaining broader teaching rights.                     |
+| Enrollment/recovery | Code request plus instructor approval; staff-assisted recovery after external identity verification; no email service dependency.                                                                             |
+| Rankings            | Same-game/ruleset cohort rankings; exclude staff, personal practice and untimed training; equal scores share rank. Global competition remains deferred.                                                       |
+| Public API/model    | Guardian integration and registered-key verification are implemented; see G-NEWS review evidence. Ollama remains proposed for the separate social-engineering game; browser-local news Q&A is deferred.       |
+| Policy constants    | Finalize exact session/reset/enrollment lifetimes, rate limits, password bounds/work factor, history caps and log retention during approved prerequisite planning. Do not guess values while coding.          |
+| Verification        | UI-04/UI-05 record pixel-design and camera checks; town/scaffold and DOC-03 records retain historical evidence. No playable games, authentication or saved records are claimed.                               |
 
 ## Active task record template
 

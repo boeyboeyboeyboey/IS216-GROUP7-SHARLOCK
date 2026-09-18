@@ -15,7 +15,7 @@ import PixelIcon from '../components/town/PixelIcon.vue'
     <p>
       Even the best detectives take a wrong turn.<br />Let's get you back to your next discovery.
     </p>
-    <RouterLink to="/dashboard" class="btn btn-primary"
+    <RouterLink to="/" class="btn btn-primary"
       ><PixelIcon name="arrow" class="icon-back" :size="20" aria-hidden="true" /> Back to
       town</RouterLink
     >

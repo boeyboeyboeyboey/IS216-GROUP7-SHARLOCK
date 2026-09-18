@@ -11,8 +11,7 @@ test('explores every building without prerequisites or changing sample points', 
   page,
 }) => {
   await page.goto('/')
-  await page.getByRole('link', { name: 'Explore the town', exact: true }).click()
-  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page).toHaveURL('/')
   await expect(page.getByRole('button', { name: /^Explore / })).toHaveCount(gameCatalog.length)
   for (const game of gameCatalog) {
     const building = page.getByRole('button', { name: `Explore ${game.name}`, exact: true })
@@ -27,6 +26,13 @@ test('explores every building without prerequisites or changing sample points', 
     ).toBeVisible()
     for (const topic of game.backgroundKnowledge)
       await expect(card.getByText(topic, { exact: true })).toBeVisible()
+    if (game.id === 'threat-briefing') {
+      await card.getByRole('link', { name: 'Read the Gazette' }).click()
+      await expect(page.getByRole('dialog', { name: 'The Sharlock Gazette' })).toBeVisible()
+      await page.getByRole('button', { name: 'Close newspaper' }).click()
+      await expect(page).toHaveURL('/')
+      continue
+    }
     await card.getByRole('link', { name: 'View activity preview' }).click()
     await expect(page).toHaveURL(new RegExp(`${game.route}$`))
     await expect(page.getByRole('heading', { name: 'A new case is taking shape.' })).toBeVisible()
@@ -158,6 +164,8 @@ test('uses pixel page artwork, keeps the 3D navbar logo, and recovers from a mis
   page,
 }) => {
   await page.goto('/')
+  await page.getByRole('link', { name: 'About Sharlock', exact: true }).click()
+  await expect(page).toHaveURL('/about')
   await expect(page.locator('.navbar-mascot')).toHaveAttribute(
     'alt',
     /3D-style capybara mascot wearing a monocle/,
@@ -182,7 +190,7 @@ test('uses pixel page artwork, keeps the 3D navbar logo, and recovers from a mis
   await page.goto('/a-missing-clue')
   await expect(page.getByRole('heading', { name: 'A little off the trail?' })).toBeVisible()
   await page.getByRole('link', { name: 'Back to town' }).click()
-  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(page).toHaveURL('/')
   await page.getByRole('link', { name: 'Sharlock Hub home' }).click()
   await expect(page).toHaveURL('/')
 })

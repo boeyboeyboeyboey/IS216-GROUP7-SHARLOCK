@@ -65,6 +65,7 @@ export function validateEnvironment(env) {
     clientOrigin,
     databaseUri,
     sessionSecret: env.SESSION_SECRET,
+    guardianApiKey: env.GUARDIAN_API_KEY?.trim() || undefined,
   })
 }
 

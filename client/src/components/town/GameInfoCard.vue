@@ -45,9 +45,18 @@ defineExpose({ focus: () => heading.value?.focus({ preventScroll: true }) })
         <li v-for="topic in game.backgroundKnowledge" :key="topic">{{ topic }}</li>
       </ul>
       <RouterLink :to="game.route" class="pixel-button enter-activity"
-        >{{ game.isPreview ? 'View activity preview' : 'Enter activity'
+        >{{
+          game.activation === 'direct'
+            ? 'Read the Gazette'
+            : game.isPreview
+              ? 'View activity preview'
+              : 'Enter activity'
         }}<PixelIcon name="arrow" :size="16" /></RouterLink
-      ><span v-if="game.isPreview" class="game-preview-label">Playable game in development</span>
+      ><span v-if="game.isPreview" class="game-preview-label">{{
+        game.activation === 'direct'
+          ? 'News connection verification pending'
+          : 'Playable game in development'
+      }}</span>
     </div>
   </section>
 </template>

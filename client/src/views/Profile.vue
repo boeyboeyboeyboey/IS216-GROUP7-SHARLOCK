@@ -40,7 +40,7 @@ import {
           points</span
         >
       </div>
-      <RouterLink to="/dashboard" class="btn btn-secondary"
+      <RouterLink to="/" class="btn btn-secondary"
         >Town map <PixelIcon name="arrow" :size="18" aria-hidden="true"
       /></RouterLink>
     </section>

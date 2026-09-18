@@ -1,0 +1,92 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { ref } from 'vue'
+import SafeInline from '../components/SafeInline.vue'
+import { parseNewsLocation, newsQuery, searchEdition } from '../composables/useNewsLocation.js'
+import { useCyberNews } from '../composables/useCyberNews.js'
+import { fetchEdition, safeNewsLink } from '../news.js'
+
+vi.mock('../news.js', async (original) => ({ ...(await original()), fetchEdition: vi.fn() }))
+afterEach(() => {
+  vi.clearAllMocks()
+  vi.useRealTimers()
+})
+
+describe('newspaper reading boundaries', () => {
+  it('normalizes shareable filter state without accepting arrays or unknown values', () => {
+    expect(
+      parseNewsLocation({ section: ['technology'], range: 'ever', q: ['x'], page: '999' }),
+    ).toEqual({ section: 'cybersecurity', range: 'week', query: '', page: 1 })
+    expect(
+      newsQuery(
+        parseNewsLocation({ section: 'technology', range: 'month', q: 'a'.repeat(100), page: '2' }),
+      ),
+    ).toEqual({ section: 'technology', range: 'month', q: 'a'.repeat(80), page: '2' })
+    expect(newsQuery(parseNewsLocation({}))).toEqual({})
+  })
+  it('searches literal text in just the current edition', () => {
+    const articles = [
+      { title: 'A [test]', excerpt: [{ text: 'PASSWORDS' }], byline: [] },
+      { title: 'Other', excerpt: [], byline: [{ text: 'Reporter' }] },
+    ]
+    expect(searchEdition(articles, '[')).toEqual([articles[0]])
+    expect(searchEdition(articles, ' passwords ')).toEqual([articles[0]])
+    expect(searchEdition(articles, 'reporter')).toEqual([articles[1]])
+  })
+  it('renders hostile strings as text and validates links defensively', () => {
+    const wrapper = mount(SafeInline, {
+      props: {
+        nodes: [
+          { type: 'text', text: '<img src=x onerror=alert(1)>' },
+          { type: 'link', text: 'unsafe', href: 'javascript:alert(1)' },
+          { type: 'link', text: 'safe', href: 'https://example.com' },
+        ],
+      },
+    })
+    expect(wrapper.find('img').exists()).toBe(false)
+    expect(wrapper.findAll('a')).toHaveLength(1)
+    expect(wrapper.get('a').attributes('rel')).toBe('noopener noreferrer')
+    expect(safeNewsLink('https://name:secret@example.com')).toBeNull()
+    wrapper.unmount()
+  })
+  it('cancels superseded requests, ignores late responses and clears expired editions', async () => {
+    vi.useFakeTimers()
+    const section = ref('cybersecurity')
+    let firstResolve
+    fetchEdition.mockReturnValueOnce(
+      new Promise((resolve) => {
+        firstResolve = resolve
+      }),
+    )
+    let state
+    const wrapper = mount({
+      setup() {
+        state = useCyberNews(section, ref('week'))
+        return () => null
+      },
+    })
+    const firstSignal = fetchEdition.mock.calls[0][2]
+    const expiresAt = new Date(Date.now() + 2000).toISOString()
+    fetchEdition.mockResolvedValueOnce({
+      section: 'technology',
+      range: 'week',
+      articles: [],
+      expiresAt,
+      freshUntil: expiresAt,
+      refreshAvailableAt: expiresAt,
+    })
+    section.value = 'technology'
+    await flushPromises()
+    expect(firstSignal.aborted).toBe(true)
+    firstResolve({ section: 'cybersecurity', articles: [{ title: 'Wrong edition' }] })
+    await flushPromises()
+    expect(state.edition.value.section).toBe('technology')
+    await vi.advanceTimersByTimeAsync(2100)
+    expect(state.edition.value).toBeNull()
+    expect(state.error.value).toContain('expired')
+    const finalSignal = fetchEdition.mock.calls[1][2]
+    wrapper.unmount()
+    expect(finalSignal.aborted).toBe(true)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+})

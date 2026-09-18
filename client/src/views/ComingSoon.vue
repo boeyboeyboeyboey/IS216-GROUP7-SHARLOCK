@@ -25,7 +25,7 @@ defineProps({
     <p class="preview-notice">
       This feature is being prepared. The portal currently uses sample data.
     </p>
-    <RouterLink to="/dashboard" class="btn btn-primary"
+    <RouterLink to="/" class="btn btn-primary"
       ><PixelIcon name="arrow" class="icon-back" :size="19" aria-hidden="true" /> Explore the
       town</RouterLink
     >

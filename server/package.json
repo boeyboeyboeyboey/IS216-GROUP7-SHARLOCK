@@ -11,7 +11,8 @@
     "dotenv": "17.4.2",
     "express": "5.2.1",
     "mongodb-connection-string-url": "7.0.2",
-    "mongoose": "9.10.1"
+    "mongoose": "9.10.1",
+    "parse5": "8.0.1"
   },
   "devDependencies": {
     "nodemon": "3.1.14"

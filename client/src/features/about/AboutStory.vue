@@ -1,7 +1,8 @@
 <script setup>
-defineOptions({ name: 'SharlockLanding' })
-import PixelIcon from '../components/town/PixelIcon.vue'
-import SharlockTip from '../components/portal/SharlockTip.vue'
+defineOptions({ name: 'SharlockAboutStory' })
+import PixelIcon from '../../components/town/PixelIcon.vue'
+import ConnectionStatus from '../../components/portal/ConnectionStatus.vue'
+import SharlockTip from '../../components/portal/SharlockTip.vue'
 </script>
 <template>
   <div class="landing-view">
@@ -19,9 +20,9 @@ import SharlockTip from '../components/portal/SharlockTip.vue'
           Meet Sharlock, your curious capybara companion. Turn cybersecurity fundamentals into
           little adventures worth figuring out.
         </p>
-        <RouterLink to="/dashboard" class="btn btn-primary"
+        <RouterLink to="/" class="btn btn-primary"
           >Explore the town <PixelIcon name="arrow" :size="20" aria-hidden="true" /></RouterLink
-        ><span class="landing-preview-note">Try the portal preview · no account needed</span>
+        ><span class="landing-preview-note">Explore freely · no account needed</span>
       </div>
       <div class="hero-art">
         <span class="art-label art-label-top"
@@ -65,5 +66,23 @@ import SharlockTip from '../components/portal/SharlockTip.vue'
         <p>Watch your skills grow, one completed case at a time.</p>
       </div>
     </div>
+    <section class="about-details" aria-labelledby="about-companion-heading">
+      <h2 id="about-companion-heading">Meet your curious companion.</h2>
+      <p>
+        Sharlock turns introductory cybersecurity into a trail of small investigations. Explore
+        encryption, integrity, permissions, and defensive thinking with a friendly capybara by your
+        side.
+      </p>
+      <h2>Made for learning</h2>
+      <p>
+        Built by Boey, Keane, Eric, Russell, Xin Lei, and Athithya for WAD2. Our aim is to make
+        foundational concepts easier to apply through interactive, controlled exercises.
+      </p>
+      <p class="preview-notice">
+        Read The Sharlock Gazette and explore our activity previews. Sample points and badges are
+        illustrative; accounts, saved results, and playable games are still being developed.
+      </p>
+    </section>
+    <ConnectionStatus />
   </div>
 </template>

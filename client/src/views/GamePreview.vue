@@ -9,7 +9,7 @@ const game = computed(() => gameCatalog.find((item) => item.id === route.params.
 </script>
 <template>
   <div v-if="game" class="case-preview">
-    <RouterLink to="/dashboard" class="text-link"
+    <RouterLink to="/" class="text-link"
       ><PixelIcon name="arrow" class="icon-back" :size="18" aria-hidden="true" /> Back to
       town</RouterLink
     >
@@ -30,7 +30,7 @@ const game = computed(() => gameCatalog.find((item) => item.id === route.params.
         page does not change your points or progress.
       </p>
     </div>
-    <RouterLink to="/dashboard" class="btn btn-primary">Keep exploring</RouterLink>
+    <RouterLink to="/" class="btn btn-primary">Keep exploring</RouterLink>
   </div>
   <NotFound v-else />
 </template>

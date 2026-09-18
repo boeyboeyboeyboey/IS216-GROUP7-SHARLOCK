@@ -1,0 +1,56 @@
+import { computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+export function parseNewsLocation(query) {
+  return {
+    section: query.section === 'technology' ? 'technology' : 'cybersecurity',
+    range: query.range === 'month' ? 'month' : 'week',
+    query: typeof query.q === 'string' ? query.q.slice(0, 80) : '',
+    page: typeof query.page === 'string' && /^[1-5]$/.test(query.page) ? Number(query.page) : 1,
+  }
+}
+export function newsQuery(location) {
+  return {
+    ...(location.section !== 'cybersecurity' && { section: location.section }),
+    ...(location.range !== 'week' && { range: location.range }),
+    ...(location.query && { q: location.query }),
+    ...(location.page > 1 && { page: String(location.page) }),
+  }
+}
+export function searchEdition(articles, query) {
+  const needle = query.trim().toLocaleLowerCase('en')
+  return articles.filter((article) =>
+    [
+      article.title,
+      ...(article.excerpt || []).map((node) => node.text || ''),
+      ...(article.byline || []).map((node) => node.text || ''),
+    ]
+      .join(' ')
+      .toLocaleLowerCase('en')
+      .includes(needle),
+  )
+}
+export function useNewsLocation() {
+  const route = useRoute()
+  const router = useRouter()
+  const location = computed(() => parseNewsLocation(route.query))
+  watch(
+    () => route.query,
+    (query) => {
+      const canonical = newsQuery(parseNewsLocation(query))
+      if (JSON.stringify(query) !== JSON.stringify(canonical))
+        router.replace({ name: 'news', query: canonical })
+    },
+    { immediate: true },
+  )
+  function update(changes) {
+    const value = { ...location.value, page: 1, ...changes }
+    return router.replace({ name: 'news', query: newsQuery(value) })
+  }
+  return {
+    location,
+    update,
+    section: computed(() => location.value.section),
+    range: computed(() => location.value.range),
+  }
+}

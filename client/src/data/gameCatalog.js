@@ -1,6 +1,6 @@
 // frontend display metadata is separate from server permissions
 export const TOWN_SIZE = { width: 1120, height: 800 }
-export const BUILDING_TYPES = ['cottage', 'library', 'office', 'hut', 'shed']
+export const BUILDING_TYPES = ['cottage', 'library', 'office', 'hut', 'shed', 'newsstand']
 
 export function defineGameCatalog(entries) {
   const ids = new Set()
@@ -20,6 +20,8 @@ export function defineGameCatalog(entries) {
       throw new Error('List the background knowledge for every game.')
     if (!game.route?.startsWith('/games/') || game.route.includes('://'))
       throw new Error('Games need a local /games/ route.')
+    if (game.activation !== undefined && game.activation !== 'direct')
+      throw new Error('Choose a supported building activation.')
     if (!BUILDING_TYPES.includes(game.building?.type))
       throw new Error('Choose a supported pixel building type.')
     const { x, y } = game.building
@@ -75,14 +77,15 @@ export const gameCatalog = defineGameCatalog([
   {
     id: 'threat-briefing',
     name: 'The daily briefing',
-    description: 'Explore a security story and connect it to a practical defence.',
+    description: 'Read The Sharlock Gazette for recent cybersecurity and technology stories.',
     difficulty: 1,
     backgroundKnowledge: ['Common cyber threats', 'Risk awareness'],
     route: '/games/threat-briefing',
-    isPreview: true,
+    isPreview: false,
     duration: '5 min',
     icon: 'news',
-    building: { type: 'hut', x: 144, y: 480 },
+    activation: 'direct',
+    building: { type: 'newsstand', x: 144, y: 480 },
   },
   {
     id: 'red-blue',

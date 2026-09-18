@@ -16,7 +16,7 @@ let offcanvas
 let media
 let routeChanged = false
 const navigation = [
-  { to: '/dashboard', label: 'Town map', icon: 'map' },
+  { to: '/', label: 'Town map', icon: 'map' },
   { to: '/profile', label: 'Detective profile', icon: 'trophy' },
   { to: '/progress', label: 'Learning progress', icon: 'chart' },
   { to: '/leaderboard', label: 'Cohort leaderboard', icon: 'people' },
@@ -34,7 +34,8 @@ function hideState() {
   menuOpen.value = false
 }
 function focusPage() {
-  document.querySelector('main h1')?.focus({ preventScroll: true })
+  const heading = route.meta.newsDialog ? '[data-news-heading]' : 'main h1'
+  document.querySelector(heading)?.focus({ preventScroll: true })
 }
 function onHidden() {
   if (routeChanged || media.matches) focusPage()
@@ -54,11 +55,14 @@ onMounted(() => {
 })
 watch(
   () => route.fullPath,
-  async () => {
+  async (_path, previousPath) => {
     if (menuOpen.value) {
       routeChanged = true
       closeMenu()
-    } else {
+    } else if (
+      !route.meta.newsDialog &&
+      !(route.name === 'town' && previousPath?.split(/[?#]/)[0] === '/games/threat-briefing')
+    ) {
       await nextTick()
       focusPage()
     }

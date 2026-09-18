@@ -1,12 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Landing from '../views/Landing.vue'
 import Dashboard from '../views/Dashboard.vue'
 import Profile from '../views/Profile.vue'
 import ComingSoon from '../views/ComingSoon.vue'
 
 export const routes = [
-  { path: '/', component: Landing, meta: { title: 'Meet Sharlock' } },
-  { path: '/dashboard', component: Dashboard, meta: { title: 'Sharlock Town', theme: 'town' } },
+  {
+    path: '/',
+    name: 'town',
+    component: Dashboard,
+    meta: { title: 'Sharlock Town', theme: 'town' },
+    children: [
+      {
+        path: '/games/threat-briefing',
+        name: 'news',
+        component: () => import('../games/threat-briefing/NewsDialog.vue'),
+        meta: { title: 'The Sharlock Gazette', newsDialog: true },
+      },
+    ],
+  },
+  { path: '/dashboard', redirect: (to) => ({ path: '/', query: to.query, hash: to.hash }) },
   { path: '/profile', component: Profile, meta: { title: 'Detective profile' } },
   { path: '/progress', component: Profile, meta: { title: 'Learning progress' } },
   {
@@ -62,7 +74,8 @@ export const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior: (_to, _from, savedPosition) => savedPosition || { top: 0 },
+  scrollBehavior: (to, from, savedPosition) =>
+    to.meta.theme === 'town' && from.meta.theme === 'town' ? false : savedPosition || { top: 0 },
 })
 router.afterEach((to) => {
   document.title = `${to.meta.title || 'Explore'} · Sharlock`

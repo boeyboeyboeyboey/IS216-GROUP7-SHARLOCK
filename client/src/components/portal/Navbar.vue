@@ -22,7 +22,7 @@ defineExpose({ focusMenu: () => menuButton.value?.focus() })
       /><span class="brand-title d-none d-md-inline">Sharlock Hub</span></RouterLink
     >
     <nav v-if="town" class="town-top-nav d-none d-md-flex" aria-label="Main navigation">
-      <RouterLink to="/dashboard"><PixelIcon name="map" :size="16" /> Town map</RouterLink
+      <RouterLink to="/"><PixelIcon name="map" :size="16" /> Town map</RouterLink
       ><RouterLink to="/profile">Profile</RouterLink><RouterLink to="/progress">Progress</RouterLink
       ><RouterLink to="/leaderboard">Leaderboard</RouterLink>
     </nav>
@@ -30,7 +30,7 @@ defineExpose({ focusMenu: () => menuButton.value?.focus() })
       <span class="tiny-dot"></span> A little curiosity. A safer digital world.
     </div>
     <div class="d-flex align-items-center gap-2">
-      <RouterLink v-if="!town" to="/" class="header-link d-none d-md-inline-flex"
+      <RouterLink v-if="!town" to="/about" class="header-link d-none d-md-inline-flex"
         >Meet Sharlock <PixelIcon name="arrow" :size="16" /></RouterLink
       ><span :class="town ? 'town-preview-tag' : 'preview-tag d-none d-sm-inline-flex'"
         ><PixelIcon v-if="!town" name="star" :size="16" />{{

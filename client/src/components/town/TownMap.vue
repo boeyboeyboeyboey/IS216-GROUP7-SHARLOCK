@@ -7,6 +7,7 @@ import TownScenery from './TownScenery.vue'
 import TownAudio from './TownAudio.vue'
 import GameInfoCard from './GameInfoCard.vue'
 
+const emit = defineEmits(['activate'])
 const props = defineProps({ games: { type: Array, required: true } })
 const frame = ref(null)
 const viewport = ref(null)
@@ -72,6 +73,12 @@ function dismiss(restoreFocus = false) {
     ignoreFocus = false
   }
 }
+function focusBuilding(id) {
+  ignoreFocus = true
+  buildingButtons.get(id)?.focus({ preventScroll: true })
+  ignoreFocus = false
+}
+defineExpose({ dismiss, focusBuilding })
 function scheduleClose() {
   if (pinned) return
   cancelClose()
@@ -104,7 +111,10 @@ function focusReveal(game) {
 }
 function selectBuilding(event, game) {
   if (suppressClick && event.detail !== 0) return
-  reveal(game, true)
+  if (game.activation === 'direct') {
+    dismiss()
+    emit('activate', game.route)
+  } else reveal(game, true)
 }
 function findBuilding(event) {
   const game = props.games.find((item) => item.id === event.target.value)
@@ -321,6 +331,7 @@ onBeforeUnmount(() => {
                 :class="{ 'building-selected': selectedId === game.id }"
                 :aria-label="`Explore ${game.name}`"
                 :aria-expanded="selectedId === game.id"
+                :aria-haspopup="game.activation === 'direct' ? 'dialog' : undefined"
                 :aria-controls="selectedId === game.id ? `game-card-${game.id}` : undefined"
                 @pointerenter="pointerReveal($event, game)"
                 @pointerleave="scheduleClose"
@@ -334,7 +345,9 @@ onBeforeUnmount(() => {
                   height="160"
                   :alt="`2D pixel-art ${game.building.type} for ${game.name}`"
                 /><span class="building-name">{{ game.name }}</span
-                ><span class="building-hint">SELECT TO EXPLORE</span>
+                ><span class="building-hint">{{
+                  game.activation === 'direct' ? 'READ THE GAZETTE' : 'SELECT TO EXPLORE'
+                }}</span>
               </button>
             </li>
           </ul>
