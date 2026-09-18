@@ -27,6 +27,7 @@
 }
 .news-dialog .gazette-button:hover:not(:disabled),
 .news-dialog .gazette-button[aria-pressed='true'],
+.news-dialog .gazette-button[aria-selected='true'],
 .news-dialog .gazette-button[aria-current='page'] {
   background: var(--accent-primary);
 }
@@ -48,10 +49,77 @@
   background: var(--accent-secondary);
 }
 .news-dialog .gazette-topbar > span,
+.news-dialog .gazette-actions,
+.news-dialog .gazette-sound,
 .news-dialog .gazette-close {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+.news-dialog .gazette-actions {
+  flex-shrink: 0;
+}
+.news-dialog .gazette-audio-status {
+  padding: 10px 12px;
+  margin: 12px 26px 0;
+  font-size: 14px;
+  border-left: 4px solid var(--border-strong);
+  background: var(--accent-secondary);
+}
+.news-dialog .gazette-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 26px 18px;
+}
+.news-dialog [role='tabpanel'] {
+  scroll-margin-top: 90px;
+}
+.news-dialog .owasp-intro {
+  padding: 22px 0 8px;
+}
+.news-dialog .owasp-intro .gazette-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.news-dialog .owasp-risks {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  border-top: 4px double var(--border-strong);
+}
+.news-dialog .owasp-risks li {
+  border-bottom: 2px solid var(--border-strong);
+}
+.news-dialog .owasp-risks summary {
+  padding: 18px 4px;
+  cursor: pointer;
+  min-height: 48px;
+  scroll-margin-top: 90px;
+}
+.news-dialog .owasp-risks h3 {
+  display: inline;
+  font-size: clamp(18px, 2.2vw, 24px);
+  line-height: 1.4;
+}
+.news-dialog .owasp-number {
+  display: inline-block;
+  font-weight: 700;
+  background: var(--accent-secondary);
+  padding: 2px 6px;
+  margin: 0 10px 0 2px;
+  border: 1px solid var(--border-strong);
+}
+.news-dialog .owasp-note {
+  padding: 0 14px 16px;
+}
+.news-dialog .owasp-note dl {
+  border-left: 4px solid var(--accent-primary);
+  padding-left: 14px;
+}
+.news-dialog .owasp-note dd {
+  margin-bottom: 12px;
 }
 .news-dialog .gazette-topbar > span {
   font-size: 14px;
@@ -301,6 +369,12 @@
   .news-dialog .gazette-edition {
     padding: 0 14px 18px;
   }
+  .news-dialog .gazette-tabs {
+    padding: 0 14px 18px;
+  }
+  .news-dialog .gazette-audio-status {
+    margin: 12px 14px 0;
+  }
   .news-dialog .gazette-grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -312,6 +386,11 @@
   }
   .news-dialog .gazette-page {
     padding: 6px;
+  }
+}
+@media (max-width: 575px) {
+  .news-dialog .gazette-topbar > span > span {
+    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {

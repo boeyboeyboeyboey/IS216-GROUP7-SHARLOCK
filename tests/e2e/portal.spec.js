@@ -12,7 +12,7 @@ test('explores every building without prerequisites or changing sample points', 
 }) => {
   await page.goto('/')
   await expect(page).toHaveURL('/')
-  await expect(page.getByRole('button', { name: /^Explore / })).toHaveCount(gameCatalog.length)
+  await expect(page.getByRole('button', { name: /^Explore / })).toHaveCount(6)
   for (const game of gameCatalog) {
     const building = page.getByRole('button', { name: `Explore ${game.name}`, exact: true })
     await expect(building).toBeEnabled()
@@ -27,8 +27,8 @@ test('explores every building without prerequisites or changing sample points', 
     for (const topic of game.backgroundKnowledge)
       await expect(card.getByText(topic, { exact: true })).toBeVisible()
     if (game.id === 'threat-briefing') {
-      await card.getByRole('link', { name: 'Read the Gazette' }).click()
-      await expect(page.getByRole('dialog', { name: 'The Sharlock Gazette' })).toBeVisible()
+      await card.getByRole('link', { name: 'Read the Times' }).click()
+      await expect(page.getByRole('dialog', { name: 'The Sharlock Times' })).toBeVisible()
       await page.getByRole('button', { name: 'Close newspaper' }).click()
       await expect(page).toHaveURL('/')
       continue
@@ -39,16 +39,24 @@ test('explores every building without prerequisites or changing sample points', 
     await page.getByRole('link', { name: 'Keep exploring', exact: true }).click()
     await expect(page.locator('.town-player')).toContainText('120 points')
   }
-  await page.goto('/games/access-control')
-  await expect(page.getByRole('heading', { name: 'A new case is taking shape.' })).toBeVisible()
+  for (const [previous, current] of [
+    ['integrity-detective', 'cli-cyber-defender'],
+    ['mini-ctf', 'sql-injection-arcade'],
+    ['access-control', 'social-engineering-simulator'],
+    ['red-blue', 'regex-defender'],
+  ]) {
+    await page.goto(`/games/${previous}`)
+    await expect(page).toHaveURL(`/games/${current}`)
+    await expect(page.getByRole('heading', { name: 'A new case is taking shape.' })).toBeVisible()
+  }
 })
 
 test('opens details by pointer, touch, and keyboard and restores focus on Escape', async ({
   page,
 }, testInfo) => {
   await page.goto('/dashboard')
-  const building = page.getByRole('button', { name: 'Explore Integrity detective', exact: true })
-  const card = page.getByRole('region', { name: 'Integrity detective', exact: true })
+  const building = page.getByRole('button', { name: 'Explore CLI Cyber Defender', exact: true })
+  const card = page.getByRole('region', { name: 'CLI Cyber Defender', exact: true })
   if (testInfo.project.name === 'desktop-chromium') {
     await building.hover()
     await expect(card).toBeVisible()
@@ -61,9 +69,7 @@ test('opens details by pointer, touch, and keyboard and restores focus on Escape
     await expect(building).toBeFocused()
     await page.keyboard.press('Enter')
   } else await building.tap()
-  await expect(
-    card.getByRole('heading', { name: 'Integrity detective', exact: true }),
-  ).toBeFocused()
+  await expect(card.getByRole('heading', { name: 'CLI Cyber Defender', exact: true })).toBeFocused()
   const inside = await card.evaluate((el) => {
     const cardBounds = el.getBoundingClientRect()
     const frame = el.parentElement.getBoundingClientRect()
@@ -96,10 +102,8 @@ test('keeps the camera bounded and supports keyboard panning', async ({ page }) 
   await map.focus()
   await page.keyboard.press('ArrowDown')
   await expect.poll(offset).toBeLessThan(-50)
-  await page.getByLabel('Jump to').selectOption('red-blue')
-  await expect(
-    page.getByRole('region', { name: 'Think like a defender', exact: true }),
-  ).toBeVisible()
+  await page.getByLabel('Jump to').selectOption('regex-defender')
+  await expect(page.getByRole('region', { name: 'Regex Defender', exact: true })).toBeVisible()
   await expect.poll(offset).toBeLessThan(-100)
 })
 
@@ -292,7 +296,7 @@ test('drags without opening a building and still selects with a fresh tap or cli
   await page.goto('/dashboard')
   const map = page.getByRole('region', { name: 'Interactive town map' })
   await map.scrollIntoViewIfNeeded()
-  const building = page.getByRole('button', { name: 'Explore Integrity detective', exact: true })
+  const building = page.getByRole('button', { name: 'Explore CLI Cyber Defender', exact: true })
   const before = await building.boundingBox()
   const start = { x: before.x + before.width / 2, y: before.y + before.height / 2 }
   const mobile = testInfo.project.name === 'mobile-chromium'
@@ -320,9 +324,7 @@ test('drags without opening a building and still selects with a fresh tap or cli
   await expect(page.locator('.game-info-card')).toHaveCount(0)
   if (mobile) await building.tap()
   else await building.click()
-  await expect(
-    page.getByRole('heading', { name: 'Integrity detective', exact: true }),
-  ).toBeFocused()
+  await expect(page.getByRole('heading', { name: 'CLI Cyber Defender', exact: true })).toBeFocused()
 })
 
 test('supports pinch zoom and wheel panning while retaining camera bounds after resize', async ({

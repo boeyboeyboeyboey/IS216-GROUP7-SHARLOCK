@@ -16,11 +16,11 @@ pnpm setup:env
 pnpm dev
 ```
 
-For live Gazette stories, privately add `GUARDIAN_API_KEY` from [Guardian Open Platform](https://open-platform.theguardian.com/access/) to root `.env` and restart the backend. The rest of the app remains usable without a key. Never put it in frontend configuration or chat.
+For live Times stories, privately add `GUARDIAN_API_KEY` from [Guardian Open Platform](https://open-platform.theguardian.com/access/) to root `.env` and restart the backend. The OWASP Top 10 reference and the rest of the app remain usable without a key. Never put it in frontend configuration or chat.
 
 Open **http://localhost:5173**. The existing workspace and scripts require pnpm; retain the single `pnpm-lock.yaml`.
 
-**Current implementation:** MEVN scaffold, pixel-styled town as the entry page, The Sharlock Gazette with live news, combined About/introduction, activity previews and database health check. Authentication, permissions, playable games and persistent learning records remain pending. Localhost demonstration; zero project budget.
+**Current implementation:** MEVN scaffold, pixel-styled town as the entry page, The Sharlock Times with live news, combined About/introduction, activity previews and database health check. Authentication, permissions, playable games and persistent learning records remain pending. Localhost demonstration; zero project budget.
 
 ## 2. Tooling Recommendation
 
@@ -42,7 +42,7 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 
 ## 4. Game Backlog
 
-The five scored games remain **proposed implementation blueprints**, not working features or automatic authorization to code. G-NEWS is implemented and awaiting review, as recorded in TASKS.md. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
+The five scored games remain **proposed implementation blueprints**, not working features or automatic authorization to code. G-NEWS / Cyber News Central is **completed and accepted by Boey on 19 September 2026**, as recorded in TASKS.md. The town represents all six features; the other five buildings open clearly labelled previews. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
 
 ### Shared implementation blueprint
 
@@ -55,7 +55,7 @@ The following proposed contract applies to the five scored games. It depends on 
 - Requests: reuse `client/src/services/api.js`; its base URL already contains `/api`.
 - State: keep gameplay in a module composable using `ref`, `reactive` and `computed`. Reserve Pinia for shared account/context state.
 - Visual boundary: follow [DESIGN.md](DESIGN.md#rules-for-new-pages-and-features). Game modules may choose their own design philosophy and scoped fonts/artwork/controls; shared navigation, town registration/cards and shared pages retain the exact hub scheme. Verify accessibility/responsiveness and no style leakage.
-- Town integration: new activities without existing implementation add a unique catalog entry and concrete route through the procedure in DESIGN.md. Include name, description, difficulty, background knowledge and building placement. Preserve existing entries; no completion locks. Cyber News Central is the existing `threat-briefing` activity described below, so it must not receive a second registration or building.
+- Town integration: all six planned features already have one catalog entry and building. The five scored games use the generic preview route and `isPreview: true`; news is complete. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
 
 **Proposed shared API**
 
@@ -112,6 +112,7 @@ All commands manipulate fictional game state. Never invoke a shell, firewall, op
 **Architectural blueprint**
 
 - Route/ID: `/games/cli-cyber-defender` / `cli-cyber-defender`.
+- Existing town preview: `cottage` at `{ x: 112, y: 112 }` in the shared catalog. Reuse this entry/route when implementation is separately approved; gameplay remains unimplemented.
 - `CliDefenderGame.vue`: owns the attempt and composes the following components.
 - `TerminalPanel.vue`: props `{ lines, disabled }`; emits `submit-command(command)`.
 - `IncidentBanner.vue`: props `{ incident, remainingMs }`.
@@ -144,6 +145,7 @@ All commands manipulate fictional game state. Never invoke a shell, firewall, op
 **Architectural blueprint**
 
 - Route/ID: `/games/social-engineering-simulator` / `social-engineering-simulator`.
+- Existing town preview: `office` at `{ x: 432, y: 520 }` in the shared catalog. Reuse this entry/route when implementation is separately approved; gameplay remains unimplemented.
 - `SocialEngineeringGame.vue`: owns the attempt.
 - `ChatTimeline.vue`: props `{ messages, pending }`; accessible message log.
 - `ChatComposer.vue`: props `{ disabled, maxLength }`; emits `send(text)`.
@@ -185,6 +187,7 @@ Prompt instructions are not an authorization boundary. Give the model no tools o
 **Architectural blueprint**
 
 - Route/ID: `/games/phishing-post-mortem` / `phishing-post-mortem`.
+- Existing town preview: `library` at `{ x: 480, y: 64 }` in the shared catalog. Reuse this entry/route when implementation is separately approved; gameplay remains unimplemented.
 - `PhishingPostMortem.vue`: coordinates selection and verdict.
 - `InboxList.vue`: props `{ emails, selectedEmailId }`; emits `select-email(id)`.
 - `EmailInspector.vue`: props `{ email }`; emits `inspect-link(linkId)`.
@@ -224,6 +227,7 @@ The screen never authenticates the player as a real administrator.
 **Architectural blueprint**
 
 - Route/ID: `/games/sql-injection-arcade` / `sql-injection-arcade`.
+- Existing town preview: `hut` at `{ x: 832, y: 128 }` in the shared catalog. Reuse this entry/route when implementation is separately approved; gameplay remains unimplemented.
 - `SqlInjectionArcade.vue`: owns puzzle state.
 - `MockAdminLogin.vue`: props `{ disabled, attemptsRemaining }`; emits `test-payload({ username, password })`. Label both fields as fictional.
 - `QueryExplanation.vue`: props `{ queryTokens, evaluation, mode }`.
@@ -259,6 +263,7 @@ The screen never authenticates the player as a real administrator.
 **Architectural blueprint**
 
 - Route/ID: `/games/regex-defender` / `regex-defender`.
+- Existing town preview: `shed` at `{ x: 720, y: 496 }` in the shared catalog. Reuse this entry/route when implementation is separately approved; gameplay remains unimplemented.
 - `RegexDefenderGame.vue`: owns the attempt.
 - `ThreatField.vue`: props `{ tokens, elapsedMs, reducedMotion }`; positions strings using `requestAnimationFrame` and CSS transforms.
 - `RegexInput.vue`: props `{ pattern, error, disabled }`; emits `update:pattern(value)` and `fire`.
@@ -277,7 +282,7 @@ Cancel animation frames, timers and workers on departure. Reduced-motion mode us
 
 ### G-NEWS — Cyber News Central
 
-**Concept:** Read **The Sharlock Gazette**, a cream pixel newspaper opened from the existing Daily briefing building, redesigned as a capybara newsstand. Cybersecurity is the default section; Technology is separate. This is reading and browsing only, without scoring, reflections, accounts or saved learning progress.
+**Concept:** Read **The Sharlock Times**, a cream pixel newspaper opened from the existing Daily briefing building, redesigned as a capybara newsstand. Latest news has Cybersecurity and Technology sections; a separate OWASP Top 10 tab explains the 2025 web-application risk categories. This is reading and browsing only, without scoring, reflections, accounts or saved learning progress.
 
 **Difficulty:** ★☆☆ learner difficulty; ★★☆ implementation complexity.
 
@@ -289,15 +294,18 @@ Cancel animation frames, timers and workers on departure. Reduced-motion mode us
 2. Open the newspaper over the mounted town at `/games/threat-briefing`.
 3. Browse the past seven days, switch section, search the fetched edition and use ten-story pages. The older-stories option expands to the past 30 days.
 4. Read publisher headlines, short excerpts, bylines and publication dates; open the publisher's full article in a new tab.
-5. Refresh or retry with honest empty/error/cache-age feedback. Close or use Escape to return to the same town camera position and restore focus.
+5. Refresh or retry with honest empty/error/cache-age feedback. Switch to OWASP Top 10 for versioned field notes, examples and official guidance. Close or use Escape to return to the same town camera position and restore focus.
+6. Newspaper ambience starts automatically when browser policy allows; the sticky corner Sound/Mute button controls it. Closing stops the loop and restores town music only if previously enabled.
 
 **Architectural blueprint**
 
-- Existing identity remains `threat-briefing`, `/games/threat-briefing`, **The daily briefing**, at `{ x: 144, y: 480 }`. The implemented entry uses `newsstand`, direct activation and `isPreview: false` following registered-key verification. The other catalog entries and generic previews remain intact; do not create a second news activity.
+- Existing identity remains `threat-briefing`, `/games/threat-briefing`, **The daily briefing**, at `{ x: 144, y: 480 }`. The implemented entry uses `newsstand`, direct activation and `isPreview: false` following registered-key verification. The other five catalog entries represent the scored-game blueprints as previews; do not create a second news activity.
 - Frontend module: `client/src/games/threat-briefing/`; backend module: `server/src/modules/news/`. Reuse the shared Axios client, catalog, town, shell, pixel tokens and icons.
-- `NewsDialog.vue` owns the native modal lifecycle and emits `request-close`; `CyberNewsCentral.vue` owns newspaper composition; `NewsFilters.vue({ section, range, query, loading, canRefresh })` emits section/range/query updates and `refresh`; `NewsArticle.vue({ article, featured })` renders safe publisher links; `SafeInline.vue({ nodes })` renders validated text/link/break nodes without `v-html`; `NewsPagination.vue({ page, pageCount })` emits `update:page`; `NewsStatus.vue({ loading, error, stale, partial, fetchedAt, refreshAvailableAt, canRefresh })` emits `retry`.
-- `useCyberNews.js` owns requests, cancellation and edition state. `useNewsLocation.js` owns canonical URL filters, local literal search and ten-item pagination. Query/page changes never trigger provider requests. URL query fields are `section=cybersecurity|technology`, `range=week|month`, `q` of at most 80 characters and a valid local page number; changes replace the current newspaper history entry.
+- `NewsDialog.vue` owns the native modal lifecycle, URL location and emits `request-close`; `CyberNewsCentral.vue({ location, update })` owns news composition; `NewsFilters.vue({ section, range, query, loading, canRefresh })` emits section/range/query updates and `refresh`; `NewsArticle.vue({ article, featured })` renders safe publisher links; `SafeInline.vue({ nodes })` renders validated text/link/break nodes without `v-html`; `NewsPagination.vue({ page, pageCount })` emits `update:page`; `NewsStatus.vue({ loading, error, stale, partial, fetchedAt, refreshAvailableAt, canRefresh })` emits `retry`.
+- `NewsTabs.vue({ activeTab })` emits `update:tab`, using manual activation with arrow/Home/End focus movement and Enter/Space selection. `OwaspTopTen.vue` renders the ten ordered entries from `data/owaspTopTen.js`, with plain-language summaries, original fictional examples, prevention guidance and per-category official links. Credit OWASP Top 10:2025 and CC BY 3.0; identify the reviewed date and distinguish risk categories from individual vulnerabilities. This bundled reference requires no server endpoint or key. `NewsAudio.vue` emits `status` for inline feedback below the toolbar and owns the supplied `/audio/Lo-fi_8-bit_coffee_s_1-1789752418868.mp3` loop, 20% volume, mute/retry state, autoplay-failure feedback and disposal; no durable preference. The supplied MP3 was renamed to remove `#` for reliable static-file serving; its audio bytes are unchanged.
+- `useCyberNews.js` owns requests, cancellation and edition state. `useNewsLocation.js` owns canonical URL filters, local literal search and ten-item pagination. Query/page changes never trigger provider requests. URL query fields are optional `tab=owasp` (default news), `section=cybersecurity|technology`, `range=week|month`, `q` of at most 80 characters and a valid local page number; changes replace the current newspaper history entry. Tab changes preserve news filters/page; the news component unmounts and cancels requests while the reference is visible, so direct OWASP links never fetch Guardian.
 - Make `Dashboard.vue` the persistent `/` route parent with a nested absolute `/games/threat-briefing` child. Redirect `/dashboard` to `/`. Keep the town unkeyed while the child changes; explicitly coordinate modal focus with PortalLayout's current route-heading focus and mobile offcanvas. Opening from town pushes one history entry; Close goes Back for that entry, while direct-link Close replaces with `/`.
+- Dashboard passes `soundSuspended` through TownMap to `TownAudio({ suspended })`; preserve the same town player and user choice, pause it while the newspaper is open and resume only a previously enabled soundtrack. Query/tab changes retain the newspaper audio instance.
 - Merge landing content into the existing About page through a feature-owned `client/src/features/about/` module and a thin `About.vue` route adapter. Preserve team information, honest sample-data labels and `ConnectionStatus`; retire the unused Landing route/component after moving its content.
 - Public endpoint: `GET /api/news?section=cybersecurity|technology&range=week|month`. Defaults are cybersecurity/week; reject unknown, repeated, array/object or invalid values. Search and pagination are browser-only. No URL/body/provider override parameters.
 - Return `{ provider, section, range, dateKey, timezone, window, editionLimit, articles, fetchedAt, freshUntil, expiresAt, refreshAvailableAt, stale, partial }`; ISO UTC timestamps, `timezone: "Asia/Singapore"`, fixed `editionLimit: 50`. Each article has stable ID, title, original URL, publication date and validated inline byline/excerpt content. Explicit DTOs omit secrets, raw provider HTML and database internals.
@@ -309,11 +317,11 @@ Cancel animation frames, timers and workers on departure. Reduced-motion mode us
 - Parse bounded provider fragments with a pinned server HTML parser; emit only text, safe HTTP(S) links and line breaks. Vue renders normal text/anchor nodes. Fetch only the fixed provider API, never arbitrary article URLs. Missing-key/upstream/quota failures use safe feature responses and retry metadata.
 - Styling stays in the news module and reuses Pixelify Sans and shared cream/green tokens. Use a readable desktop newspaper grid and a single-column, internally scrolling mobile dialog. Preserve native focus containment, Close/Escape, reduced motion, town gesture handling and normal audio lifecycle.
 
-**Continuation authorization and status:** Boey confirmed the plan and then explicitly authorized direct implementation in this chat, cancelling the separate handover. G-NEWS / API-01 is implemented and awaiting review; TASKS.md records exact evidence. This permission covers the known news preview and declared town/router/About integrations only. It does not grant takeover rights over new teammate work or other features.
+**Continuation authorization and status:** Boey confirmed the plan and then explicitly authorized direct implementation in this chat, cancelling the separate handover. G-NEWS / API-01 and its Times/OWASP extension are completed and accepted by Boey on 19 September 2026; TASKS.md retains the verification and explicit completion instruction. The corrected lo-fi MP3 is the current newspaper soundtrack. This permission covers the known news preview and declared town/router/About integrations only. It does not grant takeover rights over new teammate work or other features.
 
 **Deferred:** optional future headline Q&A using a browser-local LLM, subject to Boey's separate feasibility and source-permission investigation. No AI UI, model download, inference dependency, LLM request or speculative adapter in this version.
 
-**Acceptance:** verify real public HTTP/JSON with the registered key separately from deterministic fixtures. Test provider normalization, malicious content/links, exact date boundaries, request coalescing/budgets, Mongo persistence/expiry, empty/failure/retry states, direct links/history/focus, local search/pagination, mobile layout and regressions in town gestures/audio/navigation. The news preview flag is removed following verification; retain actual evidence in the review record.
+**Acceptance:** verify real public HTTP/JSON with the registered key separately from deterministic fixtures. Test provider normalization, malicious content/links, exact date boundaries, request coalescing/budgets, Mongo persistence/expiry, empty/failure/retry states, direct links/history/focus, local search/pagination, mobile layout and regressions in town gestures/audio/navigation. The news preview flag is removed following verification; retain actual evidence in the accepted-work record.
 
 ## 5. Teammate Agent Kickoff Prompt
 
@@ -348,7 +356,7 @@ does not prove implementation.
 An active claim is also a coordination conflict even if code is not
 present locally. State any branches or work you could not inspect.
 Cyber News Central is the existing threat-briefing / The daily briefing
-activity. Its Gazette, newsstand and API are implemented; inspect the
+activity. Its Times, newsstand and API are implemented; inspect the
 feature modules and claim. Do not treat the different title as an
 available new feature or create a duplicate.
 

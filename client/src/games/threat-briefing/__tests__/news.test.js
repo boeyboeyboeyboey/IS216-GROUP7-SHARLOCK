@@ -16,13 +16,18 @@ describe('newspaper reading boundaries', () => {
   it('normalizes shareable filter state without accepting arrays or unknown values', () => {
     expect(
       parseNewsLocation({ section: ['technology'], range: 'ever', q: ['x'], page: '999' }),
-    ).toEqual({ section: 'cybersecurity', range: 'week', query: '', page: 1 })
+    ).toEqual({ tab: 'news', section: 'cybersecurity', range: 'week', query: '', page: 1 })
     expect(
       newsQuery(
         parseNewsLocation({ section: 'technology', range: 'month', q: 'a'.repeat(100), page: '2' }),
       ),
     ).toEqual({ section: 'technology', range: 'month', q: 'a'.repeat(80), page: '2' })
     expect(newsQuery(parseNewsLocation({}))).toEqual({})
+    expect(newsQuery(parseNewsLocation({ tab: 'owasp', page: '2' }))).toEqual({
+      tab: 'owasp',
+      page: '2',
+    })
+    expect(parseNewsLocation({ tab: ['owasp'] }).tab).toBe('news')
   })
   it('searches literal text in just the current edition', () => {
     const articles = [

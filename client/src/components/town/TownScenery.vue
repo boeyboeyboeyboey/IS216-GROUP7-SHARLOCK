@@ -9,7 +9,7 @@ const trees = [
   { x: 352, y: 92 },
   { x: 704, y: 140 },
   { x: 648, y: 560 },
-  { x: 384, y: 500 },
+  { x: 352, y: 500 },
 ]
 const bushes = [
   { x: 112, y: 310 },
@@ -24,8 +24,8 @@ const bushes = [
 const cousins = [
   { name: 'Mochi', x: 352, y: 280, scarf: 'mint' },
   { name: 'Maple', x: 652, y: 204, scarf: 'peach' },
-  { name: 'Pebble', x: 496, y: 428, scarf: 'blue' },
-  { name: 'Clover', x: 408, y: 660, scarf: 'mint' },
+  { name: 'Pebble', x: 496, y: 412, scarf: 'blue' },
+  { name: 'Clover', x: 352, y: 636, scarf: 'mint' },
   { name: 'Biscuit', x: 970, y: 584, scarf: 'peach' },
 ]
 </script>

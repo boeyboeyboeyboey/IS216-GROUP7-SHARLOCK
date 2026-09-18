@@ -5,7 +5,7 @@ export const previewProfile = {
   avatar: '/images/town/capybara-mint.svg',
 }
 
-export const previewCompletedGameIds = ['integrity-detective']
+export const previewCompletedGameIds = ['cli-cyber-defender']
 
 export const previewAchievements = [
   {

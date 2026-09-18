@@ -1,14 +1,21 @@
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, toRefs, watch } from 'vue'
 import NewsArticle from './components/NewsArticle.vue'
 import NewsFilters from './components/NewsFilters.vue'
 import NewsPagination from './components/NewsPagination.vue'
 import NewsStatus from './components/NewsStatus.vue'
 import { useCyberNews } from './composables/useCyberNews.js'
-import { searchEdition, useNewsLocation } from './composables/useNewsLocation.js'
+import { searchEdition } from './composables/useNewsLocation.js'
 import { newsDate } from './news.js'
 
-const { location, update, section, range } = useNewsLocation()
+const props = defineProps({
+  location: { type: Object, required: true },
+  update: { type: Function, required: true },
+})
+const { location } = toRefs(props)
+const section = computed(() => location.value.section)
+const range = computed(() => location.value.range)
+const update = (changes) => props.update(changes)
 const { edition, loading, error, stale, refreshAt, canRefresh, refresh } = useCyberNews(
   section,
   range,

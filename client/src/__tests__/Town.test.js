@@ -7,6 +7,31 @@ import TownAudio from '../components/town/TownAudio.vue'
 afterEach(() => vi.restoreAllMocks())
 
 describe('town registration contract', () => {
+  it('registers the six planned features with distinct buildings and honest readiness', () => {
+    expect(gameCatalog.map((game) => game.id).sort()).toEqual([
+      'cli-cyber-defender',
+      'phishing-post-mortem',
+      'regex-defender',
+      'social-engineering-simulator',
+      'sql-injection-arcade',
+      'threat-briefing',
+    ])
+    expect(new Set(gameCatalog.map((game) => game.building.type)).size).toBe(6)
+    expect(gameCatalog.filter((game) => !game.isPreview).map((game) => game.id)).toEqual([
+      'threat-briefing',
+    ])
+    expect(
+      gameCatalog.find((game) => game.id === 'social-engineering-simulator').building.type,
+    ).toBe('office')
+    for (const [index, game] of gameCatalog.entries()) {
+      for (const other of gameCatalog.slice(index + 1)) {
+        expect(
+          Math.abs(game.building.x - other.building.x) >= 192 ||
+            Math.abs(game.building.y - other.building.y) >= 200,
+        ).toBe(true)
+      }
+    }
+  })
   it.each([
     [{ difficulty: 0 }, 'integer from 1 to 3'],
     [{ difficulty: 4 }, 'integer from 1 to 3'],
@@ -72,6 +97,25 @@ describe('town audio', () => {
     expect(pause).toHaveBeenCalledTimes(1)
     wrapper.unmount()
     expect(pause).toHaveBeenCalledTimes(2)
+  })
+  it('suspends for the newspaper and only resumes a previously enabled soundtrack', async () => {
+    const play = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue()
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
+    const wrapper = mount(TownAudio)
+    const audio = wrapper.get('audio').element
+    await wrapper.setProps({ suspended: true })
+    await wrapper.setProps({ suspended: false })
+    expect(play).not.toHaveBeenCalled()
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    await wrapper.setProps({ suspended: true })
+    expect(audio.muted).toBe(true)
+    expect(wrapper.get('button').element.disabled).toBe(true)
+    await wrapper.setProps({ suspended: false })
+    await flushPromises()
+    expect(play).toHaveBeenCalledTimes(2)
+    expect(audio.muted).toBe(false)
+    wrapper.unmount()
   })
   it('reports rejected playback and lets the user retry', async () => {
     const play = vi
