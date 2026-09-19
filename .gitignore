@@ -5,6 +5,7 @@ playwright-report/
 test-results/
 .cache/
 .local/
+docs/superpowers/
 .env
 .env.*
 !.env.example
@@ -13,5 +14,3 @@ test-results/
 .idea/
 .vscode/*
 !.vscode/extensions.json
-.cache/
-.local/

@@ -66,6 +66,9 @@ export function validateEnvironment(env) {
     databaseUri,
     sessionSecret: env.SESSION_SECRET,
     guardianApiKey: env.GUARDIAN_API_KEY?.trim() || undefined,
+    llmBaseUrl: env.LLM_BASE_URL?.trim() || undefined,
+    llmModel: env.LLM_MODEL?.trim() || undefined,
+    llmApiKey: env.LLM_API_KEY?.trim() || undefined,
   })
 }
 

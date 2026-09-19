@@ -83,3 +83,23 @@ describe('database safety', () => {
     }
   })
 })
+
+describe('LLM configuration', () => {
+  it('is undefined when unset and trimmed when set', () => {
+    const unset = validateEnvironment(base)
+    expect(unset.llmBaseUrl).toBeUndefined()
+    expect(unset.llmModel).toBeUndefined()
+    expect(unset.llmApiKey).toBeUndefined()
+
+    const configured = {
+      ...base,
+      LLM_BASE_URL: '  http://127.0.0.1:11434  ',
+      LLM_MODEL: '  llama3.2:1b  ',
+      LLM_API_KEY: '  sk-example-key  ',
+    }
+    const result = validateEnvironment(configured)
+    expect(result.llmBaseUrl).toBe('http://127.0.0.1:11434')
+    expect(result.llmModel).toBe('llama3.2:1b')
+    expect(result.llmApiKey).toBe('sk-example-key')
+  })
+})
