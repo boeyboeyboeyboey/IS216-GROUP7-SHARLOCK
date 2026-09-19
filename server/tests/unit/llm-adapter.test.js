@@ -47,6 +47,28 @@ describe('createLlmAdapter', () => {
     )
   })
 
+  it('threads authToken through to the Ollama provider in local mode', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ message: { content: 'local reply' } }))
+
+    const adapter = createLlmAdapter({
+      baseUrl: 'http://127.0.0.1:11434',
+      model: 'llama3.2:1b',
+      authToken: 'gateway-token',
+      fetchImpl,
+    })
+
+    await adapter.chat(call)
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'http://127.0.0.1:11434/api/chat',
+      expect.objectContaining({
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer gateway-token' },
+      }),
+    )
+  })
+
   it('selects cloud mode and delegates to the cloud stub', async () => {
     const adapter = createLlmAdapter({ apiKey: 'sk-example-key' })
 

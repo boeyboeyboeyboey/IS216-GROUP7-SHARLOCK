@@ -38,6 +38,27 @@ describe('createOllamaProvider', () => {
     })
   })
 
+  it('sends an Authorization header when authToken is provided', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ message: { content: 'Hello there' } }))
+    const provider = createOllamaProvider({
+      baseUrl: 'http://127.0.0.1:11434',
+      model: 'llama3.2:1b',
+      authToken: 'gateway-token',
+      fetchImpl,
+    })
+
+    await provider.chat({ systemPrompt, messages })
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'http://127.0.0.1:11434/api/chat',
+      expect.objectContaining({
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer gateway-token' },
+      }),
+    )
+  })
+
   it('throws LLM_UPSTREAM_UNAVAILABLE on a non-OK HTTP response', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({}, { ok: false }))
     const provider = createOllamaProvider({

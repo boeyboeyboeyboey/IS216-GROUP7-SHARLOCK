@@ -90,16 +90,19 @@ describe('LLM configuration', () => {
     expect(unset.llmBaseUrl).toBeUndefined()
     expect(unset.llmModel).toBeUndefined()
     expect(unset.llmApiKey).toBeUndefined()
+    expect(unset.llmAuthToken).toBeUndefined()
 
     const configured = {
       ...base,
       LLM_BASE_URL: '  http://127.0.0.1:11434  ',
       LLM_MODEL: '  llama3.2:1b  ',
       LLM_API_KEY: '  sk-example-key  ',
+      LLM_AUTH_TOKEN: '  gateway-token  ',
     }
     const result = validateEnvironment(configured)
     expect(result.llmBaseUrl).toBe('http://127.0.0.1:11434')
     expect(result.llmModel).toBe('llama3.2:1b')
     expect(result.llmApiKey).toBe('sk-example-key')
+    expect(result.llmAuthToken).toBe('gateway-token')
   })
 })

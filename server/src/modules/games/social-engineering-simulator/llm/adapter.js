@@ -2,7 +2,7 @@ import { LlmError } from './llmError.js'
 import { createOllamaProvider } from './providers/ollama.js'
 import { createCloudProvider } from './providers/cloud.js'
 
-export function createLlmAdapter({ baseUrl, model, apiKey, fetchImpl = fetch } = {}) {
+export function createLlmAdapter({ baseUrl, model, apiKey, authToken, fetchImpl = fetch } = {}) {
   if (Boolean(baseUrl) !== Boolean(model)) {
     throw new Error('LLM_BASE_URL and LLM_MODEL must both be set or both left empty.')
   }
@@ -12,7 +12,7 @@ export function createLlmAdapter({ baseUrl, model, apiKey, fetchImpl = fetch } =
     mode === 'cloud'
       ? createCloudProvider({ apiKey })
       : mode === 'local'
-        ? createOllamaProvider({ baseUrl, model, fetchImpl })
+        ? createOllamaProvider({ baseUrl, model, authToken, fetchImpl })
         : null
 
   return {

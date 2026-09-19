@@ -69,6 +69,7 @@ export function validateEnvironment(env) {
     llmBaseUrl: env.LLM_BASE_URL?.trim() || undefined,
     llmModel: env.LLM_MODEL?.trim() || undefined,
     llmApiKey: env.LLM_API_KEY?.trim() || undefined,
+    llmAuthToken: env.LLM_AUTH_TOKEN?.trim() || undefined,
   })
 }
 
