@@ -14,13 +14,22 @@ export const routes = [
         path: '/games/threat-briefing',
         name: 'news',
         component: () => import('../games/threat-briefing/NewsDialog.vue'),
-        meta: { title: 'The Sharlock Gazette', newsDialog: true },
+        meta: { title: 'The Sharlock Times', newsDialog: true },
       },
     ],
   },
   { path: '/dashboard', redirect: (to) => ({ path: '/', query: to.query, hash: to.hash }) },
   { path: '/profile', component: Profile, meta: { title: 'Detective profile' } },
   { path: '/progress', component: Profile, meta: { title: 'Learning progress' } },
+  ...[
+    ['integrity-detective', 'cli-cyber-defender'],
+    ['mini-ctf', 'sql-injection-arcade'],
+    ['access-control', 'social-engineering-simulator'],
+    ['red-blue', 'regex-defender'],
+  ].map(([previous, current]) => ({
+    path: `/games/${previous}`,
+    redirect: `/games/${current}`,
+  })),
   {
     path: '/games/:gameId',
     component: () => import('../views/GamePreview.vue'),

@@ -47,7 +47,7 @@ defineExpose({ focus: () => heading.value?.focus({ preventScroll: true }) })
       <RouterLink :to="game.route" class="pixel-button enter-activity"
         >{{
           game.activation === 'direct'
-            ? 'Read the Gazette'
+            ? 'Read the Times'
             : game.isPreview
               ? 'View activity preview'
               : 'Enter activity'

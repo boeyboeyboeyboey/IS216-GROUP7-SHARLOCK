@@ -60,10 +60,11 @@ function closeNewspaper() {
       ref="townMap"
       class="town-canvas"
       :games="gameCatalog"
+      :sound-suspended="route.name === 'news'"
       @activate="router.push($event)"
     />
     <p class="town-footnote">
-      <PixelIcon name="star" :size="16" /> A place to explore at your own pace. Read the Gazette or
+      <PixelIcon name="star" :size="16" /> A place to explore at your own pace. Read the Times or
       explore the activity previews; points are illustrative.
     </p>
     <RouterView @request-close="closeNewspaper" />

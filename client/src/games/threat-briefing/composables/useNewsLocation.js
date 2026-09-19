@@ -3,6 +3,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 export function parseNewsLocation(query) {
   return {
+    tab: query.tab === 'owasp' ? 'owasp' : 'news',
     section: query.section === 'technology' ? 'technology' : 'cybersecurity',
     range: query.range === 'month' ? 'month' : 'week',
     query: typeof query.q === 'string' ? query.q.slice(0, 80) : '',
@@ -11,6 +12,7 @@ export function parseNewsLocation(query) {
 }
 export function newsQuery(location) {
   return {
+    ...(location.tab === 'owasp' && { tab: 'owasp' }),
     ...(location.section !== 'cybersecurity' && { section: location.section }),
     ...(location.range !== 'week' && { range: location.range }),
     ...(location.query && { q: location.query }),
@@ -37,6 +39,7 @@ export function useNewsLocation() {
   watch(
     () => route.query,
     (query) => {
+      if (route.name !== 'news') return
       const canonical = newsQuery(parseNewsLocation(query))
       if (JSON.stringify(query) !== JSON.stringify(canonical))
         router.replace({ name: 'news', query: canonical })
@@ -44,7 +47,8 @@ export function useNewsLocation() {
     { immediate: true },
   )
   function update(changes) {
-    const value = { ...location.value, page: 1, ...changes }
+    const resetPage = ['section', 'range', 'query'].some((key) => key in changes)
+    const value = { ...location.value, ...(resetPage && { page: 1 }), ...changes }
     return router.replace({ name: 'news', query: newsQuery(value) })
   }
   return {

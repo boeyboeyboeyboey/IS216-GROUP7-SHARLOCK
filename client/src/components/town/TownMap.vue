@@ -8,7 +8,7 @@ import TownAudio from './TownAudio.vue'
 import GameInfoCard from './GameInfoCard.vue'
 
 const emit = defineEmits(['activate'])
-const props = defineProps({ games: { type: Array, required: true } })
+const props = defineProps({ games: { type: Array, required: true }, soundSuspended: Boolean })
 const frame = ref(null)
 const viewport = ref(null)
 const world = ref(null)
@@ -263,7 +263,7 @@ onBeforeUnmount(() => {
           >SHARLOCK TOWN<small>All {{ games.length }} activities open</small></span
         >
       </div>
-      <TownAudio />
+      <TownAudio :suspended="soundSuspended" />
     </div>
     <div class="map-zoom-controls" role="group" aria-label="Map zoom">
       <button
@@ -346,7 +346,7 @@ onBeforeUnmount(() => {
                   :alt="`2D pixel-art ${game.building.type} for ${game.name}`"
                 /><span class="building-name">{{ game.name }}</span
                 ><span class="building-hint">{{
-                  game.activation === 'direct' ? 'READ THE GAZETTE' : 'SELECT TO EXPLORE'
+                  game.activation === 'direct' ? 'READ THE TIMES' : 'SELECT TO EXPLORE'
                 }}</span>
               </button>
             </li>
