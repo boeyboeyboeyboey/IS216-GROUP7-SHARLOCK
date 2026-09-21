@@ -57,7 +57,7 @@ export const gameCatalog = defineGameCatalog([
     difficulty: 2,
     backgroundKnowledge: ['Sender spoofing', 'Deceptive links', 'Incident timelines'],
     route: '/games/phishing-post-mortem',
-    isPreview: true,
+    isPreview: false,
     duration: '8 min',
     icon: 'news',
     building: { type: 'library', x: 480, y: 64 },

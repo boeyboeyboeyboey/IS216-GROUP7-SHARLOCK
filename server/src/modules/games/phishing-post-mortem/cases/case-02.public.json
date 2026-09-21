@@ -1,0 +1,298 @@
+{
+  "caseId": "case-02",
+  "datasetVersion": "2026-09-21",
+  "title": "The Meridian Logistics rate-sheet incident",
+  "organisation": "Meridian Logistics",
+  "briefing": "An operations account at Meridian Logistics was used on Thursday morning to ask a haulage partner to change its bank details. The account holder says they did nothing unusual. You have the mailbox and Thursday's security logs. More than one message here is hostile, and one of them is a convincing reply to a conversation that really happened.",
+  "timezoneLabel": "SGT (UTC+8)",
+  "emails": [
+    {
+      "id": "b01",
+      "senderName": "Olu Baptiste",
+      "senderAddress": "o.baptiste@meridian-logistics.example",
+      "replyTo": "o.baptiste@meridian-logistics.example",
+      "subject": "Re: October capacity plan",
+      "sentAt": "2026-09-16T23:40:00.000Z",
+      "bodyText": "Numbers look workable for October. I would keep one spare vehicle at depot two rather than depot four, given the roadworks. Happy to walk through it on Friday.",
+      "links": []
+    },
+    {
+      "id": "b02",
+      "senderName": "Meridian Facilities",
+      "senderAddress": "facilities@meridian-logistics.example",
+      "replyTo": "facilities@meridian-logistics.example",
+      "subject": "Depot 4 gate code changes on Monday",
+      "sentAt": "2026-09-16T23:55:00.000Z",
+      "bodyText": "The depot four gate code changes on Monday morning. Supervisors can collect the new code in person from the site office with their pass. It will not be sent by email.",
+      "links": []
+    },
+    {
+      "id": "b03",
+      "senderName": "Courier Notifications",
+      "senderAddress": "alerts@parcel-redelivery.example",
+      "replyTo": "alerts@parcel-redelivery.example",
+      "subject": "Your parcel could not be delivered",
+      "sentAt": "2026-09-16T07:05:00.000Z",
+      "bodyText": "We attempted delivery of your parcel today and nobody was available. Arrange redelivery within three days or the parcel returns to the sender. A small redelivery fee applies.",
+      "links": [
+        {
+          "id": "b03-l1",
+          "label": "Arrange redelivery",
+          "destination": "https://parcel-redelivery.example/track?id=99213"
+        }
+      ]
+    },
+    {
+      "id": "b04",
+      "senderName": "Dana Whitfield",
+      "senderAddress": "dana.whitfield@meridian-logistics.example",
+      "replyTo": "dana.whitfield@meridian-logistics.example",
+      "subject": "Q3 carrier rates - updated sheet",
+      "sentAt": "2026-09-16T06:30:00.000Z",
+      "bodyText": "Sharing the updated carrier rates ahead of Friday. The third tab has the comparison Olu asked for. Please review the northern routes in particular, they moved more than expected.",
+      "links": []
+    },
+    {
+      "id": "b05",
+      "senderName": "Calder Freight Accounts",
+      "senderAddress": "accounts@calder-freight.example",
+      "replyTo": "accounts@calder-freight.example",
+      "subject": "Invoice 88120 for August haulage",
+      "sentAt": "2026-09-17T00:05:00.000Z",
+      "bodyText": "Please find our invoice for August haulage. Payment terms are unchanged at thirty days. Our bank details are as held on your supplier record and have not changed.",
+      "links": []
+    },
+    {
+      "id": "b06",
+      "senderName": "Meridian Safety",
+      "senderAddress": "safety@meridian-logistics.example",
+      "replyTo": "safety@meridian-logistics.example",
+      "subject": "Monthly safety briefing - September",
+      "sentAt": "2026-09-17T00:12:00.000Z",
+      "bodyText": "September's briefing covers reversing assistants and load securing. Toolbox talks run at both depots on Wednesday and attendance is recorded by your supervisor.",
+      "links": []
+    },
+    {
+      "id": "b07",
+      "senderName": "Olu Baptiste",
+      "senderAddress": "o.baptiste@meridian-logistics.example",
+      "replyTo": "o.baptiste@meridian-logistics.example",
+      "subject": "RE: Depot 4 gate code changes on Monday",
+      "sentAt": "2026-09-17T00:18:00.000Z",
+      "bodyText": "Noted. I will collect the code on Monday morning and brief the early shift. Can we keep the old code active until midday for the agency drivers?",
+      "links": []
+    },
+    {
+      "id": "b08",
+      "senderName": "Meridian Finance",
+      "senderAddress": "finance@meridian-logistics.example",
+      "replyTo": "finance@meridian-logistics.example",
+      "subject": "Payment run moves to Thursday this week",
+      "sentAt": "2026-09-17T00:20:00.000Z",
+      "bodyText": "This week's payment run moves to Thursday afternoon. Any supplier bank detail change must be verified by telephone against the number on the supplier record, never a number supplied in an email.",
+      "links": []
+    },
+    {
+      "id": "b09",
+      "senderName": "Dana Whitfield",
+      "senderAddress": "dana.whitfield@meridian-logistics.example.co",
+      "replyTo": "d.whitfield.commercial@mail-forward.example",
+      "subject": "RE: Q3 carrier rates - updated sheet",
+      "sentAt": "2026-09-17T00:24:00.000Z",
+      "bodyText": "Sorry, the version I sent yesterday had the northern routes wrong. I have put the corrected sheet on the document portal because the file was too large for email. You will need to sign in with your work account to open it. Please check it before the Friday review.",
+      "links": [
+        {
+          "id": "b09-l1",
+          "label": "Open the corrected rate sheet",
+          "destination": "https://meridian-portal.example/auth?doc=rates-q3"
+        }
+      ]
+    },
+    {
+      "id": "b10",
+      "senderName": "Meridian IT Support",
+      "senderAddress": "it-support@meridian-logistics.example",
+      "replyTo": "it-support@meridian-logistics.example",
+      "subject": "Scheduled VPN maintenance on Sunday",
+      "sentAt": "2026-09-17T00:30:00.000Z",
+      "bodyText": "Remote access will be unavailable on Sunday between 6am and 8am while we apply updates. No action is needed and you do not need to re-enter any credentials.",
+      "links": []
+    },
+    {
+      "id": "b11",
+      "senderName": "Meridian People",
+      "senderAddress": "people@meridian-logistics.example",
+      "replyTo": "people@meridian-logistics.example",
+      "subject": "Annual leave balances before year end",
+      "sentAt": "2026-09-17T00:52:00.000Z",
+      "bodyText": "Remaining leave balances are now visible in the self-service tile. Up to five days may be carried over, and anything above that lapses at the end of December.",
+      "links": []
+    },
+    {
+      "id": "b12",
+      "senderName": "Calder Freight Accounts",
+      "senderAddress": "ap@calder-freight-billing.example",
+      "replyTo": "ap.calder@mail-forward.example",
+      "subject": "RE: Invoice 88120 - updated remittance advice",
+      "sentAt": "2026-09-17T02:40:00.000Z",
+      "bodyText": "Further to invoice 88120, our banking has moved to a new provider this month. Please use the revised account below for this and all future payments and confirm once your records are updated.",
+      "links": []
+    },
+    {
+      "id": "b13",
+      "senderName": "Meridian Operations",
+      "senderAddress": "ops-roster@meridian-logistics.example",
+      "replyTo": "ops-roster@meridian-logistics.example",
+      "subject": "Driver roster - week 39",
+      "sentAt": "2026-09-17T03:10:00.000Z",
+      "bodyText": "The week 39 roster is published. Two agency drivers cover the northern routes on Tuesday and Wednesday. Swaps need supervisor approval by Friday noon.",
+      "links": []
+    },
+    {
+      "id": "b14",
+      "senderName": "Meridian IT Support",
+      "senderAddress": "it-support@meridian-logistics.example",
+      "replyTo": "it-support@meridian-logistics.example",
+      "subject": "Security alert: sign-in from a new device",
+      "sentAt": "2026-09-17T01:20:00.000Z",
+      "bodyText": "A sign-in to your account was recorded from a device we do not recognise. If this was you, no action is needed. If it was not, telephone the service desk on the internal number printed on your pass. Do not use a number from an email.",
+      "links": []
+    },
+    {
+      "id": "b15",
+      "senderName": "Meridian People",
+      "senderAddress": "people@meridian-logistics.example",
+      "replyTo": "people@meridian-logistics.example",
+      "subject": "Lunch and learn on Friday - route optimisation",
+      "sentAt": "2026-09-17T03:25:00.000Z",
+      "bodyText": "Friday's lunch and learn covers route optimisation with the planning team. Lunch is provided and the session is recorded for anyone on shift.",
+      "links": []
+    },
+    {
+      "id": "b16",
+      "senderName": "Document Centre",
+      "senderAddress": "share@docs-review-centre.example",
+      "replyTo": "share@docs-review-centre.example",
+      "subject": "Urgent: a shared document is awaiting your review",
+      "sentAt": "2026-09-17T03:20:00.000Z",
+      "bodyText": "A document has been shared with you and is awaiting review. Access expires in 24 hours. Sign in with your email provider to view the file before it is withdrawn.",
+      "links": [
+        {
+          "id": "b16-l1",
+          "label": "Review the shared document",
+          "destination": "https://docs-review-centre.example/open?ref=mer"
+        }
+      ]
+    },
+    {
+      "id": "b17",
+      "senderName": "Dana Whitfield",
+      "senderAddress": "dana.whitfield@meridian-logistics.example",
+      "replyTo": "dana.whitfield@meridian-logistics.example",
+      "subject": "Re: October capacity plan numbers",
+      "sentAt": "2026-09-17T04:00:00.000Z",
+      "bodyText": "Agreed on keeping the spare at depot two. I will update the plan before Friday so we are all looking at the same version in the review.",
+      "links": []
+    },
+    {
+      "id": "b18",
+      "senderName": "Meridian Facilities",
+      "senderAddress": "facilities@meridian-logistics.example",
+      "replyTo": "facilities@meridian-logistics.example",
+      "subject": "Head office closes early on 30 September",
+      "sentAt": "2026-09-17T04:30:00.000Z",
+      "bodyText": "Head office closes at 3pm on 30 September for building maintenance. Depot operations continue as normal and the out-of-hours number is unchanged.",
+      "links": []
+    },
+    {
+      "id": "b19",
+      "senderName": "Fleetcard Services",
+      "senderAddress": "renewals@fleetcard-services.example",
+      "replyTo": "renewals@fleetcard-services.example",
+      "subject": "Fuel card renewal for your fleet",
+      "sentAt": "2026-09-17T05:00:00.000Z",
+      "bodyText": "Your fuel cards are due for renewal in November. Your account manager will call to confirm the card list. No changes are needed from you at this stage.",
+      "links": []
+    },
+    {
+      "id": "b20",
+      "senderName": "Meridian Finance",
+      "senderAddress": "finance@meridian-logistics.example",
+      "replyTo": "finance@meridian-logistics.example",
+      "subject": "RE: Payment run moves to Thursday this week",
+      "sentAt": "2026-09-17T05:20:00.000Z",
+      "bodyText": "To confirm, the run completed this afternoon. One supplier change request was held for telephone verification and has not been paid. We will confirm tomorrow.",
+      "links": []
+    }
+  ],
+  "timeline": [
+    {
+      "id": "u1",
+      "at": "2026-09-16T07:40:00.000Z",
+      "label": "Web proxy - link opened",
+      "detail": "t.okafor opened parcel-redelivery.example/track on Wednesday afternoon. No credential submission followed and the host appears in no later event."
+    },
+    {
+      "id": "u2",
+      "at": "2026-09-17T00:47:00.000Z",
+      "label": "Web proxy - link opened",
+      "detail": "o.baptiste opened meridian-portal.example/auth."
+    },
+    {
+      "id": "u3",
+      "at": "2026-09-17T00:48:00.000Z",
+      "label": "Data loss prevention - credential pattern",
+      "detail": "A credential-shaped form submission left o.baptiste's workstation for meridian-portal.example."
+    },
+    {
+      "id": "u4",
+      "at": "2026-09-17T01:12:00.000Z",
+      "label": "Identity provider - successful sign-in",
+      "detail": "Sign-in succeeded for o.baptiste from an unrecognised device on an unfamiliar network."
+    },
+    {
+      "id": "u5",
+      "at": "2026-09-17T01:35:00.000Z",
+      "label": "Identity provider - successful sign-in",
+      "detail": "Sign-in succeeded for d.whitfield from the head office network on her usual laptop."
+    },
+    {
+      "id": "u6",
+      "at": "2026-09-17T02:05:00.000Z",
+      "label": "Mail gateway - outbound message",
+      "detail": "A message was sent from o.baptiste's account to Calder Freight asking them to update Meridian's bank details for future remittances."
+    },
+    {
+      "id": "u7",
+      "at": "2026-09-17T03:20:00.000Z",
+      "label": "Mail filter - message flagged",
+      "detail": "The shared document notice from docs-review-centre.example was delivered with a suspicious-sender warning. No click was recorded against it."
+    }
+  ],
+  "evidenceOptions": [
+    {
+      "id": "ev-domain-suffix",
+      "label": "The sender's address adds an extra suffix to the company domain, which makes it a different registered domain"
+    },
+    {
+      "id": "ev-click-before-new-device",
+      "label": "That message's portal host was opened at 08:47 and the sign-in from an unrecognised device followed at 09:12"
+    },
+    {
+      "id": "ev-thread-subject",
+      "label": "The subject line matches a genuine internal conversation from the previous day"
+    },
+    {
+      "id": "ev-filter-flagged",
+      "label": "A shared document notice was delivered with a suspicious-sender warning"
+    },
+    {
+      "id": "ev-wednesday-click",
+      "label": "A colleague opened a parcel redelivery link on Wednesday afternoon"
+    },
+    {
+      "id": "ev-protected-archive",
+      "label": "The message carried a password-protected archive attachment"
+    }
+  ]
+}

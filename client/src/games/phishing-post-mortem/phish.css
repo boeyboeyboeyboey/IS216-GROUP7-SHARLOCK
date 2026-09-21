@@ -1,0 +1,773 @@
+/* every rule in this file is scoped to .phish-game so the hub pixel scheme is untouched */
+.phish-game {
+  --game-bg: #f3f4f6;
+  --game-surface: #ffffff;
+  --game-line: #d8dce3;
+  --game-line-strong: #b6bdc8;
+  --game-ink: #1f2933;
+  --game-muted: #5b6672;
+  --game-accent: #1b64d1;
+  --game-accent-soft: #e8f0fd;
+  --game-good: #1c6b47;
+  --game-good-soft: #e7f3ec;
+  --game-bad: #9a3324;
+  --game-bad-soft: #fbecea;
+  --game-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--game-font);
+  color: var(--game-ink);
+  line-height: 1.5;
+}
+
+.phish-game *,
+.phish-game *::before,
+.phish-game *::after {
+  box-sizing: border-box;
+}
+
+.phish-intro {
+  margin-bottom: 1.25rem;
+}
+
+.phish-back {
+  display: inline-block;
+  min-height: 44px;
+  padding: 0.6rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--game-accent);
+}
+
+.phish-game h1 {
+  margin: 0.25rem 0 0.5rem;
+  font-family: var(--game-font);
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.phish-strap {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--game-muted);
+}
+
+.phish-state {
+  padding: 1.5rem;
+  background: var(--game-surface);
+  border: 1px solid var(--game-line);
+  border-radius: 6px;
+}
+
+.phish-error {
+  background: var(--game-bad-soft);
+  border-color: var(--game-bad);
+}
+
+.phish-error p {
+  margin: 0 0 1rem;
+  color: var(--game-bad);
+  font-weight: 600;
+}
+
+/* mail client chrome */
+.sharmail {
+  overflow: hidden;
+  background: var(--game-surface);
+  border: 1px solid var(--game-line-strong);
+  border-radius: 8px;
+}
+
+.sharmail-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  color: #ffffff;
+  background: var(--game-accent);
+}
+
+.sharmail-brand {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.sharmail-mark {
+  width: 24px;
+  height: 24px;
+}
+
+.sharmail-wordmark {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.sharmail-mailbox {
+  font-size: 0.95rem;
+  opacity: 0.92;
+}
+
+.sharmail-body-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.sharmail-rail {
+  display: none;
+  padding: 1rem 0.75rem;
+  background: var(--game-bg);
+  border-right: 1px solid var(--game-line);
+}
+
+.sharmail-rail-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--game-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sharmail-rail ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sharmail-rail li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.95rem;
+  color: var(--game-muted);
+  border-radius: 4px;
+}
+
+.sharmail-rail li.is-active {
+  font-weight: 700;
+  color: var(--game-accent);
+  background: var(--game-accent-soft);
+}
+
+.sharmail-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.sharmail-rail-case {
+  margin: 1rem 0 0;
+  padding-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--game-muted);
+  border-top: 1px solid var(--game-line);
+}
+
+.sharmail-panes {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-width: 0;
+}
+
+.sharmail-pane {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.sharmail-pane-list {
+  border-bottom: 1px solid var(--game-line);
+}
+
+.sharmail-pane-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.sharmail-pane-head p {
+  margin: 0.15rem 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--game-muted);
+}
+
+/* message list */
+.sharmail-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--game-line);
+}
+
+.sharmail-row {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.7rem 0.5rem;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--game-line);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+}
+
+.sharmail-row:hover {
+  background: var(--game-bg);
+}
+
+.sharmail-row.is-open {
+  background: var(--game-accent-soft);
+  border-left-color: var(--game-accent);
+}
+
+.sharmail-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--game-muted);
+  background: var(--game-bg);
+  border: 1px solid var(--game-line-strong);
+  border-radius: 50%;
+}
+
+.sharmail-row-text {
+  display: block;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sharmail-row-top {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.sharmail-sender {
+  overflow: hidden;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sharmail-row.is-unread .sharmail-sender,
+.sharmail-row.is-unread .sharmail-subject {
+  font-weight: 700;
+}
+
+.sharmail-when {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  color: var(--game-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sharmail-subject {
+  display: block;
+  overflow: hidden;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sharmail-preview {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.82rem;
+  color: var(--game-muted);
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.sharmail-unread-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.5rem;
+  background: var(--game-accent);
+  border-radius: 50%;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* reading pane */
+.sharmail-back {
+  min-height: 44px;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--game-accent);
+  background: var(--game-surface);
+  border: 1px solid var(--game-line-strong);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sharmail-briefing h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+}
+
+.sharmail-briefing p {
+  max-width: 68ch;
+}
+
+.sharmail-briefing-hint {
+  color: var(--game-muted);
+  font-size: 0.9rem;
+}
+
+.sharmail-reading-subject {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.sharmail-headers {
+  margin: 0 0 1rem;
+  padding: 0.75rem;
+  background: var(--game-bg);
+  border: 1px solid var(--game-line);
+  border-radius: 4px;
+}
+
+.sharmail-headers > div {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+}
+
+.sharmail-headers dt {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--game-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sharmail-headers dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sharmail-display-name {
+  font-weight: 600;
+}
+
+.sharmail-address {
+  font-family: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  color: var(--game-muted);
+}
+
+.sharmail-body p {
+  max-width: 68ch;
+}
+
+.sharmail-links {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  background: var(--game-bg);
+  border: 1px solid var(--game-line);
+  border-radius: 4px;
+}
+
+.sharmail-links h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+
+.sharmail-links-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--game-muted);
+}
+
+.sharmail-links ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sharmail-links li + li {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--game-line);
+}
+
+.sharmail-link-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--game-accent);
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.sharmail-inspect {
+  min-height: 44px;
+  padding: 0.5rem 0.85rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--game-ink);
+  background: var(--game-surface);
+  border: 1px solid var(--game-line-strong);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sharmail-destination {
+  margin: 0.5rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.sharmail-destination code {
+  font-size: 0.85rem;
+  color: var(--game-bad);
+}
+
+.sharmail-accuse-row {
+  margin: 1rem 0;
+}
+
+.sharmail-accuse {
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--game-ink);
+  background: var(--game-surface);
+  border: 2px solid var(--game-line-strong);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sharmail-accuse.is-accused {
+  color: var(--game-good);
+  background: var(--game-good-soft);
+  border-color: var(--game-good);
+}
+
+/* security log and verdict */
+.sharmail-timeline,
+.sharmail-verdict {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  background: var(--game-bg);
+  border: 1px solid var(--game-line);
+  border-radius: 6px;
+}
+
+.sharmail-timeline h3,
+.sharmail-verdict h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.sharmail-timeline ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sharmail-timeline li {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--game-line);
+}
+
+.sharmail-timeline-time {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--game-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sharmail-timeline-label {
+  font-weight: 600;
+}
+
+.sharmail-timeline-detail {
+  font-size: 0.9rem;
+  color: var(--game-muted);
+}
+
+.sharmail-verdict-target {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0 0 1rem;
+}
+
+.sharmail-verdict-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--game-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sharmail-evidence {
+  margin: 0 0 1rem;
+  padding: 0;
+  border: 0;
+}
+
+.sharmail-evidence legend {
+  margin-bottom: 0.5rem;
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.sharmail-evidence-option {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  min-height: 44px;
+  padding: 0.5rem;
+  background: var(--game-surface);
+  border: 1px solid var(--game-line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sharmail-evidence-option + .sharmail-evidence-option {
+  margin-top: 0.4rem;
+}
+
+.sharmail-evidence-option input {
+  width: 20px;
+  height: 20px;
+  margin-top: 0.15rem;
+  flex: 0 0 auto;
+  accent-color: var(--game-accent);
+}
+
+.sharmail-evidence-option input:disabled + span {
+  color: var(--game-muted);
+}
+
+.sharmail-evidence-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--game-muted);
+}
+
+.sharmail-submit {
+  min-height: 44px;
+  padding: 0.7rem 1.2rem;
+  font: inherit;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--game-accent);
+  border: 1px solid var(--game-accent);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sharmail-submit:disabled {
+  color: var(--game-muted);
+  background: var(--game-line);
+  border-color: var(--game-line-strong);
+  cursor: not-allowed;
+}
+
+.sharmail-verdict-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--game-muted);
+}
+
+/* debrief */
+.sharmail-debrief h3 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.sharmail-debrief-head {
+  padding: 1rem;
+  border: 1px solid var(--game-line-strong);
+  border-radius: 6px;
+}
+
+.sharmail-debrief-head.is-correct {
+  background: var(--game-good-soft);
+  border-color: var(--game-good);
+}
+
+.sharmail-debrief-head.is-missed {
+  background: var(--game-bad-soft);
+  border-color: var(--game-bad);
+}
+
+.sharmail-debrief-eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sharmail-debrief-head h2 {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 1.6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sharmail-debrief-unsaved {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--game-muted);
+}
+
+.sharmail-debrief-summary,
+.sharmail-debrief p {
+  max-width: 68ch;
+}
+
+.sharmail-debrief-patient {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  background: var(--game-bg);
+  border-left: 3px solid var(--game-accent);
+}
+
+.sharmail-chain {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.sharmail-chain li {
+  margin-bottom: 0.5rem;
+  max-width: 68ch;
+}
+
+.sharmail-evidence-review,
+.sharmail-decoys {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sharmail-evidence-review li,
+.sharmail-decoys li {
+  padding: 0.75rem;
+  background: var(--game-surface);
+  border: 1px solid var(--game-line);
+  border-left: 3px solid var(--game-line-strong);
+  border-radius: 4px;
+}
+
+.sharmail-evidence-review li + li,
+.sharmail-decoys li + li {
+  margin-top: 0.5rem;
+}
+
+.sharmail-evidence-review li.is-correct {
+  border-left-color: var(--game-good);
+}
+
+.sharmail-evidence-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.35rem;
+}
+
+.sharmail-tag {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid var(--game-line-strong);
+  border-radius: 3px;
+}
+
+.sharmail-evidence-review li.is-correct .sharmail-tag {
+  color: var(--game-good);
+  background: var(--game-good-soft);
+  border-color: var(--game-good);
+}
+
+.sharmail-tag.is-chosen {
+  color: var(--game-accent);
+  background: var(--game-accent-soft);
+  border-color: var(--game-accent);
+}
+
+.sharmail-evidence-claim {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+
+.sharmail-evidence-note,
+.sharmail-decoys p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--game-muted);
+}
+
+.sharmail-decoy-subject {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+  color: var(--game-ink);
+}
+
+/* focus is always visible, whatever the control */
+.phish-game a:focus-visible,
+.phish-game button:focus-visible,
+.phish-game input:focus-visible,
+.phish-game [tabindex]:focus-visible {
+  outline: 3px solid var(--game-accent);
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  .sharmail-body-grid {
+    grid-template-columns: 190px 1fr;
+  }
+
+  .sharmail-rail {
+    display: block;
+  }
+}
+
+@media (min-width: 992px) {
+  .sharmail-panes {
+    grid-template-columns: minmax(280px, 330px) 1fr;
+  }
+
+  .sharmail-pane-list {
+    max-height: 70vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--game-line);
+    border-bottom: 0;
+  }
+
+  /* both panes are visible side by side, so the narrow-screen swap stops applying */
+  .sharmail-pane.is-mobile-hidden {
+    display: block;
+  }
+
+  .sharmail-back {
+    display: none;
+  }
+}

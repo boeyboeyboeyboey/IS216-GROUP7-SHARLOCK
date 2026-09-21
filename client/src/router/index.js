@@ -31,6 +31,11 @@ export const routes = [
     redirect: `/games/${current}`,
   })),
   {
+    path: '/games/phishing-post-mortem',
+    component: () => import('../games/phishing-post-mortem/PhishingPostMortem.vue'),
+    meta: { title: 'The Phishing Post-Mortem' },
+  },
+  {
     path: '/games/:gameId',
     component: () => import('../views/GamePreview.vue'),
     meta: { title: 'Case preview' },

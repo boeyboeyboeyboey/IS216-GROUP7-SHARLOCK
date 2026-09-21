@@ -34,6 +34,8 @@ During review, compare shared surfaces with the current landing, profile and tow
 
 Game screens may choose their own visual language, typography, palette, artwork and layout. They are **not required to use the hub's pixel font, colours, square controls or pixel-art treatment**. Describe that choice in the game implementation plan without changing the shared design contract.
 
+The Phishing Post-Mortem is the first game to use this exception. Its SHARMAIL screen is an original fictional mail client with a system font stack, a neutral grey surface and a blue accent, because a spoofed sender only teaches when the inbox looks like a real inbox. Every rule lives under `.phish-game` in `client/src/games/phishing-post-mortem/phish.css` with `--game-*` variables on that wrapper, and it copies no real product's branding, wordmark or icons.
+
 Keep game components/styles under `client/src/games/<game-id>/`. Use Vue `<style scoped>` or a module-specific root class, game-specific control classes and local variables such as `--game-*`. Assign game fonts and variables on that wrapper. Do not write game overrides against `:root`, `html`, `body`, `.portal-shell`, the navbar, shared root tokens or another module; avoid unscoped/deep selectors that escape the game. A component imported by a game must follow the same isolation rule.
 
 The game's **town building, label, shared metadata card, shared navbar and any shared profile/progress/result UI** continue to use the hub scheme. Custom gameplay controls/feedback inside the game may use its own design. Its theme does not waive keyboard/touch access, readable controls, reduced-motion handling, 375px-and-up responsiveness, or shared authentication and result contracts. Never solve a layout problem by shrinking a desktop game board into an unreadable mobile image.
@@ -97,7 +99,7 @@ The six planned features are already registered. Keep their identities and place
 | Feature                                 | Catalog ID / route suffix      | Building  | Position   | Readiness |
 | --------------------------------------- | ------------------------------ | --------- | ---------- | --------- |
 | CLI Cyber Defender                      | `cli-cyber-defender`           | cottage   | (112, 112) | Preview   |
-| The Phishing Post-Mortem                | `phishing-post-mortem`         | library   | (480, 64)  | Preview   |
+| The Phishing Post-Mortem                | `phishing-post-mortem`         | library   | (480, 64)  | Complete  |
 | SQL Injection Arcade                    | `sql-injection-arcade`         | hut       | (832, 128) | Preview   |
 | Cyber News Central / The daily briefing | `threat-briefing`              | newsstand | (144, 480) | Complete  |
 | LLM Social Engineering Simulator        | `social-engineering-simulator` | office    | (432, 520) | Preview   |
@@ -143,7 +145,7 @@ The supplied MP3 was renamed to remove the filename’s `#` for reliable static-
 
 ## Current implementation boundaries
 
-The Daily briefing newsstand opens the live Times; the other five town buildings open the planned game previews. Cyber News Central is completed and accepted by Boey on 19 September 2026; those game implementations remain pending. `client/src/data/portalPreview.js` contains labelled illustrative profile/achievement data; it is not an authenticated session or saved learning record. The town is publicly reachable at `/`, with `/dashboard` redirecting there. AUTH-01/AUTH-02 remain pending. Do not claim the login screen, game previews, sample points or cohort access are working account features.
+The Daily briefing newsstand opens the live Times and the Phishing library opens the playable investigation; the other four town buildings open the planned game previews. Cyber News Central is completed and accepted by Boey on 19 September 2026, and The Phishing Post-Mortem is implemented by Athithya on 21 September 2026 and pending review; the four remaining game implementations are still pending. `client/src/data/portalPreview.js` contains labelled illustrative profile/achievement data; it is not an authenticated session or saved learning record. The town is publicly reachable at `/`, with `/dashboard` redirecting there. AUTH-01/AUTH-02 remain pending. Do not claim the login screen, game previews, sample points or cohort access are working account features.
 
 Reusable presentation contracts: `ProfileWidget` takes `username`, `title`, integer `points` and local `avatar`; `GlobalProgressBar` takes `completed`/`total` and clamps 0–100%; `TrophyCase` takes `{ id, name, description, icon }[]`; `SharlockTip` supports click/focus/hover and Escape.
 

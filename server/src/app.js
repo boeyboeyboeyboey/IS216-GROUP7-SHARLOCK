@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import express from 'express'
 import { createNewsRouter } from './modules/news/router.js'
+import { createPhishingRouter } from './modules/games/phishing-post-mortem/router.js'
 import { createHealthRouter } from './routes/health.js'
 import { handleError, notFound } from './middleware/errors.js'
 
-export function createApp(database, { news = {} } = {}) {
+export function createApp(database, { news = {}, phishing = {} } = {}) {
   const app = express()
   app.disable('x-powered-by')
   app.use((_request, response, next) => {
@@ -16,6 +17,7 @@ export function createApp(database, { news = {} } = {}) {
   app.use(express.json({ limit: '16kb' }))
   app.use('/api', createHealthRouter(database))
   app.use('/api', createNewsRouter(database, news))
+  app.use('/api', createPhishingRouter(phishing))
   app.use(notFound)
   app.use(handleError)
   return app

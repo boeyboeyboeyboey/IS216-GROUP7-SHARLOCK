@@ -1,0 +1,310 @@
+{
+  "caseId": "case-01",
+  "datasetVersion": "2026-09-21",
+  "title": "The Aurora Dynamics payroll incident",
+  "organisation": "Aurora Dynamics",
+  "briefing": "Someone at Aurora Dynamics gave away their single sign-on password last week. Overnight an attacker used it, added a hidden mailbox rule and tried to redirect a payroll run. Finance has handed you the mailbox and the security logs. Several of these messages are suspicious. Only one of them caused the compromise.",
+  "timezoneLabel": "SGT (UTC+8)",
+  "emails": [
+    {
+      "id": "a01",
+      "senderName": "Kenneth Lim",
+      "senderAddress": "k.lim@aurora-dynamics.example",
+      "replyTo": "k.lim@aurora-dynamics.example",
+      "subject": "Ops standup notes - week 38",
+      "sentAt": "2026-09-14T00:35:00.000Z",
+      "bodyText": "Morning all. Notes from the standup are in the shared drive. Two carriers are still pending confirmation for the October run. Shout if you need anything before Thursday.",
+      "links": []
+    },
+    {
+      "id": "a02",
+      "senderName": "Priya Nair",
+      "senderAddress": "p.nair@aurora-dynamics.example",
+      "replyTo": "p.nair@aurora-dynamics.example",
+      "subject": "Friday lunch order - reply by Wednesday",
+      "sentAt": "2026-09-14T01:10:00.000Z",
+      "bodyText": "Collecting the Friday lunch order again. Reply with your choice and any allergies by Wednesday evening and I will place it in one go.",
+      "links": []
+    },
+    {
+      "id": "a03",
+      "senderName": "Rewards Centre",
+      "senderAddress": "rewards@prize-claim-now.example",
+      "replyTo": "no-reply@prize-claim-now.example",
+      "subject": "Congratulations! Your colleague reward is waiting",
+      "sentAt": "2026-09-14T01:52:00.000Z",
+      "bodyText": "You have been selected for an employee appreciation gift card worth 500 dollars. Claim within 24 hours or the reward passes to another employee. No purchase necessary.",
+      "links": [
+        {
+          "id": "a03-l1",
+          "label": "Claim your reward now",
+          "destination": "https://prize-claim-now.example/claim?ref=aurora"
+        }
+      ]
+    },
+    {
+      "id": "a04",
+      "senderName": "Lena Ortiz",
+      "senderAddress": "l.ortiz@northvale-supplies.example",
+      "replyTo": "l.ortiz@northvale-supplies.example",
+      "subject": "Q3 supplier statement for your records",
+      "sentAt": "2026-09-14T02:15:00.000Z",
+      "bodyText": "Hi Rachel, attaching the quarterly statement as usual. Nothing outstanding on our side. Let me know if the reference numbers do not line up with your ledger.",
+      "links": []
+    },
+    {
+      "id": "a05",
+      "senderName": "Northvale Supplies Billing",
+      "senderAddress": "billing@northvale-supplies.example",
+      "replyTo": "accounts.northvale@mailbox-relay.example",
+      "subject": "Invoice AD-4471 - updated payment details",
+      "sentAt": "2026-09-14T02:48:00.000Z",
+      "bodyText": "Please note our remittance account has changed for this quarter. Kindly direct payment of invoice AD-4471 to the updated details below and confirm receipt of this notice.",
+      "links": []
+    },
+    {
+      "id": "a06",
+      "senderName": "Aurora Facilities",
+      "senderAddress": "facilities@aurora-dynamics.example",
+      "replyTo": "facilities@aurora-dynamics.example",
+      "subject": "Fire drill this Thursday at 10am",
+      "sentAt": "2026-09-14T03:05:00.000Z",
+      "bodyText": "A scheduled fire drill takes place on Thursday at 10am. Please use the north stairwell and assemble at the loading bay. Wardens will sweep each floor.",
+      "links": []
+    },
+    {
+      "id": "a07",
+      "senderName": "Aurora Carpark Services",
+      "senderAddress": "notice@aurora-parking-notice.example",
+      "replyTo": "notice@aurora-parking-notice.example",
+      "subject": "Outstanding parking charge - final notice",
+      "sentAt": "2026-09-14T03:12:00.000Z",
+      "bodyText": "Our records show an unpaid charge for vehicle bay 14 dated 2 September. Settle within 48 hours to avoid escalation and an administration fee.",
+      "links": [
+        {
+          "id": "a07-l1",
+          "label": "https://aurora-dynamics.example/parking/pay",
+          "destination": "https://aurora-parking-notice.example/fine?bay=14"
+        }
+      ]
+    },
+    {
+      "id": "a08",
+      "senderName": "Aurora Payroll",
+      "senderAddress": "payroll@aurora-dynamics.example",
+      "replyTo": "payroll@aurora-dynamics.example",
+      "subject": "Re: payroll cutoff dates for October",
+      "sentAt": "2026-09-14T04:00:00.000Z",
+      "bodyText": "Confirming the cutoff is the 22nd this month because of the public holiday. Any adjustments after that date move to the following cycle.",
+      "links": []
+    },
+    {
+      "id": "a09",
+      "senderName": "Aurora Expenses",
+      "senderAddress": "no-reply@aurora-dynamics.example",
+      "replyTo": "no-reply@aurora-dynamics.example",
+      "subject": "Your expense claim EX-20881 was approved",
+      "sentAt": "2026-09-14T04:30:00.000Z",
+      "bodyText": "Claim EX-20881 has been approved and will be paid with the next cycle. No further action is needed from you.",
+      "links": []
+    },
+    {
+      "id": "a10",
+      "senderName": "Aurora IT Service Desk",
+      "senderAddress": "it-servicedesk@aurora-dynamics.example",
+      "replyTo": "it-servicedesk@aurora-dynamics.example",
+      "subject": "Wi-Fi maintenance on Saturday morning",
+      "sentAt": "2026-09-14T05:05:00.000Z",
+      "bodyText": "Wireless access on floors three and four will be unavailable on Saturday between 7am and 9am while we replace two access points. Wired connections are unaffected.",
+      "links": []
+    },
+    {
+      "id": "a11",
+      "senderName": "Aurora IT Service Desk",
+      "senderAddress": "it-servicedesk@aurora-dynarnics.example",
+      "replyTo": "sso-helpdesk@mailbox-relay.example",
+      "subject": "Action required: re-verify your SSO access today",
+      "sentAt": "2026-09-14T07:58:00.000Z",
+      "bodyText": "Our directory migration finishes this evening. Accounts that have not been re-verified will lose single sign-on access tomorrow morning, including payroll and expenses. Re-verify with your usual work password using the secure link below. This takes under a minute.",
+      "links": [
+        {
+          "id": "a11-l1",
+          "label": "https://sso.aurora-dynamics.example/reverify",
+          "destination": "https://aurora-dynarnics-sso.example/verify?u=r.tan"
+        }
+      ]
+    },
+    {
+      "id": "a12",
+      "senderName": "Aurora People Team",
+      "senderAddress": "people@aurora-dynamics.example",
+      "replyTo": "people@aurora-dynamics.example",
+      "subject": "Team photo next Tuesday",
+      "sentAt": "2026-09-14T06:20:00.000Z",
+      "bodyText": "We are refreshing the intranet team photos next Tuesday afternoon. Slots are fifteen minutes each and the sign-up sheet is on the noticeboard.",
+      "links": []
+    },
+    {
+      "id": "a13",
+      "senderName": "Aurora People Team",
+      "senderAddress": "people@aurora-dynamics.example",
+      "replyTo": "people@aurora-dynamics.example",
+      "subject": "Updated travel policy takes effect 1 October",
+      "sentAt": "2026-09-14T06:45:00.000Z",
+      "bodyText": "The revised travel policy raises the domestic daily allowance and asks for receipts on anything above fifty dollars. The summary is on the intranet policy page.",
+      "links": []
+    },
+    {
+      "id": "a14",
+      "senderName": "Aurora IT Service Desk",
+      "senderAddress": "it-servicedesk@aurora-dynamics.example",
+      "replyTo": "it-servicedesk@aurora-dynamics.example",
+      "subject": "Your work password expires in 7 days",
+      "sentAt": "2026-09-14T07:10:00.000Z",
+      "bodyText": "Your password expires in seven days. Change it from the lock screen on your own laptop, or press Ctrl Alt Delete and choose Change Password. The service desk will never ask you for your password.",
+      "links": []
+    },
+    {
+      "id": "a15",
+      "senderName": "Kenneth Lim",
+      "senderAddress": "k.lim@aurora-dynamics.example",
+      "replyTo": "k.lim@aurora-dynamics.example",
+      "subject": "Re: carrier rate review - numbers for Friday",
+      "sentAt": "2026-09-14T08:30:00.000Z",
+      "bodyText": "Rachel, here are the revised carrier numbers for Friday's review. The second tab has the comparison against last quarter. No rush before Thursday.",
+      "links": []
+    },
+    {
+      "id": "a16",
+      "senderName": "Aurora Facilities",
+      "senderAddress": "facilities@aurora-dynamics.example",
+      "replyTo": "facilities@aurora-dynamics.example",
+      "subject": "Canteen menu for week 39",
+      "sentAt": "2026-09-14T08:50:00.000Z",
+      "bodyText": "Next week's canteen menu is attached to the noticeboard and on the intranet. Vegetarian options are available every day at the hot counter.",
+      "links": []
+    },
+    {
+      "id": "a17",
+      "senderName": "Mail Administrator",
+      "senderAddress": "admin@aurora-mail-support.example",
+      "replyTo": "admin@aurora-mail-support.example",
+      "subject": "Urgent: your mailbox quota is full",
+      "sentAt": "2026-09-15T01:30:00.000Z",
+      "bodyText": "Your mailbox has reached its storage limit and incoming messages are being rejected. Verify your account now to restore delivery and release the queued messages.",
+      "links": [
+        {
+          "id": "a17-l1",
+          "label": "Restore mailbox delivery",
+          "destination": "https://aurora-mail-support.example/quota/verify"
+        }
+      ]
+    },
+    {
+      "id": "a18",
+      "senderName": "Aurora Security Awareness",
+      "senderAddress": "security-awareness@aurora-dynamics.example",
+      "replyTo": "security-awareness@aurora-dynamics.example",
+      "subject": "Your annual security training is due",
+      "sentAt": "2026-09-14T09:05:00.000Z",
+      "bodyText": "Your annual security training module is due by the end of the month. It takes about twenty minutes and is available from the learning tile on the intranet home page.",
+      "links": []
+    },
+    {
+      "id": "a19",
+      "senderName": "Aurora Benefits",
+      "senderAddress": "benefits@hr-benefits-portal.example",
+      "replyTo": "benefits@hr-benefits-portal.example",
+      "subject": "Benefits enrolment closes tonight",
+      "sentAt": "2026-09-15T02:10:00.000Z",
+      "bodyText": "Enrolment for the new benefits year closes at midnight. Confirm your selections now or your current cover will lapse and cannot be reinstated until next year.",
+      "links": [
+        {
+          "id": "a19-l1",
+          "label": "Confirm your benefits selection",
+          "destination": "https://hr-benefits-portal.example/enrol/confirm"
+        }
+      ]
+    },
+    {
+      "id": "a20",
+      "senderName": "Lena Ortiz",
+      "senderAddress": "l.ortiz@northvale-supplies.example",
+      "replyTo": "l.ortiz@northvale-supplies.example",
+      "subject": "Notes from our call this morning",
+      "sentAt": "2026-09-15T03:00:00.000Z",
+      "bodyText": "Good speaking earlier. To confirm, the delivery window moves to the first week of October and the pricing stays as agreed. I will send the revised schedule once it is signed off.",
+      "links": []
+    }
+  ],
+  "timeline": [
+    {
+      "id": "t1",
+      "at": "2026-09-14T03:20:00.000Z",
+      "label": "Web proxy - link opened",
+      "detail": "k.lim opened aurora-parking-notice.example/fine. No credential submission followed and the host appears in no later event."
+    },
+    {
+      "id": "t2",
+      "at": "2026-09-14T08:02:00.000Z",
+      "label": "Web proxy - link opened",
+      "detail": "r.tan opened aurora-dynarnics-sso.example/verify."
+    },
+    {
+      "id": "t3",
+      "at": "2026-09-14T08:03:00.000Z",
+      "label": "Data loss prevention - credential pattern",
+      "detail": "A credential-shaped form submission left r.tan's workstation for aurora-dynarnics-sso.example."
+    },
+    {
+      "id": "t4",
+      "at": "2026-09-14T19:14:00.000Z",
+      "label": "Identity provider - successful sign-in",
+      "detail": "Single sign-on succeeded for r.tan from an unfamiliar network and an unrecognised device."
+    },
+    {
+      "id": "t5",
+      "at": "2026-09-14T19:40:00.000Z",
+      "label": "Mailbox - hidden rule created",
+      "detail": "A rule was added to r.tan's mailbox forwarding any message containing the word invoice to an external address, then marking it read."
+    },
+    {
+      "id": "t6",
+      "at": "2026-09-15T01:05:00.000Z",
+      "label": "Payroll - bank change submitted",
+      "detail": "A payroll bank detail change was submitted from r.tan's account and held by the approval queue."
+    },
+    {
+      "id": "t7",
+      "at": "2026-09-15T02:30:00.000Z",
+      "label": "Web proxy - request blocked",
+      "detail": "s.menon's request to hr-benefits-portal.example was blocked by the web filter before any page loaded."
+    }
+  ],
+  "evidenceOptions": [
+    {
+      "id": "ev-lookalike-domain",
+      "label": "The sending domain is a lookalike of the company domain, replacing the letter m with the pair r-n"
+    },
+    {
+      "id": "ev-click-then-credentials",
+      "label": "The proxy recorded that message's destination host being opened, and a credential submission to the same host one minute later"
+    },
+    {
+      "id": "ev-urgent-language",
+      "label": "The message pressures the reader with a same-day deadline"
+    },
+    {
+      "id": "ev-blocked-request",
+      "label": "A later request to the benefits host was blocked by the web filter"
+    },
+    {
+      "id": "ev-arrived-after-signin",
+      "label": "The message arrived after the unfamiliar single sign-on at 03:14"
+    },
+    {
+      "id": "ev-macro-attachment",
+      "label": "The message carried a macro-enabled attachment"
+    }
+  ]
+}

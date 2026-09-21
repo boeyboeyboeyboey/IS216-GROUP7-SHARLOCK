@@ -20,7 +20,15 @@ For live Times stories, privately add `GUARDIAN_API_KEY` from [Guardian Open Pla
 
 Open **http://localhost:5173**. The existing workspace and scripts require pnpm; retain the single `pnpm-lock.yaml`.
 
-**Current implementation:** MEVN scaffold, pixel-styled town as the entry page, The Sharlock Times with live news, combined About/introduction, activity previews and database health check. Authentication, permissions, playable games and persistent learning records remain pending. Localhost demonstration; zero project budget.
+Before the browser tests run for the first time, and again after any `@playwright/test` version change, install the matching browser:
+
+```sh
+pnpm exec playwright install chromium
+```
+
+Skip it and **every** E2E test fails instantly with `browserType.launch: Executable doesn't exist`. That looks like a broken suite but is only a missing download - Playwright pins a browser revision per version, so an upgrade invalidates the one already on disk.
+
+**Current implementation:** MEVN scaffold, pixel-styled town as the entry page, The Sharlock Times with live news, The Phishing Post-Mortem investigation game, combined About/introduction, activity previews and database health check. Authentication, permissions, the four remaining games and persistent learning records remain pending. Localhost demonstration; zero project budget.
 
 ## 2. Tooling Recommendation
 
@@ -42,7 +50,7 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 
 ## 4. Game Backlog
 
-The five scored games remain **proposed implementation blueprints**, not working features or automatic authorization to code. G-NEWS / Cyber News Central is **completed and accepted by Boey on 19 September 2026**, as recorded in TASKS.md. The town represents all six features; the other five buildings open clearly labelled previews. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
+Four of the five scored games remain **proposed implementation blueprints**, not working features or automatic authorization to code. G-NEWS / Cyber News Central is **completed and accepted by Boey on 19 September 2026**, and **G-PHISH / The Phishing Post-Mortem is implemented by Athithya on 21 September 2026 and pending review**, both as recorded in TASKS.md. The town represents all six features; the remaining four buildings open clearly labelled previews. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
 
 ### Shared implementation blueprint
 
@@ -55,7 +63,7 @@ The following proposed contract applies to the five scored games. It depends on 
 - Requests: reuse `client/src/services/api.js`; its base URL already contains `/api`.
 - State: keep gameplay in a module composable using `ref`, `reactive` and `computed`. Reserve Pinia for shared account/context state.
 - Visual boundary: follow [DESIGN.md](DESIGN.md#rules-for-new-pages-and-features). Game modules may choose their own design philosophy and scoped fonts/artwork/controls; shared navigation, town registration/cards and shared pages retain the exact hub scheme. Verify accessibility/responsiveness and no style leakage.
-- Town integration: all six planned features already have one catalog entry and building. The five scored games use the generic preview route and `isPreview: true`; news is complete. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
+- Town integration: all six planned features already have one catalog entry and building. Four scored games use the generic preview route and `isPreview: true`; news and the phishing post-mortem are implemented behind their own routes. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
 
 **Proposed shared API**
 
@@ -204,6 +212,9 @@ Prompt instructions are not an authorization boundary. Give the model no tools o
 Each case must contain exactly 20 uniquely identified emails and one unambiguous evidence-supported answer. Use inert fictional domains and text-only links; inspecting a destination must not navigate to it.
 
 **Acceptance:** Validate case integrity, decoy handling, forged evidence IDs, single-verdict enforcement, absence of answer keys in client bundles, keyboard navigation and mobile focus restoration.
+**Implemented in this version (21 September 2026, Athithya):** the investigation is playable at `/games/phishing-post-mortem` and its catalog entry is no longer a preview. Because AUTH-01, AUTH-02, DATA-01 and GAME-01 do not exist yet, scoring is stateless and nothing is persisted: the private answer key stays in `server/src/modules/games/phishing-post-mortem/cases/answers/`, never reaches the browser, and every response carries `persisted: false`. Two interim endpoints stand in for the shared attempt contract above. `GET /api/games/phishing-post-mortem/case?after=<caseId>` returns the public case with its inbox order shuffled, and `POST /api/games/phishing-post-mortem/verdict` accepts `{ caseId, datasetVersion, actionId, selectedEmailId, evidenceIds }` and returns `{ gameId, rulesetVersion, status, score, maxScore, persisted, result, feedback, topicOutcomes, debrief }`. They already speak the GAME-01 vocabulary, so that task replaces the router and reuses `scoreVerdict()` unchanged; `server/src/modules/games/phishing-post-mortem/README.md` records the exact migration steps.
+
+Three additions extend the component list above: `SharmailShell.vue` owns the mail-client chrome, `CaseDebrief.vue({ result })` emits `replay` and renders the score, evidence chain, clue review and decoy explanations, and `VerdictPanel` also takes `selectedSubject` so the accused message is named rather than shown as an identifier. `usePhishingCase.js` tracks the message being read and the message being accused separately, so opening a message never accuses it. The module uses the DESIGN.md game exception through a SHARMAIL theme - an original fictional mail client with its own font stack, palette and controls, contained under `.phish-game` with `--game-*` variables and borrowing no real product's branding. The town building, metadata card, navbar and every shared page keep the hub pixel scheme. Two cases of exactly twenty emails rotate on replay.
 
 ### G-SQL — SQL Injection Arcade
 
