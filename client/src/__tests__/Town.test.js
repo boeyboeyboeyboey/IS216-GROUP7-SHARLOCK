@@ -18,6 +18,7 @@ describe('town registration contract', () => {
     ])
     expect(new Set(gameCatalog.map((game) => game.building.type)).size).toBe(6)
     expect(gameCatalog.filter((game) => !game.isPreview).map((game) => game.id)).toEqual([
+      'phishing-post-mortem',
       'threat-briefing',
     ])
     expect(
@@ -71,6 +72,7 @@ describe('town registration contract', () => {
             ? 'News connection verification pending'
             : 'Playable game in development',
         )
+      else if (game.activation !== 'direct') expect(wrapper.text()).toContain('Enter activity')
       wrapper.unmount()
     }
   })

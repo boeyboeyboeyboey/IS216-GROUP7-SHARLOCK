@@ -1,0 +1,88 @@
+{
+  "caseId": "case-02",
+  "datasetVersion": "2026-09-21",
+  "patientZeroId": "b09",
+  "evidenceIds": ["ev-domain-suffix", "ev-click-before-new-device"],
+  "summary": "Patient Zero is the reply to the genuine carrier rates thread. The conversation it joins is real, which is what makes it persuasive, but the sending address is on a different registered domain and its portal host is the one opened minutes before the attacker signed in.",
+  "chain": [
+    "Wednesday 14:30 SGT - Dana Whitfield really does send the Q3 carrier rates to the team. This message exists and is genuine.",
+    "Thursday 08:24 SGT - a reply arrives keeping the same subject and a plausible correction about the northern routes. The display name reads Dana Whitfield, but the address ends meridian-logistics.example.co, not meridian-logistics.example. Anything before that final suffix can be invented; .example.co is somebody else's domain.",
+    "The reply-to points at a forwarding service rather than Dana's mailbox, so replies would never reach her.",
+    "08:47 SGT - the proxy records o.baptiste opening meridian-portal.example/auth, the destination behind the link.",
+    "08:48 SGT - a credential-shaped submission goes to that same host.",
+    "09:12 SGT - a sign-in succeeds for o.baptiste from an unrecognised device on an unfamiliar network, twenty-four minutes after the password was captured.",
+    "10:05 SGT - the attacker, inside the mailbox, asks Calder Freight to change Meridian's bank details. The finance telephone-verification rule is what stopped the payment."
+  ],
+  "evidenceNotes": {
+    "ev-domain-suffix": {
+      "correct": true,
+      "note": "This is the identity evidence. Read domains from the right: the registered domain here is example.co, not meridian-logistics.example. Adding a familiar name as a prefix is cheap and requires no access to the real company."
+    },
+    "ev-click-before-new-device": {
+      "correct": true,
+      "note": "This is the causal evidence. The portal host in this message is opened at 08:47, credentials follow at 08:48, and the unrecognised device signs in at 09:12. That ordering is what separates the message that caused the breach from the ones that merely looked bad."
+    },
+    "ev-thread-subject": {
+      "correct": false,
+      "note": "True, and it is exactly why the message worked - but a matching subject is the deception technique, not proof of causation. The genuine message with that subject is still sitting in the mailbox, unharmful."
+    },
+    "ev-filter-flagged": {
+      "correct": false,
+      "note": "That notice arrived at 11:20, after the sign-in, and carried a visible warning. Nobody clicked it. A flagged message that was never opened cannot be the source."
+    },
+    "ev-wednesday-click": {
+      "correct": false,
+      "note": "A real click on a real phish, but on an unrelated host, by a different person, with no credential submission and no later appearance in any log."
+    },
+    "ev-protected-archive": {
+      "correct": false,
+      "note": "No message in this case has an attachment. The credential theft happened on a web form behind a link."
+    }
+  },
+  "decoys": [
+    {
+      "emailId": "b04",
+      "note": "The genuine rate sheet from the real Dana Whitfield, on the real domain, with no link. Comparing it side by side with Patient Zero is the fastest way to see the extra suffix."
+    },
+    {
+      "emailId": "b12",
+      "note": "Supplier fraud aimed at the payment run, from a lookalike billing domain with a forwarding reply-to. It is hostile and worth reporting, but it arrived after the intrusion and asks for a bank change rather than a password."
+    },
+    {
+      "emailId": "b16",
+      "note": "Credential phishing, delivered with a warning banner, never clicked. A good example of a control doing its job."
+    },
+    {
+      "emailId": "b03",
+      "note": "Wednesday's parcel phish. It was clicked, which makes it tempting, but by a different person on a host that appears nowhere else in the logs."
+    },
+    {
+      "emailId": "b14",
+      "note": "Genuine. The security alert is the automated consequence of the intrusion at 09:12, not a cause of it. Note that it refuses to give a telephone number in the message."
+    },
+    {
+      "emailId": "b08",
+      "note": "Genuine, and the reason this incident cost nothing. The telephone-verification rule held the fraudulent bank change for checking."
+    }
+  ],
+  "topics": [
+    {
+      "topic": "deceptive-links",
+      "requires": "email",
+      "achievedCode": "PHISH_LINK_MISMATCH_FOUND",
+      "missedCode": "PHISH_LINK_MISMATCH_MISSED"
+    },
+    {
+      "topic": "sender-spoofing",
+      "requires": "ev-domain-suffix",
+      "achievedCode": "PHISH_SPOOF_IDENTIFIED",
+      "missedCode": "PHISH_SPOOF_MISSED"
+    },
+    {
+      "topic": "incident-timeline",
+      "requires": "ev-click-before-new-device",
+      "achievedCode": "PHISH_TIMELINE_LINKED",
+      "missedCode": "PHISH_TIMELINE_MISSED"
+    }
+  ]
+}

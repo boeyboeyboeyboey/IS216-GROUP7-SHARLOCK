@@ -1,0 +1,88 @@
+{
+  "caseId": "case-01",
+  "datasetVersion": "2026-09-21",
+  "patientZeroId": "a11",
+  "evidenceIds": ["ev-lookalike-domain", "ev-click-then-credentials"],
+  "summary": "Patient Zero is the re-verification request that appears to come from the IT service desk. It is the only suspicious message whose destination host appears in the logs immediately before credentials left the network, and the only one whose sending domain imitates the company domain.",
+  "chain": [
+    "16:58 SGT - a message signed Aurora IT Service Desk arrives from it-servicedesk@aurora-dynarnics.example. Read quickly, the domain looks right; the letter m has been replaced by r followed by n.",
+    "The visible link text reads https://sso.aurora-dynamics.example/reverify, but the destination is https://aurora-dynarnics-sso.example/verify, on the same lookalike domain as the sender.",
+    "16:02 SGT - the proxy records r.tan opening that exact destination host, four minutes after delivery.",
+    "16:03 SGT - data loss prevention sees a credential-shaped submission from r.tan's workstation to the same host. The password is now in the attacker's hands.",
+    "03:14 SGT - single sign-on succeeds for r.tan from an unfamiliar network and device, roughly eleven hours later.",
+    "03:40 SGT - a hidden mailbox rule forwards anything containing the word invoice to an external address and marks it read, which is how the intrusion stayed quiet.",
+    "09:05 SGT - a payroll bank detail change is submitted from the account and caught by the approval queue."
+  ],
+  "evidenceNotes": {
+    "ev-lookalike-domain": {
+      "correct": true,
+      "note": "This is the identity evidence. aurora-dynarnics.example is not the company domain; r-n imitates m at small sizes and in a narrow font. The reply-to on a free relay is a second signal."
+    },
+    "ev-click-then-credentials": {
+      "correct": true,
+      "note": "This is the causal evidence. Suspicion alone does not prove a compromise; the proxy click at 16:02 followed one minute later by a credential submission to the same host is what ties this message to the stolen password."
+    },
+    "ev-urgent-language": {
+      "correct": false,
+      "note": "True, but it is true of several messages here, including the genuine benefits reminder. Urgency is a prompt to slow down, not proof of a compromise."
+    },
+    "ev-blocked-request": {
+      "correct": false,
+      "note": "The benefits request was blocked before any page loaded, so no credentials could be entered. A blocked click is evidence that a control worked, not evidence of the breach."
+    },
+    "ev-arrived-after-signin": {
+      "correct": false,
+      "note": "This is false for Patient Zero and true for the mailbox quota message. A message that arrives after the intrusion cannot have caused it - which is exactly why that one is a decoy."
+    },
+    "ev-macro-attachment": {
+      "correct": false,
+      "note": "No message in this case carries an attachment. The theft here was credential phishing through a web form, not malware."
+    }
+  },
+  "decoys": [
+    {
+      "emailId": "a07",
+      "note": "The strongest decoy. It is a real phishing attempt and it was clicked at 11:20, before the compromise. But the host appears in no later event and no credentials were submitted, so it did not cause the intrusion."
+    },
+    {
+      "emailId": "a17",
+      "note": "A convincing mailbox quota phish, but it arrived on Tuesday morning, hours after the attacker had already signed in. Timing rules it out."
+    },
+    {
+      "emailId": "a19",
+      "note": "Phishing, clicked, and blocked by the web filter before the page loaded. Worth reporting, but no credentials could have been entered."
+    },
+    {
+      "emailId": "a05",
+      "note": "Classic invoice fraud with a reply-to on an unrelated relay. It targets money rather than credentials and no click was recorded. Finance should still verify the account change by phone."
+    },
+    {
+      "emailId": "a03",
+      "note": "An obvious reward scam. Easy to spot, nobody clicked it, and it is unconnected to the incident."
+    },
+    {
+      "emailId": "a14",
+      "note": "Genuine. It comes from the real company domain, contains no link, and tells the reader to change the password from their own lock screen. A useful contrast with Patient Zero."
+    }
+  ],
+  "topics": [
+    {
+      "topic": "deceptive-links",
+      "requires": "email",
+      "achievedCode": "PHISH_LINK_MISMATCH_FOUND",
+      "missedCode": "PHISH_LINK_MISMATCH_MISSED"
+    },
+    {
+      "topic": "sender-spoofing",
+      "requires": "ev-lookalike-domain",
+      "achievedCode": "PHISH_SPOOF_IDENTIFIED",
+      "missedCode": "PHISH_SPOOF_MISSED"
+    },
+    {
+      "topic": "incident-timeline",
+      "requires": "ev-click-then-credentials",
+      "achievedCode": "PHISH_TIMELINE_LINKED",
+      "missedCode": "PHISH_TIMELINE_MISSED"
+    }
+  ]
+}
