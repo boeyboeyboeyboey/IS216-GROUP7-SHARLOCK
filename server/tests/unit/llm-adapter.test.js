@@ -69,12 +69,23 @@ describe('createLlmAdapter', () => {
     )
   })
 
-  it('selects cloud mode and delegates to the cloud stub', async () => {
-    const adapter = createLlmAdapter({ apiKey: 'sk-example-key' })
+  it('selects cloud mode and delegates to the gemini provider with the injected fetchImpl', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ candidates: [{ content: { parts: [{ text: 'cloud reply' }] } }] }))
+
+    const adapter = createLlmAdapter({ apiKey: 'sk-example-key', fetchImpl })
 
     expect(adapter.mode).toBe('cloud')
     expect(adapter.configured).toBe(true)
-    await expect(adapter.chat(call)).rejects.toMatchObject({ code: 'LLM_CLOUD_NOT_IMPLEMENTED' })
+
+    const result = await adapter.chat(call)
+
+    expect(result).toEqual({ content: 'cloud reply' })
+    expect(fetchImpl).toHaveBeenCalledWith(
+      expect.stringContaining('/models/gemini-2.5-flash:generateContent'),
+      expect.objectContaining({ method: 'POST' }),
+    )
   })
 
   it('rejects messages with a role other than user or assistant', async () => {

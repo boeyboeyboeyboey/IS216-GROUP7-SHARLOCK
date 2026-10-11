@@ -99,7 +99,7 @@ export const gameCatalog = defineGameCatalog([
       'Independent verification',
     ],
     route: '/games/social-engineering-simulator',
-    isPreview: true,
+    isPreview: false,
     duration: '5 min',
     icon: 'people',
     building: { type: 'office', x: 432, y: 520 },

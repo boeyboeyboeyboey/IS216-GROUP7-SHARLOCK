@@ -20,6 +20,7 @@ describe('town registration contract', () => {
     expect(gameCatalog.filter((game) => !game.isPreview).map((game) => game.id)).toEqual([
       'phishing-post-mortem',
       'threat-briefing',
+      'social-engineering-simulator',
     ])
     expect(
       gameCatalog.find((game) => game.id === 'social-engineering-simulator').building.type,

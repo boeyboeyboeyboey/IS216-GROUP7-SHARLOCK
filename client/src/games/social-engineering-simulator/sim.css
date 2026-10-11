@@ -1,0 +1,452 @@
+/* every rule is scoped to .soc-game so the hub pixel scheme is untouched */
+.soc-game {
+  --game-bg: #eef1f6;
+  --game-surface: #ffffff;
+  --game-line: #d4dae4;
+  --game-line-strong: #aab3c2;
+  --game-ink: #1b2430;
+  --game-muted: #566173;
+  --game-accent: #4338ca;
+  --game-accent-soft: #eceafe;
+  --game-good: #1c6b47;
+  --game-good-soft: #e7f3ec;
+  --game-warn: #8a5a00;
+  --game-warn-soft: #fbf1dc;
+  --game-bad: #9a3324;
+  --game-bad-soft: #fbecea;
+  --game-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  max-width: 860px;
+  margin: 0 auto;
+  font-family: var(--game-font);
+  color: var(--game-ink);
+  line-height: 1.5;
+}
+
+.soc-game *,
+.soc-game *::before,
+.soc-game *::after {
+  box-sizing: border-box;
+}
+
+.soc-intro {
+  margin-bottom: 1.25rem;
+}
+
+.soc-back {
+  display: inline-block;
+  min-height: 44px;
+  padding: 0.6rem 0;
+  font-weight: 600;
+  color: var(--game-accent);
+}
+
+.soc-game h1 {
+  margin: 0.25rem 0 0.5rem;
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.soc-strap {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--game-muted);
+}
+
+.soc-state {
+  padding: 1.5rem;
+  background: var(--game-surface);
+  border: 1px solid var(--game-line);
+  border-radius: 8px;
+}
+
+.soc-error {
+  background: var(--game-bad-soft);
+  border-color: var(--game-bad);
+}
+
+.soc-error p {
+  margin: 0 0 1rem;
+  color: var(--game-bad);
+  font-weight: 600;
+}
+
+/* brief */
+.soc-brief {
+  padding: 1.5rem;
+  background: var(--game-surface);
+  border: 1px solid var(--game-line-strong);
+  border-radius: 10px;
+}
+
+.soc-brief-eyebrow,
+.soc-debrief-eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--game-accent);
+}
+
+.soc-brief h2 {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 1.4rem;
+}
+
+.soc-brief-objective {
+  max-width: 64ch;
+}
+
+.soc-brief-rules {
+  max-width: 64ch;
+  margin: 0 0 1.25rem;
+  padding-left: 1.2rem;
+  color: var(--game-muted);
+}
+
+.soc-brief-rules li {
+  margin-bottom: 0.35rem;
+}
+
+/* conversation */
+.soc-conversation {
+  background: var(--game-surface);
+  border: 1px solid var(--game-line-strong);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.soc-convo-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.85rem 1.1rem;
+  color: #ffffff;
+  background: var(--game-accent);
+}
+
+.soc-convo-persona {
+  margin: 0;
+  font-weight: 700;
+}
+
+.soc-convo-turns {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.92;
+  font-variant-numeric: tabular-nums;
+}
+
+.soc-thread {
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 1rem 1.1rem;
+  background: var(--game-bg);
+}
+
+.soc-thread-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.soc-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+}
+
+.soc-message.is-colleague {
+  align-self: flex-start;
+  background: var(--game-surface);
+  border: 1px solid var(--game-line);
+}
+
+.soc-message.is-you {
+  align-self: flex-end;
+  color: #ffffff;
+  background: var(--game-accent);
+}
+
+.soc-message-author {
+  margin-bottom: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.75;
+}
+
+.soc-message-body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.soc-typing {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--game-muted);
+}
+
+.soc-alert {
+  margin: 0;
+  padding: 0.75rem 1.1rem;
+  font-size: 0.9rem;
+  background: var(--game-warn-soft);
+  border-top: 1px solid var(--game-line);
+  color: var(--game-warn);
+}
+
+.soc-alert-bad {
+  background: var(--game-bad-soft);
+  color: var(--game-bad);
+  font-weight: 600;
+}
+
+/* composer */
+.soc-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  border-top: 1px solid var(--game-line);
+}
+
+.soc-composer-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--game-muted);
+}
+
+.soc-composer-input {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  color: var(--game-ink);
+  background: var(--game-surface);
+  border: 1px solid var(--game-line-strong);
+  border-radius: 6px;
+  resize: vertical;
+}
+
+.soc-composer-input:disabled {
+  background: var(--game-bg);
+  color: var(--game-muted);
+}
+
+.soc-composer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.soc-composer-count {
+  font-size: 0.8rem;
+  color: var(--game-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* decisions */
+.soc-decisions {
+  padding: 1rem 1.1rem 1.25rem;
+  border-top: 1px solid var(--game-line);
+  background: var(--game-surface);
+}
+
+.soc-decisions h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.soc-decisions-hint {
+  margin: 0 0 0.85rem;
+  font-size: 0.9rem;
+  color: var(--game-muted);
+}
+
+.soc-decisions-row {
+  display: grid;
+  gap: 0.6rem;
+}
+
+/* buttons */
+.soc-button {
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  color: var(--game-ink);
+  background: var(--game-surface);
+  border: 1px solid var(--game-line-strong);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.soc-button:disabled {
+  color: var(--game-muted);
+  background: var(--game-bg);
+  border-color: var(--game-line);
+  cursor: not-allowed;
+}
+
+.soc-button-primary {
+  color: #ffffff;
+  background: var(--game-accent);
+  border-color: var(--game-accent);
+  text-align: center;
+}
+
+.soc-button-primary:disabled {
+  color: var(--game-muted);
+  background: var(--game-line);
+  border-color: var(--game-line-strong);
+}
+
+.soc-button-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.soc-button-danger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: var(--game-bad);
+  border-color: var(--game-bad);
+  background: var(--game-bad-soft);
+}
+
+.soc-decision-label {
+  font-weight: 700;
+}
+
+.soc-decision-desc {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--game-muted);
+}
+
+.soc-button-danger .soc-decision-desc {
+  color: var(--game-bad);
+  opacity: 0.85;
+}
+
+/* debrief */
+.soc-debrief {
+  padding: 1.25rem 1.1rem 1.5rem;
+}
+
+.soc-debrief-head {
+  padding: 1rem;
+  border: 1px solid var(--game-line-strong);
+  border-radius: 8px;
+}
+
+.soc-debrief-head.is-resisted {
+  background: var(--game-good-soft);
+  border-color: var(--game-good);
+}
+
+.soc-debrief-head.is-partial {
+  background: var(--game-warn-soft);
+  border-color: var(--game-warn);
+}
+
+.soc-debrief-head.is-compromised {
+  background: var(--game-bad-soft);
+  border-color: var(--game-bad);
+}
+
+.soc-debrief-head h2 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: 1.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.soc-debrief-unsaved {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--game-muted);
+}
+
+.soc-debrief-summary,
+.soc-debrief p {
+  max-width: 66ch;
+}
+
+.soc-debrief h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.soc-breakdown {
+  margin: 0 0 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.soc-breakdown li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0.75rem;
+  background: var(--game-bg);
+  border: 1px solid var(--game-line);
+  border-radius: 6px;
+}
+
+.soc-breakdown li + li {
+  margin-top: 0.4rem;
+}
+
+.soc-breakdown-points {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.soc-debrief-note {
+  padding: 0.65rem 0.8rem;
+  background: var(--game-accent-soft);
+  border-left: 3px solid var(--game-accent);
+  border-radius: 4px;
+}
+
+.soc-debrief .soc-button-primary {
+  margin-top: 1.25rem;
+}
+
+/* focus is always visible, whatever the control */
+.soc-game a:focus-visible,
+.soc-game button:focus-visible,
+.soc-game textarea:focus-visible,
+.soc-game [tabindex]:focus-visible {
+  outline: 3px solid var(--game-accent);
+  outline-offset: 2px;
+}
+
+@media (min-width: 640px) {
+  .soc-decisions-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .soc-game * {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}

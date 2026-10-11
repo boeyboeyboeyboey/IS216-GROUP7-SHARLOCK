@@ -10,7 +10,7 @@ export function createLlmAdapter({ baseUrl, model, apiKey, authToken, fetchImpl 
   const mode = apiKey ? 'cloud' : baseUrl && model ? 'local' : null
   const provider =
     mode === 'cloud'
-      ? createCloudProvider({ apiKey })
+      ? createCloudProvider({ apiKey, model, fetchImpl })
       : mode === 'local'
         ? createOllamaProvider({ baseUrl, model, authToken, fetchImpl })
         : null
