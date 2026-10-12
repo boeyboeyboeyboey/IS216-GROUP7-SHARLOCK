@@ -7,6 +7,7 @@ import {
   errorMessage,
   fetchRun,
   pauseRun,
+  requestHint,
   resumeRun,
   startRun,
   submitCommand,
@@ -16,7 +17,8 @@ const MAX_LINES = 200
 const MAX_HISTORY = 50
 
 // phase: briefing | starting | running | finishing | debrief; a timed run can also be paused
-export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
+// onEvent receives 'alert', 'ok', 'fail' or 'miss' so the screen can add sound and effects
+export function useCliDefender({ now = () => Date.now(), tickMs = 100, onEvent = () => {} } = {}) {
   const phase = ref('briefing')
   const mode = ref('timed')
   const snapshot = ref(null)
@@ -30,6 +32,8 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
   const paused = ref(false)
   const resuming = ref(false)
   const frozenRemaining = ref(null)
+  const lastReview = ref(null)
+  const hinting = ref(false)
 
   // server time minus local time, so deadlines are compared on the server's clock
   let offset = 0
@@ -59,7 +63,7 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
     const { alert } = incident
     print(
       'alert',
-      `-- Incident ${incident.index + 1} of ${total} | ${alert.severity.toUpperCase()} | ${alert.source} --`,
+      `-- Challenge ${incident.index + 1} of ${total} | ${alert.severity.toUpperCase()} | ${alert.source} --`,
     )
     print('alert', alert.title)
     for (const line of alert.lines) print('detail', `  > ${line}`)
@@ -67,6 +71,10 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
   }
 
   function apply(next, receivedAt = now()) {
+    // a paused snapshot withholds the alert; keep the one already shown so the hidden layout keeps its size
+    const previous = snapshot.value?.current
+    if (next.current && !next.current.alert && previous?.incidentId === next.current.incidentId)
+      next = { ...next, current: { ...next.current, alert: previous.alert } }
     offset = next.serverNow - receivedAt
     clockNow.value = receivedAt
     snapshot.value = next
@@ -74,12 +82,15 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
     for (const item of next.history) {
       if (announced.has(item.incidentId)) continue
       announced.add(item.incidentId)
-      if (item.outcome === 'missed')
-        print('miss', `[MISS] Incident ${item.index + 1} window closed. Streak reset.`)
+      if (item.outcome === 'missed') {
+        print('miss', `[MISS] Challenge ${item.index + 1} window closed. Streak reset.`)
+        onEvent('miss')
+      }
     }
     if (next.current?.alert && next.current.incidentId !== shownIncident) {
       shownIncident = next.current.incidentId
       printAlert(next.current, next.incidentCount)
+      onEvent('alert')
     }
     if (!next.current && phase.value === 'running') finish()
   }
@@ -120,6 +131,8 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
     paused.value = false
     resuming.value = false
     frozenRemaining.value = null
+    lastReview.value = null
+    hinting.value = false
     shownIncident = null
     announced = new Set()
   }
@@ -136,8 +149,8 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
       print(
         'system',
         mode.value === 'timed'
-          ? 'SHARLOCK SOC TERMINAL | timed shift | 8 incidents | practice, not saved'
-          : 'SHARLOCK SOC TERMINAL | untimed practice | 8 incidents | not saved',
+          ? 'SHARLOCK SOC TERMINAL | timed game | 8 challenges | not saved'
+          : 'SHARLOCK SOC TERMINAL | practice | 8 challenges | not saved',
       )
       print('system', 'Type "help" for commands. All systems here are fictional.')
       apply(data)
@@ -159,7 +172,8 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
     }
     if (command === 'help') {
       print('info', 'Commands:')
-      for (const item of COMMAND_TEMPLATES) print('info', `  ${item.label} <target>  ${item.hint}`)
+      for (const item of COMMAND_TEMPLATES)
+        print('info', `  ${item.template.trim()} <target>  ${item.hint}`)
       print('info', '  help | history | clear  (local, never sent)')
       return true
     }
@@ -180,7 +194,7 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
     if (runLocal(text.toLowerCase())) return
     const incident = current.value
     if (paused.value) {
-      print('info', 'The shift is paused. Resume it first.')
+      print('info', 'The game is paused. Resume it first.')
       return
     }
     if (phase.value !== 'running' || !incident) {
@@ -206,6 +220,11 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
         announced.add(incident.incidentId)
         print('fail', `[FAIL] ${data.command}: ${data.message} Streak reset.`)
       } else print('error', data.message)
+      if (data.review) {
+        printReview(data.outcome, data.review)
+        lastReview.value = { outcome: data.outcome, command: data.command, ...data.review }
+        onEvent(data.outcome === 'correct' ? 'ok' : 'fail')
+      }
       apply(data)
     } catch (requestError) {
       if (disposed || controller?.signal.aborted) return
@@ -214,7 +233,7 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
         await sync()
       } else if (errorCode(requestError) === 'CLI_RUN_PAUSED') {
         paused.value = true
-        print('info', 'The shift is paused. Resume it first.')
+        print('info', 'The game is paused. Resume it first.')
       } else print('error', errorMessage(requestError, 'The command could not be sent. Try again.'))
     } finally {
       if (!disposed) pending.value = false
@@ -237,18 +256,44 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
     }
   }
 
+  function printReview(outcome, review) {
+    if (outcome !== 'correct') print('why', `  correct: ${review.expectedCommand}`)
+    print('why', `  why: ${review.explanation}`)
+    const { attack, cia, stage } = review.concepts
+    print('tag', `  [${[attack, cia.join(' + '), stage].filter(Boolean).join(' | ')}]`)
+  }
+
+  async function hint() {
+    const incident = current.value
+    if (mode.value !== 'practice' || phase.value !== 'running' || !incident || hinting.value) return
+    if (incident.hintLine != null) return
+    hinting.value = true
+    try {
+      const data = await requestHint(snapshot.value.runId, incident.incidentId, controller?.signal)
+      if (disposed) return
+      apply(data)
+      print('info', 'Hint: the highlighted line in the alert holds the key evidence.')
+    } catch (requestError) {
+      if (disposed || controller?.signal.aborted) return
+      print('error', errorMessage(requestError, 'No hint is available right now.'))
+    } finally {
+      if (!disposed) hinting.value = false
+    }
+  }
+
   // switching away freezes the server clock; the player resumes explicitly when back
-  async function pause() {
-    if (mode.value !== 'timed' || phase.value !== 'running' || paused.value) return
+  async function pause(note = 'Game paused while you were away. The clock is stopped.') {
+    if (mode.value !== 'timed' || phase.value !== 'running' || paused.value) return false
     frozenRemaining.value = remainingMs.value
     paused.value = true
-    print('info', 'Shift paused while you were away. The clock is stopped.')
+    print('info', note)
     try {
       const data = await pauseRun(snapshot.value.runId, controller?.signal)
       if (!disposed && phase.value === 'running') apply(data)
     } catch {
       // the resume request resynchronises with the server either way
     }
+    return true
   }
 
   async function resume() {
@@ -259,10 +304,10 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
       const data = await resumeRun(snapshot.value.runId, controller?.signal)
       if (disposed) return
       apply(data)
-      if (!paused.value) print('info', 'Shift resumed.')
+      if (!paused.value) print('info', 'Game resumed.')
     } catch (requestError) {
       if (disposed || controller?.signal.aborted) return
-      error.value = errorMessage(requestError, 'The shift could not be resumed. Try again.')
+      error.value = errorMessage(requestError, 'The game could not be resumed. Try again.')
     } finally {
       if (!disposed) resuming.value = false
     }
@@ -305,7 +350,10 @@ export function useCliDefender({ now = () => Date.now(), tickMs = 100 } = {}) {
     canSubmit,
     paused,
     resuming,
+    lastReview,
+    hinting,
     start,
+    hint,
     pause,
     resume,
     submit,

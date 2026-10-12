@@ -1,5 +1,6 @@
 <script setup>
 import { nextTick, ref, watch } from 'vue'
+import CliIcon from './CliIcon.vue'
 
 const props = defineProps({
   lines: { type: Array, default: () => [] },
@@ -21,6 +22,9 @@ watch(
   async () => {
     await nextTick()
     if (output.value) output.value.scrollTop = output.value.scrollHeight
+    // keep the prompt on screen while the player is typing, however long the log gets
+    if (input.value && document.activeElement === input.value)
+      input.value.scrollIntoView({ block: 'nearest' })
   },
 )
 
@@ -64,8 +68,10 @@ defineExpose({ focus: () => input.value?.focus() })
     </div>
     <form class="cli-prompt" @submit.prevent="onSubmit">
       <label for="cli-command" class="cli-prompt-label">
-        <span aria-hidden="true">soc@sharlock:~$</span>
-        <span class="cli-sr-only">Command</span>
+        <span class="cli-prompt-symbol" aria-hidden="true"
+          ><span class="cli-prompt-host">soc@sharlock:~</span>$</span
+        >
+        <span class="visually-hidden">Command</span>
       </label>
       <input
         id="cli-command"
@@ -84,11 +90,11 @@ defineExpose({ focus: () => input.value?.focus() })
         @input="emit('update:modelValue', $event.target.value)"
         @keydown="onKeydown"
       />
-      <button type="submit" class="cli-button cli-button-primary" :disabled="disabled || busy">
-        Run
+      <button type="submit" class="btn cli-btn-primary" :disabled="disabled || busy">
+        <CliIcon name="run" :size="18" />Run
       </button>
     </form>
-    <p id="cli-command-help" class="cli-sr-only">
+    <p id="cli-command-help" class="visually-hidden">
       Type a command and press Enter. Up and down arrows recall earlier commands.
     </p>
   </section>

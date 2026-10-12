@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { formatCommand } from '../../../src/modules/games/cli-cyber-defender/parser.js'
 import { CliError } from '../../../src/modules/games/cli-cyber-defender/policy.js'
 import { SCENARIOS } from '../../../src/modules/games/cli-cyber-defender/scenarios.js'
-import { createCliDefenderService } from '../../../src/modules/games/cli-cyber-defender/service.js'
+import {
+  createCliDefenderService,
+  segmentLine,
+} from '../../../src/modules/games/cli-cyber-defender/service.js'
 
 const RUN_ID = '11111111-1111-4111-8111-111111111111'
 
@@ -258,6 +261,69 @@ describe('cli defender service', () => {
     expectCliError(() => practice.service.pauseRun(RUN_ID), 'CLI_PAUSE_UNAVAILABLE')
   })
 
+  it('orders a shift from easy to hard tiers', () => {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const service = createCliDefenderService({ createId: () => RUN_ID })
+      const tiers = []
+      let snapshot = service.startRun({ mode: 'practice' })
+      while (snapshot.current) {
+        tiers.push(SCENARIOS.find((item) => item.alert.title === snapshot.current.alert.title).tier)
+        snapshot = service.submitCommand(RUN_ID, {
+          actionId: nextAction(),
+          incidentId: snapshot.current.incidentId,
+          command: 'block ip 192.0.2.250',
+        })
+      }
+      expect(tiers).toEqual([1, 1, 1, 2, 2, 2, 3, 3])
+    }
+  })
+
+  it('reveals the review only once an incident closes', () => {
+    const { service } = setup()
+    const started = service.startRun({ mode: 'practice' })
+    expect(JSON.stringify(started)).not.toContain('expectedCommand')
+    const typo = service.submitCommand(RUN_ID, {
+      actionId: nextAction(),
+      incidentId: 'incident-01',
+      command: 'blok ip 1.2.3.4',
+    })
+    expect(typo.review).toBeNull()
+    const wrong = service.submitCommand(RUN_ID, {
+      actionId: nextAction(),
+      incidentId: 'incident-01',
+      command: 'block ip 192.0.2.250',
+    })
+    const scenario = SCENARIOS.find((item) => item.alert.title === started.current.alert.title)
+    expect(wrong.review).toEqual({
+      expectedCommand: answerFor(started),
+      explanation: scenario.explanation,
+      concepts: { ...scenario.concepts, stage: 'Containment' },
+    })
+  })
+
+  it('gives practice hints for the open incident and marks them in the debrief', () => {
+    const { service } = setup()
+    const started = service.startRun({ mode: 'practice' })
+    const scenario = SCENARIOS.find((item) => item.alert.title === started.current.alert.title)
+    const hinted = service.hintRun(RUN_ID, { incidentId: 'incident-01' })
+    expect(hinted.hint).toEqual({ incidentId: 'incident-01', lineIndex: scenario.keyLine })
+    expect(hinted.current.hintLine).toBe(scenario.keyLine)
+    expectCliError(
+      () => service.hintRun(RUN_ID, { incidentId: 'incident-02' }),
+      'CLI_INCIDENT_CLOSED',
+    )
+    const result = service.completeRun(RUN_ID, { actionId: nextAction() })
+    expect(result.debrief[0]).toMatchObject({ hintUsed: true })
+    expect(result.debrief[1]).toMatchObject({ hintUsed: false })
+    expect(result.debrief[0].concepts.stage).toBe('Containment')
+    const timed = setup()
+    timed.service.startRun({ mode: 'timed' })
+    expectCliError(
+      () => timed.service.hintRun(RUN_ID, { incidentId: 'incident-01' }),
+      'CLI_HINT_UNAVAILABLE',
+    )
+  })
+
   it('forgets idle runs', () => {
     const { clock, service } = setup()
     service.startRun({ mode: 'practice' })
@@ -286,6 +352,34 @@ describe('cli defender service', () => {
   })
 })
 
+describe('alert segments', () => {
+  it('makes every listed name tappable without losing text', () => {
+    for (const scenario of SCENARIOS) {
+      const segments = scenario.alert.lines.map((line) => segmentLine(line, scenario.entities))
+      segments.forEach((parts, index) =>
+        expect(parts.map((part) => part.text ?? part.target).join('')).toBe(
+          scenario.alert.lines[index],
+        ),
+      )
+      const targets = new Set(segments.flat().flatMap((part) => (part.target ? [part.target] : [])))
+      expect([...targets].sort()).toEqual([...scenario.entities].sort())
+      expect(targets.has(scenario.expected.target)).toBe(true)
+    }
+  })
+
+  it('matches names only as whole tokens', () => {
+    expect(segmentLine('to 10.20.0.15 and 10.20.0.1.', ['10.20.0.1'])).toEqual([
+      { text: 'to 10.20.0.15 and ' },
+      { target: '10.20.0.1', kind: 'ip' },
+      { text: '.' },
+    ])
+    expect(segmentLine('lab-02x and lab-02', ['lab-02'])).toEqual([
+      { text: 'lab-02x and ' },
+      { target: 'lab-02', kind: 'name' },
+    ])
+  })
+})
+
 describe('scenario integrity', () => {
   it('has a balanced pool of unique, answerable incidents', () => {
     expect(SCENARIOS.length).toBeGreaterThanOrEqual(16)
@@ -300,7 +394,14 @@ describe('scenario integrity', () => {
       expect(scenario.alert.lines.join(' ')).toContain(scenario.expected.target)
       expect(command.length).toBeLessThanOrEqual(120)
       expect(scenario.explanation.length).toBeGreaterThan(20)
+      expect([1, 2, 3]).toContain(scenario.tier)
+      expect(scenario.alert.lines[scenario.keyLine]).toBeTruthy()
+      expect(scenario.concepts.attack).toBeTruthy()
+      expect(scenario.concepts.cia.length).toBeGreaterThan(0)
     }
+    expect([1, 2, 3].map((tier) => SCENARIOS.filter((item) => item.tier === tier).length)).toEqual([
+      6, 6, 4,
+    ])
   })
 
   it('only uses documentation or private address space', () => {

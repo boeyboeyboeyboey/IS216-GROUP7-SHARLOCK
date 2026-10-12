@@ -83,6 +83,13 @@ export function parseEmptyBody(body) {
   return {}
 }
 
+export function parseHintBody(body) {
+  const fieldErrors = readObject(body, ['incidentId'])
+  const incidentId = readPattern(body.incidentId, INCIDENT_ID, 'incidentId', fieldErrors)
+  if (Object.keys(fieldErrors).length) throw invalid(fieldErrors)
+  return { incidentId }
+}
+
 export function parseCompleteBody(body) {
   const fieldErrors = readObject(body, ['actionId'])
   const actionId = readPattern(body.actionId, ACTION_ID, 'actionId', fieldErrors)
@@ -93,7 +100,7 @@ export function parseCompleteBody(body) {
 export function runNotFound() {
   return new CliError(
     'CLI_RUN_NOT_FOUND',
-    'That shift has ended or expired. Start a new shift to keep defending.',
+    'That game has ended or expired. Start a new game to keep playing.',
     404,
   )
 }
@@ -115,25 +122,33 @@ export function actionConflict() {
 }
 
 export function runFinished() {
-  return new CliError('CLI_RUN_FINISHED', 'This shift is already complete.', 409)
+  return new CliError('CLI_RUN_FINISHED', 'This game is already finished.', 409)
 }
 
 export function runNotFinished() {
   return new CliError(
     'CLI_RUN_NOT_FINISHED',
-    'The shift is still running. Handle the remaining incidents first.',
+    'The game is still running. Handle the remaining challenges first.',
     409,
   )
 }
 
 export function runPaused() {
-  return new CliError('CLI_RUN_PAUSED', 'The shift is paused. Resume it to keep defending.', 409)
+  return new CliError('CLI_RUN_PAUSED', 'The game is paused. Resume it to keep playing.', 409)
 }
 
 export function pauseUnavailable() {
   return new CliError(
     'CLI_PAUSE_UNAVAILABLE',
-    'Only a timed shift that is still running can be paused.',
+    'Only a timed game that is still running can be paused.',
+    409,
+  )
+}
+
+export function hintUnavailable() {
+  return new CliError(
+    'CLI_HINT_UNAVAILABLE',
+    'Hints are only available during untimed practice.',
     409,
   )
 }
@@ -141,7 +156,7 @@ export function pauseUnavailable() {
 export function commandLimit() {
   return new CliError(
     'CLI_COMMAND_LIMIT',
-    'This shift has reached its command limit. Start a new shift.',
+    'This game has reached its command limit. Start a new game.',
     409,
   )
 }

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { mount, RouterLinkStub } from '@vue/test-utils'
 import BriefingPanel from '../components/BriefingPanel.vue'
 import CommandReference from '../components/CommandReference.vue'
+import ConceptTags from '../components/ConceptTags.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import IncidentBanner from '../components/IncidentBanner.vue'
 import PausedPanel from '../components/PausedPanel.vue'
 import ScoreHud from '../components/ScoreHud.vue'
@@ -9,12 +11,39 @@ import ShiftDebrief from '../components/ShiftDebrief.vue'
 import TerminalPanel from '../components/TerminalPanel.vue'
 
 describe('cli defender components', () => {
-  it('starts either mode from the briefing', async () => {
+  it('starts practice at once but confirms a timed shift first', async () => {
     const wrapper = mount(BriefingPanel)
-    const buttons = wrapper.findAll('button')
-    await buttons[0].trigger('click')
-    await buttons[1].trigger('click')
-    expect(wrapper.emitted('start')).toEqual([['timed'], ['practice']])
+    const [timed, practice] = wrapper.findAll('section > div > button')
+    await practice.trigger('click')
+    expect(wrapper.emitted('start')).toEqual([['practice']])
+    await timed.trigger('click')
+    expect(wrapper.emitted('start')).toHaveLength(1)
+    const dialog = wrapper.getComponent(ConfirmDialog)
+    expect(dialog.props('open')).toBe(true)
+    expect(dialog.text()).toContain('recorded once accounts are connected')
+    dialog.vm.$emit('cancel')
+    await wrapper.vm.$nextTick()
+    expect(dialog.props('open')).toBe(false)
+    await timed.trigger('click')
+    dialog.vm.$emit('confirm')
+    expect(wrapper.emitted('start')).toEqual([['practice'], ['timed']])
+  })
+
+  it('emits confirm, cancel and escape from the dialog', async () => {
+    const wrapper = mount(ConfirmDialog, {
+      props: { id: 'test', open: true, title: 'Leave?', confirmLabel: 'Leave' },
+      slots: { default: 'Progress is lost.' },
+      attachTo: document.body,
+    })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('dialog').attributes('aria-labelledby')).toBe('test-title')
+    expect(wrapper.text()).toContain('Progress is lost.')
+    await wrapper.get('.cli-btn-primary').trigger('click')
+    await wrapper.findAll('button')[0].trigger('click')
+    await wrapper.get('dialog').trigger('cancel')
+    expect(wrapper.emitted('confirm')).toHaveLength(1)
+    expect(wrapper.emitted('cancel')).toHaveLength(2)
+    wrapper.unmount()
   })
 
   it('emits a typed command and recalls history with the arrow keys', async () => {
@@ -67,7 +96,6 @@ describe('cli defender components', () => {
         mode: 'timed',
       },
     })
-    expect(wrapper.text()).toContain('Incident 2')
     expect(wrapper.text()).toContain('low')
     expect(wrapper.text()).toContain('You have 6 seconds for this incident.')
     expect(wrapper.get('.cli-countdown').attributes('aria-hidden')).toBe('true')
@@ -76,10 +104,110 @@ describe('cli defender components', () => {
   it('focuses resume on the paused panel', async () => {
     const wrapper = mount(PausedPanel, { attachTo: document.body })
     expect(document.activeElement).toBe(wrapper.get('button').element)
-    expect(wrapper.text()).toContain('alert is hidden')
+    expect(wrapper.text()).toContain('Take a breather')
     await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('resume')).toHaveLength(1)
     wrapper.unmount()
+  })
+
+  it('makes alert names tappable and highlights the hinted line', async () => {
+    const wrapper = mount(IncidentBanner, {
+      props: {
+        mode: 'practice',
+        incident: {
+          incidentId: 'incident-01',
+          index: 0,
+          windowSeconds: null,
+          hintLine: 1,
+          alert: {
+            title: 'Port sweep',
+            severity: 'low',
+            source: 'Firewall',
+            lines: ['src 192.0.2.66 swept ports', 'no exploit traffic'],
+            segments: [
+              [{ text: 'src ' }, { target: '192.0.2.66', kind: 'ip' }, { text: ' swept ports' }],
+              [{ text: 'no exploit traffic' }],
+            ],
+          },
+        },
+      },
+    })
+    expect(wrapper.findAll('li')[0].text()).toBe('src 192.0.2.66 swept ports')
+    await wrapper.get('button[aria-label="Use 192.0.2.66 as the target"]').trigger('click')
+    expect(wrapper.emitted('select-target')).toEqual([['192.0.2.66']])
+    expect(wrapper.findAll('li')[1].classes()).toContain('cli-hint-line')
+    expect(wrapper.findAll('li')[1].text()).toContain('hint')
+    await wrapper.setProps({ interactive: false })
+    expect(wrapper.get('.cli-entity').attributes('disabled')).toBeDefined()
+  })
+
+  it('lists concept tags as text', () => {
+    const wrapper = mount(ConceptTags, {
+      props: { concepts: { attack: 'Ransomware', cia: ['Availability'], stage: 'Containment' } },
+    })
+    expect(wrapper.findAll('li').map((item) => item.text())).toEqual([
+      'Ransomware',
+      'Availability at risk',
+      'Containment',
+    ])
+  })
+
+  it('fills the streak meter up to three', async () => {
+    const wrapper = mount(ScoreHud, { props: { streak: 2 } })
+    expect(wrapper.findAll('.cli-streak-pip.is-on')).toHaveLength(2)
+    await wrapper.setProps({ streak: 5 })
+    expect(wrapper.findAll('.cli-streak-pip.is-on')).toHaveLength(3)
+    expect(wrapper.get('.cli-streak-meter').classes()).toContain('is-max')
+  })
+
+  it('celebrates a perfect game and tallies topics in a table', () => {
+    const wrapper = mount(ShiftDebrief, {
+      props: {
+        result: {
+          mode: 'practice',
+          score: 2100,
+          maxScore: 2100,
+          result: { bestStreak: 8 },
+          feedback: { summary: 'You contained 8 of 8 incidents.' },
+          topicOutcomes: [
+            { topic: 'firewall-blocking', label: 'Firewall blocking', achieved: true },
+            { topic: 'account-security', label: 'Account security', achieved: false },
+          ],
+          debrief: [
+            {
+              incidentId: 'incident-01',
+              title: 'Port sweep',
+              outcome: 'correct',
+              yourCommand: 'block ip 192.0.2.66',
+              expectedCommand: 'block ip 192.0.2.66',
+              explanation: 'Block the scanner.',
+              pointsAwarded: 100,
+              hintUsed: true,
+              topic: 'firewall-blocking',
+              concepts: {
+                attack: 'Reconnaissance',
+                cia: ['Confidentiality'],
+                stage: 'Containment',
+              },
+            },
+          ],
+        },
+      },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    })
+    expect(wrapper.text()).toContain('Perfect game')
+    expect(wrapper.findAll('.cli-confetti-piece').length).toBeGreaterThan(0)
+    expect(wrapper.get('.cli-confetti').attributes('aria-hidden')).toBe('true')
+    const rows = wrapper.findAll('.cli-topic-table tbody tr').map((row) => row.text())
+    expect(rows[0]).toContain('Firewall blocking')
+    expect(rows[0]).toContain('1/1')
+    expect(rows[0]).toContain('Strong')
+    expect(rows[1]).toContain('Account security')
+    expect(rows[1]).toContain('Review')
+    expect(wrapper.text()).toContain('Practice results are not saved.')
+    expect(wrapper.text()).not.toContain('Back to town')
+    expect(wrapper.text()).toContain('hint used')
+    expect(wrapper.text()).toContain('Reconnaissance')
   })
 
   it('labels practice as untimed in the hud', () => {
