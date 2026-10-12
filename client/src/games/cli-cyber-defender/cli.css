@@ -1,0 +1,478 @@
+/* every rule is scoped to .cli-game so the hub pixel scheme is untouched */
+.cli-game {
+  --game-bg: #0b120d;
+  --game-panel: #101b13;
+  --game-line: #23412b;
+  --game-ink: #c8f5d2;
+  --game-green: #4ef08a;
+  --game-green-dim: #8fd6a3;
+  --game-amber: #ffc857;
+  --game-red: #ff8a7a;
+  --game-cyan: #7fdcff;
+  --game-font:
+    ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1rem;
+  background: var(--game-bg);
+  color: var(--game-ink);
+  font-family: var(--game-font);
+  font-size: 16px;
+  line-height: 1.5;
+  border: 2px solid var(--game-line);
+  border-radius: 6px;
+}
+
+.cli-game *,
+.cli-game *::before,
+.cli-game *::after {
+  box-sizing: border-box;
+}
+
+.cli-game h1,
+.cli-game h2,
+.cli-game h3 {
+  font-family: var(--game-font);
+  color: var(--game-green);
+  letter-spacing: 0;
+}
+
+.cli-game h1 {
+  font-size: 1.6rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.cli-game code {
+  font-family: var(--game-font);
+  color: var(--game-amber);
+  background: transparent;
+  font-size: 1em;
+  word-break: break-word;
+}
+
+.cli-game :focus-visible {
+  outline: 3px solid var(--game-amber);
+  outline-offset: 2px;
+}
+
+.cli-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--game-cyan);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.cli-strap,
+.cli-note {
+  color: var(--game-green-dim);
+}
+
+.cli-note {
+  font-size: 0.95rem;
+}
+
+.cli-panel {
+  padding: 1rem;
+  background: var(--game-panel);
+  border: 1px solid var(--game-line);
+  border-radius: 4px;
+}
+
+.cli-heading {
+  font-size: 1.3rem;
+  margin: 0 0 0.75rem;
+}
+
+.cli-subheading {
+  font-size: 1.05rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.cli-list {
+  padding-left: 1.25rem;
+  margin: 0 0 0.75rem;
+}
+
+.cli-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.cli-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--game-green);
+  border: 2px solid var(--game-green);
+  border-radius: 4px;
+  font-family: var(--game-font);
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cli-button:hover:not(:disabled) {
+  background: rgba(78, 240, 138, 0.12);
+  color: var(--game-green);
+}
+
+.cli-button-primary {
+  background: var(--game-green);
+  color: var(--game-bg);
+}
+
+.cli-button-primary:hover:not(:disabled) {
+  background: #7af5a7;
+  color: var(--game-bg);
+}
+
+.cli-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cli-badge {
+  font-size: 0.9rem;
+  color: var(--game-amber);
+  border: 1px dashed var(--game-amber);
+  padding: 0.25rem 0.5rem;
+}
+
+.cli-alert {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 2px solid var(--game-red);
+  color: var(--game-red);
+}
+
+.cli-alert p {
+  margin: 0 0 0.5rem;
+}
+
+.cli-console {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cli-hud {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.cli-hud > div {
+  padding: 0.5rem 0.75rem;
+  background: var(--game-panel);
+  border: 1px solid var(--game-line);
+}
+
+.cli-hud dt {
+  font-size: 0.85rem;
+  color: var(--game-green-dim);
+  text-transform: uppercase;
+}
+
+.cli-hud dd {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--game-green);
+  font-variant-numeric: tabular-nums;
+}
+
+.cli-hud-sub {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--game-green-dim);
+}
+
+.cli-banner {
+  padding: 0.75rem 1rem;
+  background: var(--game-panel);
+  border: 1px solid var(--game-line);
+  border-left: 4px solid var(--game-amber);
+}
+
+.cli-banner-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 0.25rem;
+  font-size: 0.9rem;
+  color: var(--game-green-dim);
+}
+
+.cli-banner-title {
+  font-size: 1.15rem;
+  margin: 0 0 0.25rem;
+}
+
+.cli-banner-lines {
+  margin: 0 0 0.5rem;
+  padding-left: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+.cli-banner-idle {
+  margin: 0;
+  color: var(--game-green-dim);
+}
+
+.cli-severity {
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0 0.35rem;
+  border: 1px solid currentColor;
+}
+
+.cli-severity-low {
+  color: var(--game-cyan);
+}
+
+.cli-severity-medium {
+  color: var(--game-amber);
+}
+
+.cli-severity-high,
+.cli-severity-critical {
+  color: var(--game-red);
+}
+
+.cli-countdown {
+  height: 8px;
+  background: var(--game-line);
+  overflow: hidden;
+}
+
+.cli-countdown-fill {
+  display: block;
+  height: 100%;
+  background: var(--game-green);
+  transform-origin: left center;
+}
+
+.cli-countdown-urgent .cli-countdown-fill {
+  background: var(--game-red);
+}
+
+.cli-terminal {
+  background: #050906;
+  border: 1px solid var(--game-line);
+  border-radius: 4px;
+  box-shadow: inset 0 0 24px rgba(78, 240, 138, 0.08);
+  position: relative;
+}
+
+/* faint scanlines; removed for reduced motion users below */
+.cli-terminal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(0, 0, 0, 0.18) 3px
+  );
+}
+
+.cli-output {
+  height: 18rem;
+  overflow-y: auto;
+  padding: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.cli-line {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.cli-line-system {
+  color: var(--game-cyan);
+}
+
+.cli-line-alert {
+  color: var(--game-amber);
+  font-weight: 700;
+}
+
+.cli-line-detail,
+.cli-line-info {
+  color: var(--game-green-dim);
+}
+
+.cli-line-input {
+  color: var(--game-ink);
+}
+
+.cli-line-ok {
+  color: var(--game-green);
+  font-weight: 700;
+}
+
+.cli-line-fail,
+.cli-line-miss,
+.cli-line-error {
+  color: var(--game-red);
+}
+
+.cli-prompt {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem 0.75rem;
+  border-top: 1px solid var(--game-line);
+}
+
+.cli-prompt-label {
+  color: var(--game-green);
+  font-weight: 700;
+}
+
+.cli-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.4rem 0.6rem;
+  background: var(--game-bg);
+  color: var(--game-ink);
+  caret-color: var(--game-green);
+  border: 2px solid var(--game-line);
+  border-radius: 4px;
+  font-family: var(--game-font);
+  font-size: 1rem;
+}
+
+.cli-input:focus {
+  border-color: var(--game-green);
+}
+
+.cli-reference .cli-subheading {
+  margin-top: 0;
+}
+
+.cli-template-list {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cli-template {
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.cli-template-hint {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--game-green-dim);
+}
+
+.cli-score {
+  font-size: 1.4rem;
+  color: var(--game-green);
+}
+
+.cli-debrief-list {
+  padding-left: 1.5rem;
+}
+
+.cli-debrief-item {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px dashed var(--game-line);
+}
+
+.cli-debrief-item p {
+  margin: 0 0 0.25rem;
+}
+
+.cli-debrief-title {
+  font-weight: 700;
+  color: var(--game-ink);
+}
+
+.cli-outcome {
+  display: inline-block;
+  min-width: 5.5rem;
+  margin-right: 0.5rem;
+  padding: 0 0.35rem;
+  border: 1px solid currentColor;
+  text-align: center;
+}
+
+.cli-outcome-correct {
+  color: var(--game-green);
+}
+
+.cli-outcome-wrong,
+.cli-outcome-missed {
+  color: var(--game-red);
+}
+
+.cli-outcome-skipped {
+  color: var(--game-green-dim);
+}
+
+.cli-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 768px) {
+  .cli-game {
+    padding: 1.5rem;
+  }
+
+  .cli-hud {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .cli-template-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cli-output {
+    height: 22rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cli-terminal::after {
+    display: none;
+  }
+
+  .cli-game * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

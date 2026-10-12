@@ -3,10 +3,14 @@ import express from 'express'
 import { createNewsRouter } from './modules/news/router.js'
 import { createPhishingRouter } from './modules/games/phishing-post-mortem/router.js'
 import { createSocialEngineeringRouter } from './modules/games/social-engineering-simulator/router.js'
+import { createCliDefenderRouter } from './modules/games/cli-cyber-defender/router.js'
 import { createHealthRouter } from './routes/health.js'
 import { handleError, notFound } from './middleware/errors.js'
 
-export function createApp(database, { news = {}, phishing = {}, socialEngineering = {} } = {}) {
+export function createApp(
+  database,
+  { news = {}, phishing = {}, socialEngineering = {}, cliDefender = {} } = {},
+) {
   const app = express()
   app.disable('x-powered-by')
   app.use((_request, response, next) => {
@@ -20,6 +24,7 @@ export function createApp(database, { news = {}, phishing = {}, socialEngineerin
   app.use('/api', createNewsRouter(database, news))
   app.use('/api', createPhishingRouter(phishing))
   app.use('/api', createSocialEngineeringRouter(socialEngineering))
+  app.use('/api', createCliDefenderRouter(cliDefender))
   app.use(notFound)
   app.use(handleError)
   return app
