@@ -103,6 +103,23 @@ describe('cli cyber defender http api', () => {
     await request(app).post(`${base}/${runId}/pause`).send({ force: true }).expect(400)
   })
 
+  it('serves practice hints and refuses them in a timed shift', async () => {
+    const practice = await request(app).post(base).send({ mode: 'practice' }).expect(200)
+    const hint = await request(app)
+      .post(`${base}/${practice.body.runId}/hint`)
+      .send({ incidentId: 'incident-01' })
+      .expect(200)
+    expect(hint.body.hint.incidentId).toBe('incident-01')
+    expect(Number.isInteger(hint.body.hint.lineIndex)).toBe(true)
+    expect(JSON.stringify(hint.body)).not.toContain('expectedCommand')
+    const timed = await request(app).post(base).send({ mode: 'timed' }).expect(200)
+    const refused = await request(app)
+      .post(`${base}/${timed.body.runId}/hint`)
+      .send({ incidentId: 'incident-01' })
+      .expect(409)
+    expect(refused.body.error.code).toBe('CLI_HINT_UNAVAILABLE')
+  })
+
   it('rejects malformed bodies with field errors and no internals', async () => {
     const response = await request(app).post(base).send({ mode: 'timed', score: 9999 }).expect(400)
     expect(response.body.error).toMatchObject({

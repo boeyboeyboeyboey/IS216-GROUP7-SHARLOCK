@@ -1,5 +1,5 @@
 import { randomInt as cryptoRandomInt, randomUUID } from 'node:crypto'
-import { SYNTAX_HINTS, formatCommand, parseCommand } from './parser.js'
+import { SYNTAX_HINTS, formatCommand, isIpv4, parseCommand } from './parser.js'
 import {
   GAME_ID,
   INCIDENT_COUNT,
@@ -8,6 +8,7 @@ import {
   RULESET_VERSION,
   actionConflict,
   commandLimit,
+  hintUnavailable,
   incidentClosed,
   pauseUnavailable,
   runPaused,
@@ -15,7 +16,7 @@ import {
   runNotFinished,
   runNotFound,
 } from './policy.js'
-import { SCENARIOS, TOPICS } from './scenarios.js'
+import { RESPONSE_STAGE, SCENARIOS, TIER_PLAN, TOPICS } from './scenarios.js'
 import { deriveProgress, generateWindows } from './schedule.js'
 
 const MAX_RUNS = 500
@@ -25,21 +26,74 @@ function incidentId(index) {
   return `incident-${String(index + 1).padStart(2, '0')}`
 }
 
-function pickScenarios(pool, randomInt) {
-  const ordered = [...pool]
+function shuffle(items, randomInt) {
+  const ordered = [...items]
   for (let index = ordered.length - 1; index > 0; index -= 1) {
     const swap = randomInt(index + 1)
     ;[ordered[index], ordered[swap]] = [ordered[swap], ordered[index]]
   }
-  return ordered.slice(0, INCIDENT_COUNT)
+  return ordered
 }
 
-function publicAlert(alert) {
+// a shift draws easy, then medium, then hard incidents, shuffled within each tier
+function pickScenarios(pool, randomInt) {
+  const picked = TIER_PLAN.flatMap(({ tier, count }) =>
+    shuffle(
+      pool.filter((scenario) => scenario.tier === tier),
+      randomInt,
+    ).slice(0, count),
+  )
+  return picked.length === INCIDENT_COUNT
+    ? picked
+    : shuffle(pool, randomInt).slice(0, INCIDENT_COUNT)
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// split each alert line into plain text and tappable names; decoys are tappable too,
+// and a name only matches as a whole token so 10.20.0.1 never matches inside 10.20.0.15
+export function segmentLine(line, entities) {
+  if (!entities?.length) return [{ text: line }]
+  const names = [...entities].sort((a, b) => b.length - a.length).map(escapeRegExp)
+  const pattern = new RegExp(`(?<![\\w.-])(${names.join('|')})(?![\\w-]|\\.\\d)`, 'g')
+  const segments = []
+  let last = 0
+  for (const match of line.matchAll(pattern)) {
+    if (match.index > last) segments.push({ text: line.slice(last, match.index) })
+    segments.push({ target: match[0], kind: isIpv4(match[0]) ? 'ip' : 'name' })
+    last = match.index + match[0].length
+  }
+  if (last < line.length) segments.push({ text: line.slice(last) })
+  return segments
+}
+
+function publicAlert(scenario) {
+  const { alert, entities } = scenario
   return {
     title: alert.title,
     severity: alert.severity,
     source: alert.source,
     lines: [...alert.lines],
+    segments: alert.lines.map((line) => segmentLine(line, entities)),
+  }
+}
+
+function review(scenario) {
+  const { verb, target } = scenario.expected
+  return {
+    expectedCommand: formatCommand(verb, target),
+    explanation: scenario.explanation,
+    concepts: concepts(scenario),
+  }
+}
+
+function concepts(scenario) {
+  return {
+    attack: scenario.concepts?.attack ?? null,
+    cia: [...(scenario.concepts?.cia ?? [])],
+    stage: RESPONSE_STAGE,
   }
 }
 
@@ -92,7 +146,8 @@ export function createCliDefenderService({
         closesAt: progress.current.closesAt,
         windowSeconds:
           run.mode === 'timed' ? run.incidents[progress.current.index].windowSeconds : null,
-        alert: run.pausedAt === null ? publicAlert(scenario.alert) : null,
+        alert: run.pausedAt === null ? publicAlert(scenario) : null,
+        hintLine: run.incidents[progress.current.index].hintUsed ? scenario.keyLine : null,
       },
       history: progress.incidents
         .filter((item) => !['open', 'pending'].includes(item.outcome))
@@ -127,6 +182,7 @@ export function createCliDefenderService({
         scenario,
         windowSeconds: windows[index],
         resolution: null,
+        hintUsed: false,
       })),
       actions: new Map(),
       completion: null,
@@ -138,6 +194,22 @@ export function createCliDefenderService({
   function getRun(runId) {
     const run = requireRun(runId)
     return snapshot(run, gameTime(run, now()))
+  }
+
+  // practice only: names the evidence line, never the answer, and is marked in the debrief
+  function hintRun(runId, { incidentId: target }) {
+    const run = requireRun(runId)
+    const wall = now()
+    if (run.mode !== 'practice' || run.completion) throw hintUnavailable()
+    const progress = deriveProgress(run, gameTime(run, wall))
+    if (!progress.current || progress.current.incidentId !== target) throw incidentClosed()
+    const incident = run.incidents[progress.current.index]
+    incident.hintUsed = true
+    run.lastActivityAt = wall
+    return {
+      ...snapshot(run, gameTime(run, wall)),
+      hint: { incidentId: target, lineIndex: incident.scenario.keyLine },
+    }
   }
 
   function pauseRun(runId) {
@@ -198,6 +270,7 @@ export function createCliDefenderService({
       ...after,
       outcome,
       message,
+      review: parsed.ok ? review(run.incidents[before.current.index].scenario) : null,
       command: parsed.ok ? parsed.normalized : null,
       pointsAwarded:
         outcome === 'syntax'
@@ -232,6 +305,8 @@ export function createCliDefenderService({
         topic: incident.scenario.topic,
         outcome: item.outcome,
         yourCommand: incident.resolution?.command ?? null,
+        concepts: concepts(incident.scenario),
+        hintUsed: incident.hintUsed,
         expectedCommand: formatCommand(verb, target),
         explanation: incident.scenario.explanation,
         pointsAwarded: item.pointsAwarded,
@@ -279,5 +354,5 @@ export function createCliDefenderService({
     return { ...run.completion, actionId }
   }
 
-  return { startRun, getRun, pauseRun, resumeRun, submitCommand, completeRun }
+  return { startRun, getRun, hintRun, pauseRun, resumeRun, submitCommand, completeRun }
 }

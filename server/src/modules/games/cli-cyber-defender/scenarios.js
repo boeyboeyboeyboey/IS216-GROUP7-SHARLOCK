@@ -1,5 +1,15 @@
-// private answer data: only the alert reaches the browser before the debrief
+// private answer data: only the alert reaches the browser before the incident closes
+// tier orders a shift from easy to hard; keyLine is the evidence a practice hint highlights;
+// entities lists every tappable name in the alert, decoys included, so tapping reveals nothing
 // addresses use the rfc 5737 documentation ranges and internal 10.x lab space; names are fictional
+
+export const RESPONSE_STAGE = 'Containment'
+
+export const TIER_PLAN = [
+  { tier: 1, count: 3 },
+  { tier: 2, count: 3 },
+  { tier: 3, count: 2 },
+]
 
 export const TOPICS = {
   'firewall-blocking': 'Firewall blocking',
@@ -10,6 +20,10 @@ export const TOPICS = {
 export const SCENARIOS = [
   {
     id: 'ssh-brute-force',
+    tier: 1,
+    keyLine: 0,
+    entities: ['203.0.113.45', 'lab-gw', '10.20.0.1'],
+    concepts: { attack: 'Brute force', cia: ['Confidentiality'] },
     topic: 'firewall-blocking',
     alert: {
       title: 'Repeated SSH login failures',
@@ -27,6 +41,10 @@ export const SCENARIOS = [
   },
   {
     id: 'web-scanner',
+    tier: 1,
+    keyLine: 0,
+    entities: ['198.51.100.23', 'portal-web', '10.20.0.15'],
+    concepts: { attack: 'Reconnaissance', cia: ['Confidentiality'] },
     topic: 'firewall-blocking',
     alert: {
       title: 'Automated vulnerability scan',
@@ -44,6 +62,10 @@ export const SCENARIOS = [
   },
   {
     id: 'password-spray',
+    tier: 2,
+    keyLine: 2,
+    entities: ['203.0.113.77', 'trainee-03', 'ops-lee', 'finance-ana'],
+    concepts: { attack: 'Password spraying', cia: ['Confidentiality'] },
     topic: 'firewall-blocking',
     alert: {
       title: 'Password spraying across accounts',
@@ -61,6 +83,10 @@ export const SCENARIOS = [
   },
   {
     id: 'sqli-probe',
+    tier: 2,
+    keyLine: 2,
+    entities: ['198.51.100.140', 'shop-api'],
+    concepts: { attack: 'SQL injection', cia: ['Confidentiality', 'Integrity'] },
     topic: 'firewall-blocking',
     alert: {
       title: 'SQL injection attempts blocked by WAF',
@@ -78,6 +104,10 @@ export const SCENARIOS = [
   },
   {
     id: 'port-scan',
+    tier: 1,
+    keyLine: 0,
+    entities: ['192.0.2.66', 'lab-gw', 'portal-web'],
+    concepts: { attack: 'Reconnaissance', cia: ['Confidentiality'] },
     topic: 'firewall-blocking',
     alert: {
       title: 'Port sweep from the internet',
@@ -95,6 +125,10 @@ export const SCENARIOS = [
   },
   {
     id: 'smtp-relay-abuse',
+    tier: 3,
+    keyLine: 2,
+    entities: ['203.0.113.150', 'mail-gw', '10.20.0.25'],
+    concepts: { attack: 'Spam relay abuse', cia: ['Availability', 'Integrity'] },
     topic: 'firewall-blocking',
     alert: {
       title: 'Open-relay abuse attempt',
@@ -112,6 +146,10 @@ export const SCENARIOS = [
   },
   {
     id: 'impossible-travel',
+    tier: 3,
+    keyLine: 1,
+    entities: ['trainee-03', '203.0.113.9', '198.51.100.61'],
+    concepts: { attack: 'Account takeover', cia: ['Confidentiality'] },
     topic: 'account-security',
     alert: {
       title: 'Impossible travel sign-in',
@@ -129,6 +167,10 @@ export const SCENARIOS = [
   },
   {
     id: 'credential-stuffing-success',
+    tier: 2,
+    keyLine: 1,
+    entities: ['ops-lee', '198.51.100.200'],
+    concepts: { attack: 'Credential stuffing', cia: ['Confidentiality'] },
     topic: 'account-security',
     alert: {
       title: 'Successful sign-in after credential stuffing',
@@ -146,6 +188,10 @@ export const SCENARIOS = [
   },
   {
     id: 'mail-forwarding-rule',
+    tier: 2,
+    keyLine: 1,
+    entities: ['finance-ana'],
+    concepts: { attack: 'Business email compromise', cia: ['Confidentiality'] },
     topic: 'account-security',
     alert: {
       title: 'Suspicious mailbox forwarding rule',
@@ -163,6 +209,10 @@ export const SCENARIOS = [
   },
   {
     id: 'dormant-admin',
+    tier: 3,
+    keyLine: 1,
+    entities: ['svc-backup', 'lab-02'],
+    concepts: { attack: 'Privilege escalation', cia: ['Confidentiality', 'Integrity'] },
     topic: 'account-security',
     alert: {
       title: 'Dormant account gained admin rights',
@@ -180,6 +230,10 @@ export const SCENARIOS = [
   },
   {
     id: 'password-posted',
+    tier: 1,
+    keyLine: 1,
+    entities: ['intern-02'],
+    concepts: { attack: 'Credential exposure', cia: ['Confidentiality'] },
     topic: 'account-security',
     alert: {
       title: 'Password shared in a public channel',
@@ -197,6 +251,10 @@ export const SCENARIOS = [
   },
   {
     id: 'c2-beacon',
+    tier: 1,
+    keyLine: 2,
+    entities: ['lab-02', '203.0.113.200'],
+    concepts: { attack: 'Command and control', cia: ['Confidentiality', 'Integrity'] },
     topic: 'incident-containment',
     alert: {
       title: 'Command-and-control beaconing',
@@ -214,6 +272,10 @@ export const SCENARIOS = [
   },
   {
     id: 'ransomware-encryption',
+    tier: 1,
+    keyLine: 0,
+    entities: ['hr-pc-07', 'trainee-03'],
+    concepts: { attack: 'Ransomware', cia: ['Availability', 'Integrity'] },
     topic: 'incident-containment',
     alert: {
       title: 'Mass file encryption',
@@ -231,6 +293,10 @@ export const SCENARIOS = [
   },
   {
     id: 'lateral-movement',
+    tier: 3,
+    keyLine: 0,
+    entities: ['kiosk-04', 'print-srv'],
+    concepts: { attack: 'Lateral movement', cia: ['Confidentiality', 'Integrity'] },
     topic: 'incident-containment',
     alert: {
       title: 'Internal SMB sweep',
@@ -248,6 +314,10 @@ export const SCENARIOS = [
   },
   {
     id: 'cryptominer',
+    tier: 2,
+    keyLine: 2,
+    entities: ['build-runner-1', '198.51.100.210'],
+    concepts: { attack: 'Cryptojacking', cia: ['Availability'] },
     topic: 'incident-containment',
     alert: {
       title: 'Cryptocurrency miner detected',
@@ -265,6 +335,10 @@ export const SCENARIOS = [
   },
   {
     id: 'usb-autorun',
+    tier: 2,
+    keyLine: 1,
+    entities: ['reception-pc'],
+    concepts: { attack: 'Removable-media malware', cia: ['Integrity'] },
     topic: 'incident-containment',
     alert: {
       title: 'Malware from a USB drive',

@@ -17,6 +17,9 @@ Server half of the `cli-cyber-defender` game (G-CLI). The server owns the incide
 
 - Eight incidents per run, drawn from the pool. Timed mode gives each one a window; resolving an incident (right or wrong) opens the next one immediately with its own full window, so a shift lasts at most 100 seconds.
 - A correct command before the deadline adds one to the streak and scores `100 × min(3, streak)`. A wrong action or target, or a missed window, closes the incident and resets the streak. Maximum 2,100.
+- Each shift draws 3 easy, 3 medium and 2 hard incidents (scenario `tier`), in that order.
+- Alerts include `segments`: each line split into text and tappable names from the scenario's `entities`, decoys included, matched as whole tokens.
+- A correct or wrong command response includes `review: { expectedCommand, explanation, concepts }`; the debrief adds `concepts` and `hintUsed` per incident.
 - A command the parser cannot read returns `outcome: "syntax"` with a hint and leaves the incident open.
 - The receipt time is taken on the server. A command arriving at or after `closesAt` is rejected with `CLI_INCIDENT_CLOSED`.
 - Missed windows are derived from the clock whenever the run is read, so `GET` never changes state.
@@ -31,13 +34,14 @@ All responses carry `saved: false`; nothing is written to MongoDB.
 | -------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `POST /api/games/cli-cyber-defender/runs`                            | `{ mode: "timed" \| "practice" }`   | Snapshot: `{ gameId, rulesetVersion, runId, mode, status, serverNow, incidentCount, resolvedCount, current, history, score, streak, multiplier, maxScore, saved }` |
 | `GET /api/games/cli-cyber-defender/runs/:runId`                      | —                                   | Snapshot.                                                                                                                                                          |
+| `POST /api/games/cli-cyber-defender/runs/:runId/hint`                | `{ incidentId }`                    | Practice only: snapshot plus `hint: { incidentId, lineIndex }`; the incident is marked `hintUsed`. Timed shifts get `CLI_HINT_UNAVAILABLE` (409).                  |
 | `POST /api/games/cli-cyber-defender/runs/:runId/pause` and `/resume` | `{}`                                | Snapshot with `paused: true` (alert hidden) or `paused: false`.                                                                                                    |
 | `POST /api/games/cli-cyber-defender/runs/:runId/commands`            | `{ actionId, incidentId, command }` | Snapshot plus `{ outcome: "correct" \| "wrong" \| "syntax", message, command, pointsAwarded }`.                                                                    |
 | `POST /api/games/cli-cyber-defender/runs/:runId/complete`            | `{ actionId }`                      | `{ gameId, rulesetVersion, runId, mode, status, score, maxScore, saved, result, feedback, topicOutcomes, debrief[] }`.                                             |
 
 `current` is `{ incidentId, index, opensAt, closesAt, windowSeconds, alert: { title, severity, source, lines } }`; times are epoch milliseconds on the server clock and the client corrects for skew with `serverNow`. Expected commands and explanations appear only in `debrief`.
 
-Error codes: `CLI_INVALID_BODY` (400), `CLI_RUN_NOT_FOUND` (404), `CLI_INCIDENT_CLOSED`, `CLI_RUN_PAUSED`, `CLI_PAUSE_UNAVAILABLE`, `CLI_ACTION_CONFLICT`, `CLI_RUN_FINISHED`, `CLI_RUN_NOT_FINISHED`, `CLI_COMMAND_LIMIT` (409), `CLI_RATE_LIMITED` (429), `CLI_UNAVAILABLE` (503).
+Error codes: `CLI_INVALID_BODY` (400), `CLI_RUN_NOT_FOUND` (404), `CLI_INCIDENT_CLOSED`, `CLI_RUN_PAUSED`, `CLI_PAUSE_UNAVAILABLE`, `CLI_HINT_UNAVAILABLE`, `CLI_ACTION_CONFLICT`, `CLI_RUN_FINISHED`, `CLI_RUN_NOT_FINISHED`, `CLI_COMMAND_LIMIT` (409), `CLI_RATE_LIMITED` (429), `CLI_UNAVAILABLE` (503).
 
 Repeating a command with the same `actionId` returns the recorded response; the same ID with a different command fails. Completion is idempotent.
 

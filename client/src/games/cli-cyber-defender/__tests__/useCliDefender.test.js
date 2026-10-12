@@ -5,6 +5,7 @@ import {
   completeRun,
   fetchRun,
   pauseRun,
+  requestHint,
   resumeRun,
   startRun,
   submitCommand,
@@ -18,6 +19,7 @@ vi.mock('../cliDefender.js', async (original) => ({
   completeRun: vi.fn(),
   pauseRun: vi.fn(),
   resumeRun: vi.fn(),
+  requestHint: vi.fn(),
 }))
 
 const RUN = '11111111-1111-4111-8111-111111111111'
@@ -57,11 +59,11 @@ function setHidden(hidden) {
 
 const mounted = []
 
-function harness(clock) {
+function harness(clock, onEvent) {
   let game
   const wrapper = mount({
     setup() {
-      game = useCliDefender({ now: () => clock.now })
+      game = useCliDefender({ now: () => clock.now, onEvent })
       return () => null
     },
   })
@@ -161,7 +163,7 @@ describe('cli defender composable', () => {
     vi.advanceTimersByTime(100)
     await flushPromises()
     expect(fetchRun).toHaveBeenCalledTimes(1)
-    expect(game.lines.value.some((line) => line.text.startsWith('[MISS] Incident 1'))).toBe(true)
+    expect(game.lines.value.some((line) => line.text.startsWith('[MISS] Challenge 1'))).toBe(true)
     expect(game.current.value.incidentId).toBe('incident-02')
   })
 
@@ -251,6 +253,58 @@ describe('cli defender composable', () => {
     await flushPromises()
     expect(pauseRun).not.toHaveBeenCalled()
     expect(game.paused.value).toBe(false)
+  })
+
+  it('explains a closed incident and reports events for sound and effects', async () => {
+    const events = []
+    startRun.mockResolvedValue(snapshot())
+    submitCommand.mockResolvedValue(
+      snapshot({
+        outcome: 'wrong',
+        command: 'isolate host lab-gw',
+        message: 'That action did not contain the incident. Incident closed.',
+        pointsAwarded: 0,
+        resolvedCount: 1,
+        history: [{ incidentId: 'incident-01', index: 0, outcome: 'wrong', pointsAwarded: 0 }],
+        review: {
+          expectedCommand: 'block ip 203.0.113.45',
+          explanation: 'Block the single outside source.',
+          concepts: { attack: 'Brute force', cia: ['Confidentiality'], stage: 'Containment' },
+        },
+        current: { ...snapshot().current, incidentId: 'incident-02', index: 1, alert: alert('B') },
+      }),
+    )
+    const { game } = harness({ now: 50_000 }, (kind) => events.push(kind))
+    await game.start('timed')
+    await game.submit('isolate host lab-gw')
+    const texts = game.lines.value.map((line) => line.text)
+    expect(texts).toContain('  correct: block ip 203.0.113.45')
+    expect(texts).toContain('  why: Block the single outside source.')
+    expect(texts).toContain('  [Brute force | Confidentiality | Containment]')
+    expect(game.lastReview.value).toMatchObject({
+      outcome: 'wrong',
+      expectedCommand: 'block ip 203.0.113.45',
+    })
+    expect(events).toEqual(['alert', 'fail', 'alert'])
+  })
+
+  it('requests a hint only in practice and only once per incident', async () => {
+    startRun.mockResolvedValue(snapshot({ mode: 'practice' }))
+    requestHint.mockResolvedValue(
+      snapshot({ mode: 'practice', current: { ...snapshot().current, hintLine: 0 } }),
+    )
+    const { game } = harness({ now: 50_000 })
+    await game.start('practice')
+    await game.hint()
+    expect(requestHint).toHaveBeenCalledWith(RUN, 'incident-01', expect.any(AbortSignal))
+    expect(game.current.value.hintLine).toBe(0)
+    await game.hint()
+    expect(requestHint).toHaveBeenCalledTimes(1)
+    startRun.mockResolvedValue(snapshot())
+    const timed = harness({ now: 50_000 })
+    await timed.game.start('timed')
+    await timed.game.hint()
+    expect(requestHint).toHaveBeenCalledTimes(1)
   })
 
   it('stops its timer and listener on unmount', async () => {

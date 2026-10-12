@@ -4,6 +4,7 @@ import {
   parseCommandBody,
   parseCompleteBody,
   parseEmptyBody,
+  parseHintBody,
   parseRunId,
   parseStart,
   rateLimited,
@@ -79,6 +80,12 @@ export function createCliDefenderRouter({
   router.get(
     `${base}/:runId`,
     handle((request) => game.getRun(parseRunId(request.params.runId))),
+  )
+  router.post(
+    `${base}/:runId/hint`,
+    handle((request) =>
+      game.hintRun(parseRunId(request.params.runId), parseHintBody(request.body)),
+    ),
   )
   router.post(
     `${base}/:runId/pause`,

@@ -5,7 +5,12 @@ const BASE = '/games/cli-cyber-defender/runs'
 export const MAX_COMMAND_LENGTH = 120
 
 export const COMMAND_TEMPLATES = [
-  { id: 'block-ip', template: 'block ip ', label: 'block ip', hint: 'Block an outside address' },
+  {
+    id: 'block-ip',
+    template: 'block ip ',
+    label: 'block ip',
+    hint: 'Block an outside address',
+  },
   {
     id: 'disable-user',
     template: 'disable user ',
@@ -20,6 +25,25 @@ export const COMMAND_TEMPLATES = [
   },
 ]
 
+// demo-only incidents that never appear in a real shift, so the loop teaches without spoiling
+export const DEMO_SCENES = [
+  {
+    alert: 'Brute force on vpn-gw from 192.0.2.99',
+    command: 'block ip 192.0.2.99',
+    result: 'Contained +100',
+  },
+  {
+    alert: 'Phished account demo-07 signs in from abroad',
+    command: 'disable user demo-07',
+    result: 'Contained +200',
+  },
+  {
+    alert: 'Host demo-pc beacons to a known C2 server',
+    command: 'isolate host demo-pc',
+    result: 'Contained +300',
+  },
+]
+
 export const LOCAL_COMMANDS = ['help', 'clear', 'history']
 
 export function startRun(mode, signal) {
@@ -28,6 +52,10 @@ export function startRun(mode, signal) {
 
 export function fetchRun(runId, signal) {
   return api.get(`${BASE}/${runId}`, { signal }).then(({ data }) => data)
+}
+
+export function requestHint(runId, incidentId, signal) {
+  return api.post(`${BASE}/${runId}/hint`, { incidentId }, { signal }).then(({ data }) => data)
 }
 
 export function pauseRun(runId, signal) {
