@@ -28,7 +28,7 @@ pnpm exec playwright install chromium
 
 Skip it and **every** E2E test fails instantly with `browserType.launch: Executable doesn't exist`. That looks like a broken suite but is only a missing download - Playwright pins a browser revision per version, so an upgrade invalidates the one already on disk.
 
-**Current implementation:** MEVN scaffold, pixel-styled town as the entry page, The Sharlock Times with live news, The Phishing Post-Mortem investigation game, combined About/introduction, activity previews and database health check. Authentication, permissions, the four remaining games and persistent learning records remain pending. Localhost demonstration; zero project budget.
+**Current implementation:** MEVN scaffold, pixel-styled town as the entry page, The Sharlock Times with live news, The Phishing Post-Mortem investigation game, the CLI Cyber Defender terminal game, combined About/introduction, activity previews and database health check. Authentication, permissions, the remaining games and persistent learning records remain pending. Localhost demonstration; zero project budget.
 
 ## 2. Tooling Recommendation
 
@@ -50,7 +50,7 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 
 ## 4. Game Backlog
 
-Four of the five scored games remain **proposed implementation blueprints**, not working features or automatic authorization to code. G-NEWS / Cyber News Central is **completed and accepted by Boey on 19 September 2026**, and **G-PHISH / The Phishing Post-Mortem is implemented by Athithya on 21 September 2026 and pending review**, both as recorded in TASKS.md. The town represents all six features; the remaining four buildings open clearly labelled previews. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
+The unimplemented scored games remain **proposed implementation blueprints**, not working features or automatic authorization to code. G-NEWS / Cyber News Central is **completed and accepted by Boey on 19 September 2026**, **G-PHISH / The Phishing Post-Mortem is implemented by Athithya on 21 September 2026 and pending review**, and **G-CLI / CLI Cyber Defender is implemented by Xin Lei on 12 October 2026 and pending review**, as recorded in TASKS.md. The town represents all six features; buildings without an implementation open clearly labelled previews. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
 
 ### Shared implementation blueprint
 
@@ -63,7 +63,7 @@ The following proposed contract applies to the five scored games. It depends on 
 - Requests: reuse `client/src/services/api.js`; its base URL already contains `/api`.
 - State: keep gameplay in a module composable using `ref`, `reactive` and `computed`. Reserve Pinia for shared account/context state.
 - Visual boundary: follow [DESIGN.md](DESIGN.md#rules-for-new-pages-and-features). Game modules may choose their own design philosophy and scoped fonts/artwork/controls; shared navigation, town registration/cards and shared pages retain the exact hub scheme. Verify accessibility/responsiveness and no style leakage.
-- Town integration: all six planned features already have one catalog entry and building. Four scored games use the generic preview route and `isPreview: true`; news and the phishing post-mortem are implemented behind their own routes. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
+- Town integration: all six planned features already have one catalog entry and building. The SQL-injection and regex games use the generic preview route and `isPreview: true`; news, the phishing post-mortem, the social-engineering simulator and the CLI defender are implemented behind their own routes. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
 
 **Proposed shared API**
 
@@ -100,7 +100,7 @@ Verify the core journey, invalid inputs, another user’s attempt ID, duplicate 
 
 ### G-CLI — CLI Cyber Defender
 
-**Concept:** Defend a fictional network through a simulated terminal during a 60-second incident shift.
+**Concept:** Defend a fictional network through a simulated terminal during a 100-second incident shift.
 
 **Difficulty:** ★★☆
 
@@ -109,7 +109,7 @@ Verify the core journey, invalid inputs, another user’s attempt ID, duplicate 
 **Gameplay / interaction loop**
 
 1. Read the command reference and start.
-2. Receive eight incidents. Generate eight random integer windows of 5–10 seconds whose total is exactly 60 seconds.
+2. Receive eight incidents. Generate eight random integer windows of 10–15 seconds whose total is exactly 100 seconds.
 3. Submit one defense command per incident, such as `block ip 192.0.2.10`, `disable user trainee-03` or `isolate host lab-02`.
 4. A correct command before its deadline increases the streak. Award `100 × min(3, streak)` points.
 5. A wrong command or missed window closes that incident and resets the streak. Maximum score: 2,100.
@@ -132,6 +132,8 @@ All commands manipulate fictional game state. Never invoke a shell, firewall, op
 - Mongoose `state`: `{ mode, schedule: [{ incidentId, scenarioId, opensAt, closesAt, expectedAction, resolved, outcome }], streak, correctCount, missedCount }`. Keep `expectedAction` private.
 
 **Acceptance:** Test exact deadline boundaries, incorrect targets, duplicate submissions, multiplier resets, background-tab throttling and timer cleanup. Mobile users can insert templates and enter targets without a desktop keyboard.
+
+**Implemented in this version (12 October 2026, Xin Lei):** the shift is playable at `/games/cli-cyber-defender` and its catalog entry is no longer a preview. Because AUTH-01, AUTH-02, DATA-01 and GAME-01 do not exist yet, nothing is persisted: runs live in server memory for at most ten idle minutes and every response carries `saved: false`. Four interim feature-local endpoints stand in for the shared attempt contract: `POST /api/games/cli-cyber-defender/runs` with `{ mode: "timed" | "practice" }`, side-effect-free `GET .../runs/:runId`, `POST .../runs/:runId/commands` with `{ actionId, incidentId, command }` and `POST .../runs/:runId/complete` with `{ actionId }`; `server/src/modules/games/cli-cyber-defender/README.md` records the GAME-01 migration. Three approved refinements to the loop above: resolving an incident opens the next one immediately with its own full window, so a shift lasts at most 100 seconds; an unparseable command returns a hint and leaves the incident open, while a parseable wrong action or target closes it; and an untimed practice mode with no deadlines can be ended early. Xin Lei lengthened the timed windows on 12 October 2026 from the original 5–10 seconds (60 in total) to 10–15 seconds (100 in total) to give more reading time. A timed shift also auto-pauses when the tab is hidden: `POST .../runs/:runId/pause` and `.../resume` (empty bodies) freeze the server's game clock so deadlines move back by the paused time, commands are refused with `CLI_RUN_PAUSED`, and `PausedPanel.vue` (emits `resume`) hides the alert until the player resumes. There is no manual pause button, and practice never pauses. The server derives misses, streak and score from stored timestamps on every read. `BriefingPanel.vue` (emits `start(mode)`) and `ShiftDebrief.vue({ result })` (emits `replay`) extend the component list; `TerminalPanel` also takes `{ busy, modelValue, history, maxLength }` for template insertion and command recall. The module uses the DESIGN.md game exception through an original green/amber-on-black terminal theme contained under `.cli-game`.
 
 ### G-SOC — LLM Social Engineering Simulator
 

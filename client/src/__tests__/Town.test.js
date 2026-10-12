@@ -18,6 +18,7 @@ describe('town registration contract', () => {
     ])
     expect(new Set(gameCatalog.map((game) => game.building.type)).size).toBe(6)
     expect(gameCatalog.filter((game) => !game.isPreview).map((game) => game.id)).toEqual([
+      'cli-cyber-defender',
       'phishing-post-mortem',
       'threat-briefing',
       'social-engineering-simulator',

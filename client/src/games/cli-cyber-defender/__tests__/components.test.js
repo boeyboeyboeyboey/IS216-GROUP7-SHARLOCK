@@ -1,0 +1,124 @@
+import { describe, expect, it } from 'vitest'
+import { mount, RouterLinkStub } from '@vue/test-utils'
+import BriefingPanel from '../components/BriefingPanel.vue'
+import CommandReference from '../components/CommandReference.vue'
+import IncidentBanner from '../components/IncidentBanner.vue'
+import PausedPanel from '../components/PausedPanel.vue'
+import ScoreHud from '../components/ScoreHud.vue'
+import ShiftDebrief from '../components/ShiftDebrief.vue'
+import TerminalPanel from '../components/TerminalPanel.vue'
+
+describe('cli defender components', () => {
+  it('starts either mode from the briefing', async () => {
+    const wrapper = mount(BriefingPanel)
+    const buttons = wrapper.findAll('button')
+    await buttons[0].trigger('click')
+    await buttons[1].trigger('click')
+    expect(wrapper.emitted('start')).toEqual([['timed'], ['practice']])
+  })
+
+  it('emits a typed command and recalls history with the arrow keys', async () => {
+    const wrapper = mount(TerminalPanel, {
+      props: {
+        lines: [{ id: 1, kind: 'ok', text: '[ OK ] done' }],
+        modelValue: 'isolate host lab-02',
+        history: ['block ip 192.0.2.1', 'disable user ops-lee'],
+      },
+    })
+    expect(wrapper.get('[role="log"]').text()).toContain('[ OK ] done')
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.emitted('submit-command')).toEqual([['isolate host lab-02']])
+    const input = wrapper.get('input')
+    await input.trigger('keydown', { key: 'ArrowUp' })
+    await input.trigger('keydown', { key: 'ArrowUp' })
+    await input.trigger('keydown', { key: 'ArrowDown' })
+    expect(wrapper.emitted('update:modelValue')).toEqual([
+      ['disable user ops-lee'],
+      ['block ip 192.0.2.1'],
+      ['disable user ops-lee'],
+    ])
+    expect(input.attributes('maxlength')).toBe('120')
+    expect(input.attributes('autocapitalize')).toBe('off')
+    expect(wrapper.get('label').text()).toContain('Command')
+  })
+
+  it('inserts command templates for touch users', async () => {
+    const wrapper = mount(CommandReference)
+    const buttons = wrapper.findAll('button')
+    expect(buttons).toHaveLength(3)
+    for (const button of buttons) await button.trigger('click')
+    expect(wrapper.emitted('insert-template')).toEqual([
+      ['block ip '],
+      ['disable user '],
+      ['isolate host '],
+    ])
+  })
+
+  it('describes the incident and its window in text', () => {
+    const wrapper = mount(IncidentBanner, {
+      props: {
+        incident: {
+          incidentId: 'incident-02',
+          index: 1,
+          windowSeconds: 6,
+          alert: { title: 'Port sweep', severity: 'low', source: 'Firewall', lines: ['a', 'b'] },
+        },
+        remainingMs: 3000,
+        mode: 'timed',
+      },
+    })
+    expect(wrapper.text()).toContain('Incident 2')
+    expect(wrapper.text()).toContain('low')
+    expect(wrapper.text()).toContain('You have 6 seconds for this incident.')
+    expect(wrapper.get('.cli-countdown').attributes('aria-hidden')).toBe('true')
+  })
+
+  it('focuses resume on the paused panel', async () => {
+    const wrapper = mount(PausedPanel, { attachTo: document.body })
+    expect(document.activeElement).toBe(wrapper.get('button').element)
+    expect(wrapper.text()).toContain('alert is hidden')
+    await wrapper.get('button').trigger('click')
+    expect(wrapper.emitted('resume')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it('labels practice as untimed in the hud', () => {
+    const wrapper = mount(ScoreHud, { props: { mode: 'practice', score: 1200, streak: 4 } })
+    expect(wrapper.text()).toContain('untimed')
+    expect(wrapper.text()).toContain('1,200')
+  })
+
+  it('renders the debrief with text outcomes and replays', async () => {
+    const wrapper = mount(ShiftDebrief, {
+      props: {
+        result: {
+          mode: 'timed',
+          score: 300,
+          maxScore: 2100,
+          result: { bestStreak: 2 },
+          feedback: { summary: 'You contained 2 of 8 incidents.' },
+          topicOutcomes: [
+            { topic: 'firewall-blocking', label: 'Firewall blocking', achieved: false },
+          ],
+          debrief: [
+            {
+              incidentId: 'incident-01',
+              title: 'Port sweep',
+              outcome: 'missed',
+              yourCommand: null,
+              expectedCommand: 'block ip 192.0.2.66',
+              explanation: 'Block the scanner.',
+              pointsAwarded: 0,
+            },
+          ],
+        },
+      },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    })
+    expect(wrapper.text()).toContain('MISSED')
+    expect(wrapper.text()).toContain('block ip 192.0.2.66')
+    expect(wrapper.text()).toContain('not saved')
+    await wrapper.get('button').trigger('click')
+    expect(wrapper.emitted('replay')).toHaveLength(1)
+  })
+})

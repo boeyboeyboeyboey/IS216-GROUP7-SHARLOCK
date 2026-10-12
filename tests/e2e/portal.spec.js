@@ -33,6 +33,16 @@ test('explores every building without prerequisites or changing sample points', 
       await expect(page).toHaveURL('/')
       continue
     }
+    if (game.id === 'cli-cyber-defender') {
+      await card.getByRole('link', { name: 'Enter activity' }).click()
+      await expect(page).toHaveURL(new RegExp(`${game.route}$`))
+      await expect(
+        page.getByRole('heading', { name: 'CLI Cyber Defender', level: 1 }),
+      ).toBeVisible()
+      await page.getByRole('link', { name: 'Back to town' }).click()
+      await expect(page).toHaveURL('/')
+      continue
+    }
     if (game.id === 'phishing-post-mortem') {
       await card.getByRole('link', { name: 'Enter activity' }).click()
       await expect(page).toHaveURL(new RegExp(`${game.route}$`))
@@ -58,7 +68,6 @@ test('explores every building without prerequisites or changing sample points', 
     await expect(page.locator('.town-player')).toContainText('120 points')
   }
   for (const [previous, current] of [
-    ['integrity-detective', 'cli-cyber-defender'],
     ['mini-ctf', 'sql-injection-arcade'],
     ['red-blue', 'regex-defender'],
   ]) {
@@ -66,6 +75,10 @@ test('explores every building without prerequisites or changing sample points', 
     await expect(page).toHaveURL(`/games/${current}`)
     await expect(page.getByRole('heading', { name: 'A new case is taking shape.' })).toBeVisible()
   }
+  // the cli legacy url now redirects to the playable game, not a preview
+  await page.goto('/games/integrity-detective')
+  await expect(page).toHaveURL('/games/cli-cyber-defender')
+  await expect(page.getByRole('heading', { name: 'CLI Cyber Defender', level: 1 })).toBeVisible()
   // the social-engineering legacy url now redirects to the playable game, not a preview
   await page.goto('/games/access-control')
   await expect(page).toHaveURL('/games/social-engineering-simulator')
