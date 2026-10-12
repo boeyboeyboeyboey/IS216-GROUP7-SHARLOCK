@@ -19,6 +19,16 @@ describe('scenario brief', () => {
     await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('start')).toHaveLength(1)
   })
+
+  it('shows the reset code in the brief when one is provided', () => {
+    const wrapper = mount(ScenarioBrief, { props: { ...props, resetCode: 'SYNTH-RESET-4821' } })
+    expect(wrapper.get('[data-testid="soc-reset-code"]').text()).toBe('SYNTH-RESET-4821')
+  })
+
+  it('renders the brief without a code when the server sends none', () => {
+    const wrapper = mount(ScenarioBrief, { props })
+    expect(wrapper.find('[data-testid="soc-reset-code"]').exists()).toBe(false)
+  })
 })
 
 describe('chat thread', () => {

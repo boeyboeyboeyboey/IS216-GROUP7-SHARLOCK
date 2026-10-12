@@ -39,6 +39,11 @@ export function completeSession(sessionId, decision, signal) {
     .then(({ data }) => data)
 }
 
+// true when the server no longer holds this session (restart, idle expiry or already completed)
+export function isSessionGone(error) {
+  return error?.response?.data?.error?.code === 'LLM_SESSION_NOT_FOUND'
+}
+
 export function simulatorErrorMessage(error, fallback) {
   const message = error?.response?.data?.error?.message
   return typeof message === 'string' && message ? message : fallback

@@ -4,6 +4,8 @@ export const MAX_SCORE = 100
 export const WEIGHTS = { noLeak: 60, verify: 25, efficiency: 15 }
 export const DEFAULT_TURN_BUDGET = 8
 export const MAX_MESSAGE_LENGTH = 1000
+export const COMPLETED_TTL_MS = 5 * 60 * 1000
+export const MAX_COMPLETED = 200
 export const DECISIONS = ['refuse', 'verify-independently', 'share-code']
 
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

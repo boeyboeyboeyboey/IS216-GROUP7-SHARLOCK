@@ -24,14 +24,15 @@ client/src/games/social-engineering-simulator/simulator.js
 
 | Route                                                   | Purpose                                                                                                           |
 | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `POST /api/games/social-engineering-simulator/session`  | Starts a run; returns `{ sessionId, persona, brief, openingMessage }`.                                            |
+| `POST /api/games/social-engineering-simulator/session`  | Starts a run; returns `{ sessionId, persona, brief, openingMessage, resetCode }`.                                 |
 | `POST /api/games/social-engineering-simulator/message`  | Body `{ sessionId, content }` (1..1000 chars); returns the colleague reply, turn count and `leaked`/`ended`.      |
 | `POST /api/games/social-engineering-simulator/complete` | Body `{ sessionId, decision }` (`refuse` / `verify-independently` / `share-code`); returns the score and debrief. |
 
 All three send `Cache-Control: no-store`.
 
 Errors use the project shape `{ error: { code, message, fieldErrors? }, requestId }`:
-`SOC_INVALID_BODY` (400), `LLM_SESSION_NOT_FOUND` (404), `SOC_RATE_LIMITED` (429),
+`SOC_INVALID_BODY` (400), `LLM_SESSION_NOT_FOUND` (404), `LLM_SESSION_BUSY` (409),
+`SOC_RATE_LIMITED` (429),
 `LLM_NOT_CONFIGURED` / `LLM_UPSTREAM_UNAVAILABLE` (503) from the adapter, and
 `SOC_UNAVAILABLE` (503) as the catch-all. No stack or configuration detail leaks.
 
@@ -46,8 +47,9 @@ Maximum 100: `noLeak` 60, `verify` 25, `efficiency` 15.
 - Outcome is `resisted` (protected + verified), `partial` (protected, refused only) or
   `compromised` (code exposed).
 
-Leak detection normalises both the code and the trainee message (uppercase, spaces and
-hyphens removed) and checks for a substring match, so `synth reset 4821` is caught.
+Leak detection normalises both the code and the trainee message (uppercase, everything
+except letters and digits removed) and checks for a substring match, so `synth reset 4821`
+and `synth_reset.4821` are caught. Partial disclosure such as only the digits is not flagged.
 
 ## Why there is no database here
 

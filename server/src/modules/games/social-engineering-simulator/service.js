@@ -2,13 +2,21 @@ import { LlmError } from './llm/llmError.js'
 import { createLlmAdapter } from './llm/adapter.js'
 import { createChatSessionStore } from './llm/chatSessionStore.js'
 import { createChatSessionRunner } from './llm/chatSessionRunner.js'
-import { DEFAULT_TURN_BUDGET, GAME_ID, MAX_SCORE, RULESET_VERSION, WEIGHTS } from './policy.js'
+import {
+  COMPLETED_TTL_MS,
+  DEFAULT_TURN_BUDGET,
+  GAME_ID,
+  MAX_COMPLETED,
+  MAX_SCORE,
+  RULESET_VERSION,
+  WEIGHTS,
+} from './policy.js'
 import { pickScenario, publicBrief } from './scenarios.js'
 
-// normalise for leak detection: uppercase and drop spaces and hyphens so
-// "synth reset 4821" matches the stored SYNTH-RESET-4821
+// normalise for leak detection: uppercase and keep only letters and digits so
+// "synth reset 4821" and "synth_reset.4821" match the stored SYNTH-RESET-4821
 function normalise(value) {
-  return value.toUpperCase().replace(/[\s-]/g, '')
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, '')
 }
 
 function sessionNotFound() {
@@ -77,10 +85,23 @@ export function createSocialEngineeringService({
   adapter = createLlmAdapter(),
   store = createChatSessionStore(),
   random = Math.random,
+  now = Date.now,
 } = {}) {
   const runner = createChatSessionRunner({ store, adapter })
   // per-session metadata the bounded transcript store does not hold
   const meta = new Map()
+  // finished results kept briefly so a retried complete gets the same answer
+  const completed = new Map()
+
+  function pruneCompleted() {
+    const cutoff = now() - COMPLETED_TTL_MS
+    for (const [id, entry] of completed) if (entry.at <= cutoff) completed.delete(id)
+    // map order is insertion order, so the first keys are the oldest
+    for (const id of completed.keys()) {
+      if (completed.size <= MAX_COMPLETED) break
+      completed.delete(id)
+    }
+  }
 
   function requireSession(sessionId) {
     const entry = meta.get(sessionId)
@@ -99,6 +120,8 @@ export function createSocialEngineeringService({
     const scenario = pickScenario(random)
     const view = publicBrief(scenario)
     const sessionId = runner.start()
+    // the store has just swept expired transcripts; drop their metadata too
+    for (const id of meta.keys()) if (store.get(id) === null) meta.delete(id)
     // seed the scripted opening as the colleague's first turn so the model
     // continues from it on the next send
     store.append(sessionId, { role: 'assistant', content: scenario.opening })
@@ -108,6 +131,7 @@ export function createSocialEngineeringService({
       turnBudget: scenario.turnBudget,
       leaked: false,
       ended: false,
+      busy: false,
     })
     return {
       sessionId,
@@ -116,19 +140,28 @@ export function createSocialEngineeringService({
       persona: { id: scenario.id, displayName: scenario.displayName },
       brief: view.brief,
       openingMessage: scenario.opening,
+      resetCode: scenario.code,
     }
   }
 
   async function sendMessage(sessionId, content) {
     const entry = requireSession(sessionId)
     if (entry.ended) throw sessionNotFound()
-    entry.turnsUsed += 1
+    if (entry.busy) {
+      throw new LlmError(
+        'LLM_SESSION_BUSY',
+        'A reply is still being written. Wait for it before sending again.',
+        409,
+      )
+    }
     const leakedNow = normalise(content).includes(normalise(entry.scenario.code))
     if (leakedNow) {
-      // never forward the code to the model; end the run on the leak
+      // never forward the code to the model; end the run on the leak. the
+      // transcript stays until complete or idle expiry so metadata and
+      // transcript are pruned together
+      entry.turnsUsed += 1
       entry.leaked = true
       entry.ended = true
-      store.end(sessionId)
       return {
         reply: null,
         turnsUsed: entry.turnsUsed,
@@ -137,10 +170,18 @@ export function createSocialEngineeringService({
         ended: true,
       }
     }
-    const reply = await runner.send(sessionId, {
-      systemPrompt: entry.scenario.systemPrompt,
-      content,
-    })
+    let reply
+    entry.busy = true
+    try {
+      reply = await runner.send(sessionId, {
+        systemPrompt: entry.scenario.systemPrompt,
+        content,
+      })
+    } finally {
+      entry.busy = false
+    }
+    // a turn counts only once the model has replied
+    entry.turnsUsed += 1
     if (entry.turnsUsed >= entry.turnBudget) entry.ended = true
     return {
       reply,
@@ -152,6 +193,9 @@ export function createSocialEngineeringService({
   }
 
   function complete(sessionId, decision) {
+    pruneCompleted()
+    const replay = completed.get(sessionId)
+    if (replay) return replay.result
     const entry = requireSession(sessionId)
     const { score, outcome, breakdown } = scoreOutcome({
       leaked: entry.leaked,
@@ -163,7 +207,7 @@ export function createSocialEngineeringService({
     // release the transcript and metadata; nothing is persisted
     store.end(sessionId)
     meta.delete(sessionId)
-    return {
+    const result = {
       gameId: GAME_ID,
       rulesetVersion: RULESET_VERSION,
       score,
@@ -173,6 +217,9 @@ export function createSocialEngineeringService({
       debrief,
       saved: false,
     }
+    completed.set(sessionId, { result, at: now() })
+    pruneCompleted()
+    return result
   }
 
   return {
@@ -182,6 +229,7 @@ export function createSocialEngineeringService({
     complete,
     // exposed for tests and future GAME-01 adoption
     scoreOutcome,
+    sessionCount: () => meta.size,
     DEFAULT_TURN_BUDGET,
   }
 }

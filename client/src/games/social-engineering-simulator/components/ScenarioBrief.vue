@@ -2,6 +2,7 @@
 defineProps({
   brief: { type: Object, required: true },
   persona: { type: Object, required: true },
+  resetCode: { type: String, default: '' },
 })
 defineEmits(['start'])
 </script>
@@ -15,6 +16,10 @@ defineEmits(['start'])
       >.
     </p>
     <p class="soc-brief-objective">{{ brief.objective }}</p>
+    <p v-if="resetCode" class="soc-brief-code">
+      Your reset code (fictional):
+      <code class="soc-code" data-testid="soc-reset-code">{{ resetCode }}</code>
+    </p>
     <ul class="soc-brief-rules">
       <li>The reset code on your screen is a secret. Treat it like a password.</li>
       <li>You have up to {{ brief.turnBudget }} replies. Stay calm and ask questions.</li>

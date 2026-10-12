@@ -22,6 +22,10 @@ const session = {
   openingMessage: 'Hi, this is Jordan.',
 }
 
+const gone = {
+  response: { status: 404, data: { error: { code: 'LLM_SESSION_NOT_FOUND', message: 'gone' } } },
+}
+
 function harness() {
   let game
   const wrapper = mount({
@@ -44,6 +48,55 @@ describe('social-engineering session composable', () => {
     expect(game.persona.value.displayName).toBe('Jordan Vale (IT Service Desk)')
     expect(game.turnBudget.value).toBe(8)
     expect(game.messages.value).toEqual([{ role: 'colleague', content: 'Hi, this is Jordan.' }])
+  })
+
+  it('keeps the reset code from the start response and replaces it on restart', async () => {
+    startSession
+      .mockResolvedValueOnce({ ...session, resetCode: 'SYNTH-RESET-4821' })
+      .mockResolvedValueOnce({ ...session, resetCode: 'SYNTH-RESET-7731' })
+    const { game } = harness()
+    await game.start()
+    await flushPromises()
+    expect(game.resetCode.value).toBe('SYNTH-RESET-4821')
+    await game.reset()
+    await flushPromises()
+    expect(game.resetCode.value).toBe('SYNTH-RESET-7731')
+  })
+
+  it('moves to the error state when completing a session the server no longer has', async () => {
+    startSession.mockResolvedValue(session)
+    completeSession.mockRejectedValue(gone)
+    const { game } = harness()
+    await game.start()
+    await flushPromises()
+    game.begin()
+    await game.complete('refuse')
+    expect(game.status.value).toBe('error')
+    expect(game.error.value).toMatch(/ended or expired/i)
+    expect(game.pending.value).toBe(false)
+  })
+
+  it('moves to the error state when a message hits a session the server no longer has', async () => {
+    startSession.mockResolvedValue(session)
+    sendMessage.mockRejectedValue(gone)
+    const { game } = harness()
+    await game.start()
+    await flushPromises()
+    game.begin()
+    await game.send('hello')
+    expect(game.status.value).toBe('error')
+    expect(game.error.value).toMatch(/ended or expired/i)
+  })
+
+  it('keeps the retry path when completing fails for any other reason', async () => {
+    startSession.mockResolvedValue(session)
+    completeSession.mockRejectedValue(new Error('network'))
+    const { game } = harness()
+    await game.start()
+    await flushPromises()
+    game.begin()
+    await game.complete('refuse')
+    expect(game.status.value).toBe('chatting')
   })
 
   it('sends a message to the active session and appends the reply', async () => {

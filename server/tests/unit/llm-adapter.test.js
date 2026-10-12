@@ -72,7 +72,9 @@ describe('createLlmAdapter', () => {
   it('selects cloud mode and delegates to the gemini provider with the injected fetchImpl', async () => {
     const fetchImpl = vi
       .fn()
-      .mockResolvedValue(jsonResponse({ candidates: [{ content: { parts: [{ text: 'cloud reply' }] } }] }))
+      .mockResolvedValue(
+        jsonResponse({ candidates: [{ content: { parts: [{ text: 'cloud reply' }] } }] }),
+      )
 
     const adapter = createLlmAdapter({ apiKey: 'sk-example-key', fetchImpl })
 
@@ -107,5 +109,37 @@ describe('createLlmAdapter', () => {
     })
 
     expect(adapter.mode).toBe('cloud')
+  })
+
+  it('uses LLM_MODEL as the Gemini model when only the key and model are set', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ candidates: [{ content: { parts: [{ text: 'hi' }] } }] }))
+
+    const adapter = createLlmAdapter({
+      apiKey: 'sk-example-key',
+      model: 'gemini-2.5-pro',
+      fetchImpl,
+    })
+
+    expect(adapter.mode).toBe('cloud')
+    await adapter.chat(call)
+    expect(fetchImpl.mock.calls[0][0]).toContain('/models/gemini-2.5-pro:generateContent')
+  })
+
+  it('ignores the Ollama variables in cloud mode when both are also set', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ candidates: [{ content: { parts: [{ text: 'hi' }] } }] }))
+
+    const adapter = createLlmAdapter({
+      apiKey: 'sk-example-key',
+      baseUrl: 'http://127.0.0.1:11434',
+      model: 'llama3.2:1b',
+      fetchImpl,
+    })
+
+    await adapter.chat(call)
+    expect(fetchImpl.mock.calls[0][0]).toContain('/models/gemini-2.5-flash:generateContent')
   })
 })

@@ -21,6 +21,7 @@ const {
   closed,
   result,
   error,
+  resetCode,
   canSend,
   start,
   begin,
@@ -59,6 +60,7 @@ onMounted(start)
       v-else-if="status === 'briefing' && brief && persona"
       :brief="brief"
       :persona="persona"
+      :reset-code="resetCode"
       @start="begin"
     />
 
@@ -68,6 +70,10 @@ onMounted(start)
       <template v-else>
         <header class="soc-convo-head">
           <p class="soc-convo-persona">{{ personaName }}</p>
+          <p v-if="resetCode" class="soc-convo-code">
+            Your reset code:
+            <code class="soc-code" data-testid="soc-reset-code-chat">{{ resetCode }}</code>
+          </p>
           <p class="soc-convo-turns" aria-live="polite">Turn {{ turnsUsed }} of {{ turnBudget }}</p>
         </header>
 

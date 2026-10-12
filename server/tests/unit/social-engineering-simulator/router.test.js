@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import express from 'express'
 import request from 'supertest'
 import { createSocialEngineeringRouter } from '../../../src/modules/games/social-engineering-simulator/router.js'
 import { LlmError } from '../../../src/modules/games/social-engineering-simulator/llm/llmError.js'
+import { createSocialEngineeringService } from '../../../src/modules/games/social-engineering-simulator/service.js'
 
 const SESSION = '11111111-1111-1111-1111-111111111111'
 
@@ -48,6 +49,18 @@ function makeApp(service, now = Date.now) {
 const base = '/api/games/social-engineering-simulator'
 
 describe('social-engineering router', () => {
+  it('answers a repeated complete with the same result', async () => {
+    const adapter = { configured: true, mode: 'local', chat: vi.fn() }
+    const app = makeApp(createSocialEngineeringService({ adapter }))
+    const { body: start } = await request(app).post(`${base}/session`).send({}).expect(200)
+    const payload = { sessionId: start.sessionId, decision: 'refuse' }
+
+    const first = await request(app).post(`${base}/complete`).send(payload).expect(200)
+    const second = await request(app).post(`${base}/complete`).send(payload).expect(200)
+
+    expect(second.body).toEqual(first.body)
+  })
+
   it('starts a session with no-store caching', async () => {
     const response = await request(makeApp(stubService()))
       .post(`${base}/session`)

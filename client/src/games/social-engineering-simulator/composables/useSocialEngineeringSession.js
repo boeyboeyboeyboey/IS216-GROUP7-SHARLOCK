@@ -1,5 +1,13 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
-import { completeSession, sendMessage, simulatorErrorMessage, startSession } from '../simulator.js'
+import {
+  completeSession,
+  isSessionGone,
+  sendMessage,
+  simulatorErrorMessage,
+  startSession,
+} from '../simulator.js'
+
+const SESSION_GONE_MESSAGE = 'This simulation has ended or expired. Start a new one.'
 
 // status: idle (loading) | briefing (brief shown) | chatting | awaiting (reply in flight)
 //         | ended (debrief shown) | error (fatal load failure)
@@ -16,6 +24,7 @@ export function useSocialEngineeringSession() {
   const result = ref(null)
   const error = ref('')
   const sessionId = ref('')
+  const resetCode = ref('')
 
   let controller
   let generation = 0
@@ -39,6 +48,7 @@ export function useSocialEngineeringSession() {
     result.value = null
     error.value = ''
     sessionId.value = ''
+    resetCode.value = ''
   }
 
   async function start() {
@@ -52,6 +62,7 @@ export function useSocialEngineeringSession() {
       const data = await startSession(controller.signal)
       if (disposed || request !== generation) return
       sessionId.value = data.sessionId
+      resetCode.value = data.resetCode ?? ''
       persona.value = data.persona
       brief.value = data.brief
       turnBudget.value = data.brief?.turnBudget ?? 0
@@ -94,6 +105,11 @@ export function useSocialEngineeringSession() {
       status.value = 'chatting'
     } catch (requestError) {
       if (disposed || request !== generation) return
+      if (isSessionGone(requestError)) {
+        status.value = 'error'
+        error.value = SESSION_GONE_MESSAGE
+        return
+      }
       status.value = 'chatting'
       error.value = simulatorErrorMessage(
         requestError,
@@ -118,6 +134,11 @@ export function useSocialEngineeringSession() {
       status.value = 'ended'
     } catch (requestError) {
       if (disposed || request !== generation) return
+      if (isSessionGone(requestError)) {
+        status.value = 'error'
+        error.value = SESSION_GONE_MESSAGE
+        return
+      }
       status.value = 'chatting'
       error.value = simulatorErrorMessage(
         requestError,
@@ -149,6 +170,7 @@ export function useSocialEngineeringSession() {
     closed,
     result,
     error,
+    resetCode,
     canSend,
     canDecide,
     start,

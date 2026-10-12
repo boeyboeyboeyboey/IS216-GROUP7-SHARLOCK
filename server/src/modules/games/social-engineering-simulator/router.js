@@ -1,6 +1,13 @@
 import { Router } from 'express'
 import { LlmError } from './llm/llmError.js'
-import { SocialEngError, parseComplete, parseMessage, parseStart, rateLimited } from './policy.js'
+import {
+  SocialEngError,
+  parseComplete,
+  parseMessage,
+  parseStart,
+  rateLimited,
+  unavailable,
+} from './policy.js'
 import { createSocialEngineeringService } from './service.js'
 
 const WINDOW_MS = 60000
@@ -25,14 +32,7 @@ function createPacer(now) {
 }
 
 function fail(response, error) {
-  const safe =
-    error instanceof SocialEngError || error instanceof LlmError
-      ? error
-      : new SocialEngError(
-          'SOC_UNAVAILABLE',
-          'The simulation is temporarily unavailable. Please try again shortly.',
-          503,
-        )
+  const safe = error instanceof SocialEngError || error instanceof LlmError ? error : unavailable()
   response.status(safe.status).json({
     error: {
       code: safe.code,

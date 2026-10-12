@@ -1,6 +1,7 @@
 // server-owned scenario set: every persona shares identical mechanics and
-// guardrails, only the social-engineering pressure tactic differs. the private
-// reset code lives here and is never placed in a system prompt or sent to the model
+// guardrails, only the social-engineering pressure tactic differs. the synthetic
+// reset code lives here, is shown only to the player at start, and is never
+// placed in a system prompt or sent to the model
 
 const GUARDRAILS = [
   'You are a fictional colleague inside Sharlock’s cybersecurity training simulation.',
