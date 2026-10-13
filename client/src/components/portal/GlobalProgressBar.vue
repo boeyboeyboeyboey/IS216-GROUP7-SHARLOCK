@@ -5,14 +5,12 @@ const props = defineProps({
   completed: { type: Number, default: 0 },
   total: { type: Number, default: 0 },
 })
-const totalCount = computed(() =>
-  Number.isFinite(props.total) ? Math.max(0, Math.floor(props.total)) : 0,
-)
-const completedCount = computed(() =>
-  Number.isFinite(props.completed)
-    ? Math.min(totalCount.value, Math.max(0, Math.floor(props.completed)))
-    : 0,
-)
+function normalizeCount(value) {
+  if (!Number.isFinite(value)) return 0
+  return Math.max(0, Math.floor(value))
+}
+const totalCount = computed(() => normalizeCount(props.total))
+const completedCount = computed(() => Math.min(totalCount.value, normalizeCount(props.completed)))
 const percentage = computed(() =>
   totalCount.value ? Math.round((completedCount.value / totalCount.value) * 100) : 0,
 )
