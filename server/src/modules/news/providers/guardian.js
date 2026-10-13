@@ -55,12 +55,11 @@ export function normalizeGuardian(payload, edition, now) {
         !Number.isFinite(time)
       )
         throw new Error()
-      if (
+      const isOutsideAllowedTime =
         time < Date.parse(edition.window.from) ||
         time >= Date.parse(edition.window.to) ||
         time > now
-      )
-        continue
+      if (isOutsideAllowedTime) continue
       if (seen.has(item.id)) continue
       const title = inlineText(parseInline(item.fields?.headline ?? item.webTitle)).trim()
       if (!title || title.length > 2000) throw new Error()

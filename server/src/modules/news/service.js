@@ -8,6 +8,14 @@ import {
   editionWindow,
 } from './policy.js'
 
+function serializeInline(nodes) {
+  return nodes.map(({ type, text, href }) => ({
+    type,
+    ...(text !== undefined && { text }),
+    ...(href && { href }),
+  }))
+}
+
 function serialize(edition, now, refreshAvailableAt) {
   return {
     provider: 'The Guardian',
@@ -23,16 +31,8 @@ function serialize(edition, now, refreshAvailableAt) {
         title,
         url,
         publishedAt,
-        excerpt: excerpt.map(({ type, text, href }) => ({
-          type,
-          ...(text !== undefined && { text }),
-          ...(href && { href }),
-        })),
-        byline: byline.map(({ type, text, href }) => ({
-          type,
-          ...(text !== undefined && { text }),
-          ...(href && { href }),
-        })),
+        excerpt: serializeInline(excerpt),
+        byline: serializeInline(byline),
         copyright,
       }),
     ),
