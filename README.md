@@ -1,6 +1,125 @@
 # Sharlock Hub
 
-## 1. Project Setup
+## 1. Teammate Agent Kickoff Prompt
+
+```text
+You are helping me work on Sharlock Hub. Begin with read-only inspection.
+Do not write code, install dependencies, generate scaffolding or claim a
+task until the following workflow reaches explicit plan approval.
+
+1. INGEST
+Read TASKS.md first, then README.md, DESIGN.md and agents.md in full.
+Then read CODE_STYLE.md for the readability rules and the bounded
+maintenance path. This path applies only to explicitly approved existing
+code; it does not weaken the collision guardrail for new features.
+Inspect git status, staged/unstaged diffs, relevant source, tests and
+available branch/PR information. Preserve all existing changes.
+Ask my name if it is not already known; never invent a contributor.
+Check TASKS.md's course reference index and the current documentation/
+inventory. Read relevant CS440 lectures before designing cybersecurity
+learning content, and relevant WAD2 slides for implementation discussion.
+The supplied WAD2 Week 6 covers components, props, slots, events and
+non-sensitive local storage. Identify supporting filenames and slide/page
+numbers; verify actual content when filenames or versions are ambiguous.
+Course examples do not override this repository's security boundaries
+or authorize a new feature.
+Treat DESIGN.md as mandatory for every new shared UI surface. Inspect
+its referenced styles/components and the existing pages before planning.
+Preserve the exact current shared pixel scheme and 3D navbar logo.
+Game screens may have their own design philosophy, fonts and artwork,
+but must isolate styles within their module; the shared navbar, town
+building/card and other pages keep the hub scheme. Retain the existing
+admin/log-content exception. Task 3 hover-card refinement is skipped;
+do not restart it. Tasks 4–5 are accepted; new implementation requires
+its own explicit plan approval. Follow TASKS.md's feature-folder convention
+and list the feature files, tests and minimal shared integration edits.
+
+1a. REQUEST TYPE
+If my request explicitly asks to simplify or review existing code, use
+CODE_STYLE.md's read-only audit and proposal workflow. Present up to three
+bounded options with paths, unchanged behavior and narrow checks. Wait for
+the owning contributor's agreement and my explicit approval of the scope
+before editing. This does not authorize editing another contributor's code
+or Social's separately owned llm/ engine without its contributor's agreement.
+Otherwise, use the new-feature selection and collision workflow below.
+
+2. DETECT COLLISIONS FOR NEW FEATURE SELECTION
+Inspect the implementation before trusting a task's status.
+Search by feature name, concept, alternate names, routes, components,
+services, schemas, fixtures, tests and Git history.
+A partially implemented feature counts as existing work, including a
+feature-specific prototype or preview. A generic empty directory alone
+does not prove implementation.
+An active claim is also a coordination conflict even if code is not
+present locally. State any branches or work you could not inspect.
+Cyber News Central is the existing threat-briefing / The daily briefing
+activity. Its Times, newsstand and API are implemented; inspect the
+feature modules and claim. Do not treat the different title as an
+available new feature or create a duplicate.
+
+3. ENFORCE THE COLLISION GUARDRAIL FOR NEW FEATURE SELECTION
+If a newly selected or proposed feature already has partial or complete work, STOP.
+You are strictly forbidden from touching, overwriting, refactoring,
+deleting, replacing or continuing that feature's existing code.
+Immediately identify the conflicting files/tasks/branches, explain what
+already exists and ask me to choose another unimplemented backlog task
+or propose a brand-new feature.
+Do not evade this rule by renaming, copying or rebuilding the same
+feature elsewhere. Do not silently take over a teammate's work.
+
+4. ROUTE ME TO A NEW FEATURE
+Present exactly these two paths:
+A. Choose an unimplemented, unclaimed backlog feature that passed inspection.
+B. Propose a brand-new custom feature.
+
+If all backlog features are complete, immediately ask me to propose a
+new feature. If unfinished items exist but all are claimed, implemented
+in part or blocked by dependencies, explain this and offer a new feature
+or an independently available prerequisite task.
+
+Apply the same collision inspection to every custom proposal before
+accepting it. No chosen task means no implementation.
+
+5. CLARIFY AND AGREE BEFORE CODING
+After an open feature is selected, ask focused clarifying questions and
+conduct a dialogue with me. Finalize:
+- The learning objective, difficulty and required background knowledge.
+- Gameplay rules, scoring, feedback, replay and failure behavior.
+- Mobile, touch, keyboard and reduced-motion behavior.
+- Exact files, Vue components, props/emits and state ownership.
+- Shared design reuse or game-local theme, CSS isolation and leakage checks.
+- API requests/responses, validation, schemas and result integrity.
+- Shared dependencies, town placement and minimal integration changes.
+- External services, zero-cost feasibility and test/acceptance criteria.
+
+Recommend concrete defaults, but do not treat silence as agreement.
+Present the final implementation plan and wait for my explicit approval
+before writing a single line of implementation code.
+
+6. BEGIN ONLY AFTER APPROVAL
+Recheck Git, TASKS.md and affected files immediately before editing.
+If new overlapping work appears, return to the collision guardrail.
+
+Record the agreed task, my name, branch, affected files, dependencies
+and next action in TASKS.md. New branches use lowercase
+<task-id>-<description> with no codex/ prefix.
+Treat the claim as a coordination record, not proof that other machines
+have no competing work.
+
+Reuse existing shared interfaces. Make only the additive shared
+registration changes explicitly included in the approved plan; preserve
+existing catalog entries and other features. Missing shared contracts
+require a separately agreed prerequisite, not a competing implementation.
+
+Keep private .env files untouched, retain the root pnpm lockfile and
+preserve DESIGN.md's visual/accessibility rules.
+
+Finish with the actual diff, exact checks and outcomes, limitations and
+next action. Mark Review with evidence; mark Done only after acceptance.
+Never claim a test, commit, push or working feature that did not occur.
+```
+
+## 2. Project Setup
 
 Requires Node.js **24.12.0** and a MongoDB connection. Run from the repository root:
 
@@ -30,7 +149,7 @@ Skip it and **every** E2E test fails instantly with `browserType.launch: Executa
 
 **Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator and CLI Cyber Defender games, plus combined About/introduction, two scored-game previews and database health check. The three games remain in Review and do not persist results. Authentication, permissions and persistent learning records remain pending. Localhost demonstration; zero project budget.
 
-## 2. Tooling Recommendation
+## 3. Tooling Recommendation
 
 **Use Cursor or another agentic coding environment.** The repository architecture, task board and kickoff prompt are designed specifically for AI-assisted development.
 
@@ -40,7 +159,7 @@ Before publishing existing-code work, check the latest [CODE_STYLE.md](CODE_STYL
 
 Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments.
 
-## 3. Documentation Directory
+## 4. Documentation Directory
 
 - **[TASKS.md](TASKS.md):** Feature specifications, availability checks, task claims, dependencies, contributors and verification evidence. Claim only after the collision check and plan approval.
 - **[DESIGN.md](DESIGN.md):** Mandatory shared pixel design, exact tokens/components, game-local design freedom, responsiveness and building registration.
@@ -52,7 +171,7 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 
 **Organize new work by feature:** follow the [feature-folder convention](TASKS.md#feature-organization). Keep each feature’s UI, local state, styles, backend module and tests clearly grouped, with small integrations into shared infrastructure. Preserve existing feature identities and avoid unrelated directory migrations.
 
-## 4. Game Backlog
+## 5. Game Backlog
 
 The five scored games have implementation blueprints, but a blueprint does not authorize work. G-NEWS / Cyber News Central is accepted by Boey; G-PHISH, G-SOC and G-CLI are playable unsaved implementations pending review; G-SQL and G-REGEX remain clearly labelled previews. The town has six activities. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
 
@@ -341,122 +460,3 @@ Cancel animation frames, timers and workers on departure. Reduced-motion mode us
 **Deferred:** optional future headline Q&A using a browser-local LLM, subject to Boey's separate feasibility and source-permission investigation. No AI UI, model download, inference dependency, LLM request or speculative adapter in this version.
 
 **Acceptance:** verify real public HTTP/JSON with the registered key separately from deterministic fixtures. Test provider normalization, malicious content/links, exact date boundaries, request coalescing/budgets, Mongo persistence/expiry, empty/failure/retry states, direct links/history/focus, local search/pagination, mobile layout and regressions in town gestures/audio/navigation. The news preview flag is removed following verification; retain actual evidence in the accepted-work record.
-
-## 5. Teammate Agent Kickoff Prompt
-
-```text
-You are helping me work on Sharlock Hub. Begin with read-only inspection.
-Do not write code, install dependencies, generate scaffolding or claim a
-task until the following workflow reaches explicit plan approval.
-
-1. INGEST
-Read TASKS.md first, then README.md, DESIGN.md and agents.md in full.
-Then read CODE_STYLE.md for the readability rules and the bounded
-maintenance path. This path applies only to explicitly approved existing
-code; it does not weaken the collision guardrail for new features.
-Inspect git status, staged/unstaged diffs, relevant source, tests and
-available branch/PR information. Preserve all existing changes.
-Ask my name if it is not already known; never invent a contributor.
-Check TASKS.md's course reference index and the current documentation/
-inventory. Read relevant CS440 lectures before designing cybersecurity
-learning content, and relevant WAD2 slides for implementation discussion.
-The supplied WAD2 Week 6 covers components, props, slots, events and
-non-sensitive local storage. Identify supporting filenames and slide/page
-numbers; verify actual content when filenames or versions are ambiguous.
-Course examples do not override this repository's security boundaries
-or authorize a new feature.
-Treat DESIGN.md as mandatory for every new shared UI surface. Inspect
-its referenced styles/components and the existing pages before planning.
-Preserve the exact current shared pixel scheme and 3D navbar logo.
-Game screens may have their own design philosophy, fonts and artwork,
-but must isolate styles within their module; the shared navbar, town
-building/card and other pages keep the hub scheme. Retain the existing
-admin/log-content exception. Task 3 hover-card refinement is skipped;
-do not restart it. Tasks 4–5 are accepted; new implementation requires
-its own explicit plan approval. Follow TASKS.md's feature-folder convention
-and list the feature files, tests and minimal shared integration edits.
-
-1a. REQUEST TYPE
-If my request explicitly asks to simplify or review existing code, use
-CODE_STYLE.md's read-only audit and proposal workflow. Present up to three
-bounded options with paths, unchanged behavior and narrow checks. Wait for
-the owning contributor's agreement and my explicit approval of the scope
-before editing. This does not authorize editing another contributor's code
-or Social's separately owned llm/ engine without its contributor's agreement.
-Otherwise, use the new-feature selection and collision workflow below.
-
-2. DETECT COLLISIONS FOR NEW FEATURE SELECTION
-Inspect the implementation before trusting a task's status.
-Search by feature name, concept, alternate names, routes, components,
-services, schemas, fixtures, tests and Git history.
-A partially implemented feature counts as existing work, including a
-feature-specific prototype or preview. A generic empty directory alone
-does not prove implementation.
-An active claim is also a coordination conflict even if code is not
-present locally. State any branches or work you could not inspect.
-Cyber News Central is the existing threat-briefing / The daily briefing
-activity. Its Times, newsstand and API are implemented; inspect the
-feature modules and claim. Do not treat the different title as an
-available new feature or create a duplicate.
-
-3. ENFORCE THE COLLISION GUARDRAIL FOR NEW FEATURE SELECTION
-If a newly selected or proposed feature already has partial or complete work, STOP.
-You are strictly forbidden from touching, overwriting, refactoring,
-deleting, replacing or continuing that feature's existing code.
-Immediately identify the conflicting files/tasks/branches, explain what
-already exists and ask me to choose another unimplemented backlog task
-or propose a brand-new feature.
-Do not evade this rule by renaming, copying or rebuilding the same
-feature elsewhere. Do not silently take over a teammate's work.
-
-4. ROUTE ME TO A NEW FEATURE
-Present exactly these two paths:
-A. Choose an unimplemented, unclaimed backlog feature that passed inspection.
-B. Propose a brand-new custom feature.
-
-If all backlog features are complete, immediately ask me to propose a
-new feature. If unfinished items exist but all are claimed, implemented
-in part or blocked by dependencies, explain this and offer a new feature
-or an independently available prerequisite task.
-
-Apply the same collision inspection to every custom proposal before
-accepting it. No chosen task means no implementation.
-
-5. CLARIFY AND AGREE BEFORE CODING
-After an open feature is selected, ask focused clarifying questions and
-conduct a dialogue with me. Finalize:
-- The learning objective, difficulty and required background knowledge.
-- Gameplay rules, scoring, feedback, replay and failure behavior.
-- Mobile, touch, keyboard and reduced-motion behavior.
-- Exact files, Vue components, props/emits and state ownership.
-- Shared design reuse or game-local theme, CSS isolation and leakage checks.
-- API requests/responses, validation, schemas and result integrity.
-- Shared dependencies, town placement and minimal integration changes.
-- External services, zero-cost feasibility and test/acceptance criteria.
-
-Recommend concrete defaults, but do not treat silence as agreement.
-Present the final implementation plan and wait for my explicit approval
-before writing a single line of implementation code.
-
-6. BEGIN ONLY AFTER APPROVAL
-Recheck Git, TASKS.md and affected files immediately before editing.
-If new overlapping work appears, return to the collision guardrail.
-
-Record the agreed task, my name, branch, affected files, dependencies
-and next action in TASKS.md. New branches use lowercase
-<task-id>-<description> with no codex/ prefix.
-Treat the claim as a coordination record, not proof that other machines
-have no competing work.
-
-Reuse existing shared interfaces. Make only the additive shared
-registration changes explicitly included in the approved plan; preserve
-existing catalog entries and other features. Missing shared contracts
-require a separately agreed prerequisite, not a competing implementation.
-
-Keep private .env files untouched, retain the root pnpm lockfile and
-preserve DESIGN.md's visual/accessibility rules.
-
-Finish with the actual diff, exact checks and outcomes, limitations and
-next action. Mark Review with evidence; mark Done only after acceptance.
-Never claim a test, commit, push or working feature that did not occur.
-```

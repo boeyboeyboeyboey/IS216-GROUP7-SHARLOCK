@@ -2,7 +2,7 @@
 
 ## 1. Start with read-only ingestion
 
-**Read [TASKS.md](TASKS.md) first**, then [README.md](README.md), [DESIGN.md](DESIGN.md) and this file in full, followed by [CODE_STYLE.md](CODE_STYLE.md). Check authorization, dependencies, In Progress, Review and coordination notes before reading the affected implementation. Do not assume tools automatically discover the lowercase `agents.md` filename; explicitly load it. The [README kickoff prompt](README.md#5-teammate-agent-kickoff-prompt) is the teammate entry point.
+**Read [TASKS.md](TASKS.md) first**, then [README.md](README.md), [DESIGN.md](DESIGN.md) and this file in full, followed by [CODE_STYLE.md](CODE_STYLE.md). Check authorization, dependencies, In Progress, Review and coordination notes before reading the affected implementation. Do not assume tools automatically discover the lowercase `agents.md` filename; explicitly load it. The [README kickoff prompt](README.md#1-teammate-agent-kickoff-prompt) is the teammate entry point.
 
 Use Cursor or another agentic coding environment: the module structure, task board and prompt workflow are designed for AI-assisted development. Human developers remain responsible for approving scope and reviewing changes.
 
@@ -148,7 +148,7 @@ Documentation-only changes need links/anchors, synchronized specifications, trut
 ## 10. Documentation maintenance
 
 - [CODE_STYLE.md](CODE_STYLE.md) is the single authority for readability standards and staged maintenance review. Its rules do not create automatic refactor permission or change new-feature authorization.
-- README.md retains its approved five sections: minimal setup, tooling recommendation, directory, six activity blueprints and kickoff prompt.
+- README.md retains its approved five sections: kickoff prompt first, then minimal setup, tooling recommendation, directory and six activity blueprints.
 - TASKS.md owns authorization, availability/collision evidence, dependencies, active records, detailed feature specifications, operational verification and retained history.
 - agents.md owns the decision tree and engineering guardrails; DESIGN.md owns visual details.
 - Keep README and TASKS copies of the shared/six-game blueprints synchronized in the same change. TASKS may add coordination or implementation-detail notes without silently altering approved rules.
