@@ -195,14 +195,16 @@ function wheelCamera(event) {
   if (!camera) return
   dismiss()
   event.preventDefault()
-  if (event.ctrlKey || event.metaKey) camera.zoomWithWheel(event)
-  else {
-    const unit =
-      event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.value.clientHeight : 1
-    const x = event.shiftKey && !event.deltaX ? event.deltaY : event.deltaX
-    const y = event.shiftKey && !event.deltaX ? 0 : event.deltaY
-    camera.pan((-x * unit) / scale.value, (-y * unit) / scale.value, { relative: true })
+  if (event.ctrlKey || event.metaKey) {
+    camera.zoomWithWheel(event)
+    return
   }
+  let unit = 1
+  if (event.deltaMode === 1) unit = 16
+  else if (event.deltaMode === 2) unit = viewport.value.clientHeight
+  const x = event.shiftKey && !event.deltaX ? event.deltaY : event.deltaX
+  const y = event.shiftKey && !event.deltaX ? 0 : event.deltaY
+  camera.pan((-x * unit) / scale.value, (-y * unit) / scale.value, { relative: true })
 }
 function cameraChanged(event) {
   scale.value = event.detail.scale
