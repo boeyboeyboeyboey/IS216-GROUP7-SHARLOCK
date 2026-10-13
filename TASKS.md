@@ -6,7 +6,7 @@ Team: **Boey, Keane, Eric, Russell, Xin Lei and Athithya**. Contributor ownershi
 
 ## Current authorization
 
-**Current authorization: DOC-08 — kickoff prompt first in README.** On 13 October 2026 Boey directly requested moving the user/teammate agent kickoff prompt to the first part of README so it is the first thing readers see. Scope is the README section order and numbering, its kickoff anchor in TASKS.md and agents.md, and the documented five-section order. Application code and prompt/game content remain unchanged. Prepare the branch for review; explicit approval is still required before merging and publishing main.
+**Completed authorization: DOC-08 — kickoff prompt first in README.** On 13 October 2026 Boey requested the reorder and explicitly approved its direct main merge and publication. README now begins with the complete kickoff prompt, followed by setup, tooling, documentation directory and game backlog as sections 2–5. Active kickoff links and the documented section order are updated; all section bodies and application code remain unchanged. No code-refactoring batch is selected or authorized.
 
 **Completed authorization: DOC-07 — code readability standards and staged review workflow.** On 13 October 2026 Boey approved the documentation-only plan, then explicitly approved its direct main merge and publication. CODE_STYLE.md is the adopted readability guide; README, agents, TASKS and DESIGN link its rules and workflow. New branches omit the `codex/` prefix as Boey requested. No readability review batch is selected, and no application refactoring, dependency/configuration change or database operation is authorized by this completed task. Each later batch requires its own agreed scope and approval.
 
@@ -61,13 +61,6 @@ No task is currently in progress.
 - **Preservation / coordination:** branch, HEAD `952c0486098a79ead0acc3fcab173dad0b5dae56`, status and all 222 covered file hashes matched the handover checkpoint immediately before edits. Verified 36 archived source/integration files. Unrelated implementation files, six retained blueprints, other contributors’ review records and course index are preserved; private configuration and supplied course files were not edited. Removed 14 Dash-only failure directories. No live PR, unfetched remote or teammate-machine inspection. Nothing staged; no commits or pushes.
 
 ## Review
-
-**DOC-08 — README kickoff prompt first** · Status: **Review** · Contributor/reviewer: **Boey** · Branch: `doc-08-readme-kickoff-first`.
-
-- **Direct request / scope:** move the full kickoff prompt to section 1 immediately after the project title; renumber setup, tooling, directory and game backlog as sections 2–5. Update the two active kickoff links and agents.md's documented order. This is ★☆☆ documentation complexity; gameplay, components/props/emits, API/schema/state changes and dependencies are not applicable.
-- **Preservation / coordination:** starts from main `e77048f`; only the two pre-existing Finder metadata files were dirty. Preserve the prompt body, all setup/tooling/directory content, synchronized blueprints, contributor records, course files, private configuration and ignored handovers. Only README.md, TASKS.md and agents.md are changed. No live PR or teammate-machine inspection is needed for this direct reorder.
-- **Next action / checks:** verify section order, unchanged section bodies, local links/anchors, blueprint synchronization, formatting and final diff. Commit/push this documentation branch; wait for Boey's explicit approval before main merge. Application suites and database checks are unnecessary for a documentation reorder.
-- **Verification (13 October 2026):** a focused `python3` stdin check passed: kickoff first, five numbered sections, all five section bodies unchanged from `e77048f`, **64 local links/anchors** and only the three declared documents changed. `./node_modules/.bin/prettier --check README.md TASKS.md agents.md` and `git diff --check` passed. Reviewed the related anchor/order diff. No application tests, services or database operations were run.
 
 **DOC-06 — Course reference inventory and agent guidance** · Status: **Review** · Contributor/reviewer: **Boey** · Branch: `codex/doc-06-course-references`.
 
@@ -1088,6 +1081,16 @@ These original ideas are retained as history, not selectable open tasks or team 
 | Global competition                 | Optional competition across institutions without exposing private learning records.                                   | Deferred.                                                                               | Opt-in, signed-in leaderboard with agreed eligibility/scoring rules. |
 
 ## Accepted work
+
+### Accepted README kickoff order
+
+**DOC-08 — README kickoff prompt first** · Status: **Done** · Contributor/reviewer: **Boey** · Branch: `doc-08-readme-kickoff-first`.
+
+- **Direct request / scope:** move the full kickoff prompt to section 1 immediately after the project title; renumber setup, tooling, directory and game backlog as sections 2–5. Update the two active kickoff links and agents.md's documented order. This is ★☆☆ documentation complexity; gameplay, components/props/emits, API/schema/state changes and dependencies are not applicable.
+- **Preservation / coordination:** starts from main `e77048f`; only the two pre-existing Finder metadata files were dirty. Preserve the prompt body, all setup/tooling/directory content, synchronized blueprints, contributor records, course files, private configuration and ignored handovers. Only README.md, TASKS.md and agents.md are changed. No live PR or teammate-machine inspection is needed for this direct reorder.
+- **Next action / checks:** verify section order, unchanged section bodies, local links/anchors, blueprint synchronization, formatting and final diff. Commit/push this documentation branch; wait for Boey's explicit approval before main merge. Application suites and database checks are unnecessary for a documentation reorder.
+- **Verification (13 October 2026):** a focused `python3` stdin check passed: kickoff first, five numbered sections, all five section bodies unchanged from `e77048f`, **64 local links/anchors** and only the three declared documents changed. `./node_modules/.bin/prettier --check README.md TASKS.md agents.md` and `git diff --check` passed. Reviewed the related anchor/order diff. No application tests, services or database operations were run.
+- **Acceptance / main integration (13 October 2026):** Boey replied “approve” to merging reorder commit `abb244b3c94b54484caa39ad2041346e3634c276` into main and pushing directly. Local main was fast-forwarded to that exact commit after live refs were rechecked unchanged. This acceptance record changes only TASKS.md. No application code or feature content changed; the first readability batch remains unselected.
 
 ### Accepted code readability standards
 
