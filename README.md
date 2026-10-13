@@ -28,7 +28,7 @@ pnpm exec playwright install chromium
 
 Skip it and **every** E2E test fails instantly with `browserType.launch: Executable doesn't exist`. That looks like a broken suite but is only a missing download - Playwright pins a browser revision per version, so an upgrade invalidates the one already on disk.
 
-**Current implementation:** MEVN scaffold, pixel-styled town as the entry page, The Sharlock Times with live news, The Phishing Post-Mortem investigation game, combined About/introduction, activity previews and database health check. Authentication, permissions, the four remaining games and persistent learning records remain pending. Localhost demonstration; zero project budget.
+**Current implementation:** MEVN scaffold, pixel-styled town as the entry page, The Sharlock Times with live news, The Phishing Post-Mortem investigation game, combined About/introduction, four scored-game previews and database health check. The Phishing Post-Mortem is a playable unsaved prototype awaiting review. Authentication, permissions and persistent learning records remain pending. Localhost demonstration; zero project budget.
 
 ## 2. Tooling Recommendation
 
@@ -43,6 +43,7 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 - **[TASKS.md](TASKS.md):** Feature specifications, availability checks, task claims, dependencies, contributors and verification evidence. Claim only after the collision check and plan approval.
 - **[DESIGN.md](DESIGN.md):** Mandatory shared pixel design, exact tokens/components, game-local design freedom, responsiveness and building registration.
 - **[agents.md](agents.md):** AI operating instructions, conflict detection, overwrite restrictions and review workflow.
+- **[Course reference index](TASKS.md#course-reference-index):** Supplied project brief, CS440 lecture decks and WAD2 teaching slides under `documentation/`. The 21 September additions include CS440 security basics, encryption, certificates, authentication, access control, network/software/web security and WAD2 Week 6 on Vue components, props, slots, events and local storage. Read the relevant sources before mapping learning objectives or making course/assessment claims; the index records filename/version ambiguities.
 
 **When adding UI:** follow the exact current [shared design contract](DESIGN.md#rules-for-new-pages-and-features): Pixelify Sans, cream/earthy-green tokens, square borders, hard shadows, pixel artwork/icons, the retained 3D navbar logo and existing town controls. Reuse the shared components. Admin/log content retains its functional-style exception. **Games may use their own design philosophy** inside their module; their styles must not change the shared navbar, town building/card or other pages. Task 3 hover-card refinement is skipped; Tasks 4–5 are accepted, with evidence in TASKS.md.
 
@@ -50,11 +51,11 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 
 ## 4. Game Backlog
 
-Four of the five scored games remain **proposed implementation blueprints**, not working features or automatic authorization to code. G-NEWS / Cyber News Central is **completed and accepted by Boey on 19 September 2026**, and **G-PHISH / The Phishing Post-Mortem is implemented by Athithya on 21 September 2026 and pending review**, both as recorded in TASKS.md. The town represents all six features; the remaining four buildings open clearly labelled previews. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
+Four of the five scored games remain **proposed implementation blueprints**, not working features or automatic authorization to code. G-NEWS / Cyber News Central is **completed and accepted by Boey on 19 September 2026**, and **G-PHISH / The Phishing Post-Mortem is implemented by Athithya on 21 September 2026 and pending review**, both as recorded in TASKS.md. The town has six activities: the Times and Phishing Post-Mortem are playable, while four buildings open clearly labelled previews. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
 
 ### Shared implementation blueprint
 
-The following proposed contract applies to the five scored games. It depends on the pending shared authentication, authorization and attempt/result foundation. Agree and implement that foundation as a separate task; individual games must not create competing versions.
+The following proposed persistence contract applies to the five scored games. Ranked play depends on the pending shared authentication, authorization and attempt/result foundation. Agree and implement that foundation as a separate task; individual games must not create competing versions.
 
 **Module boundaries**
 
@@ -63,7 +64,7 @@ The following proposed contract applies to the five scored games. It depends on 
 - Requests: reuse `client/src/services/api.js`; its base URL already contains `/api`.
 - State: keep gameplay in a module composable using `ref`, `reactive` and `computed`. Reserve Pinia for shared account/context state.
 - Visual boundary: follow [DESIGN.md](DESIGN.md#rules-for-new-pages-and-features). Game modules may choose their own design philosophy and scoped fonts/artwork/controls; shared navigation, town registration/cards and shared pages retain the exact hub scheme. Verify accessibility/responsiveness and no style leakage.
-- Town integration: all six planned features already have one catalog entry and building. Four scored games use the generic preview route and `isPreview: true`; news and the phishing post-mortem are implemented behind their own routes. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
+- Town integration: all six activities have one catalog entry and building. Four scored games use the generic preview route and `isPreview: true`; news and the phishing post-mortem are implemented behind their own routes. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
 
 **Proposed shared API**
 
@@ -346,6 +347,14 @@ Read TASKS.md first, then README.md, DESIGN.md and agents.md in full.
 Inspect git status, staged/unstaged diffs, relevant source, tests and
 available branch/PR information. Preserve all existing changes.
 Ask my name if it is not already known; never invent a contributor.
+Check TASKS.md's course reference index and the current documentation/
+inventory. Read relevant CS440 lectures before designing cybersecurity
+learning content, and relevant WAD2 slides for implementation discussion.
+The supplied WAD2 Week 6 covers components, props, slots, events and
+non-sensitive local storage. Identify supporting filenames and slide/page
+numbers; verify actual content when filenames or versions are ambiguous.
+Course examples do not override this repository's security boundaries
+or authorize a new feature.
 Treat DESIGN.md as mandatory for every new shared UI surface. Inspect
 its referenced styles/components and the existing pages before planning.
 Preserve the exact current shared pixel scheme and 3D navbar logo.

@@ -94,16 +94,16 @@ Audio starts muted and paused on every page load and every return to the town. T
 
 ## Adding a new game to the homepage
 
-The six planned features are already registered. Keep their identities and placements when an implementation is explicitly authorized; a generic preview is existing work under the kickoff collision rules. These are shared town surfaces using the existing sprites, tokens, metadata card and camera.
+The six activities are already registered. Keep their identities and placements when an implementation is explicitly authorized; a generic preview is existing work under the kickoff collision rules. These are shared town surfaces using the existing sprites, tokens, metadata card and camera.
 
-| Feature                                 | Catalog ID / route suffix      | Building  | Position   | Readiness |
-| --------------------------------------- | ------------------------------ | --------- | ---------- | --------- |
-| CLI Cyber Defender                      | `cli-cyber-defender`           | cottage   | (112, 112) | Preview   |
-| The Phishing Post-Mortem                | `phishing-post-mortem`         | library   | (480, 64)  | Complete  |
-| SQL Injection Arcade                    | `sql-injection-arcade`         | hut       | (832, 128) | Preview   |
-| Cyber News Central / The daily briefing | `threat-briefing`              | newsstand | (144, 480) | Complete  |
-| LLM Social Engineering Simulator        | `social-engineering-simulator` | office    | (432, 520) | Preview   |
-| Regex Defender                          | `regex-defender`               | shed      | (720, 496) | Preview   |
+| Feature                                 | Catalog ID / route suffix      | Building  | Position   | Readiness         |
+| --------------------------------------- | ------------------------------ | --------- | ---------- | ----------------- |
+| CLI Cyber Defender                      | `cli-cyber-defender`           | cottage   | (112, 112) | Preview           |
+| The Phishing Post-Mortem                | `phishing-post-mortem`         | library   | (480, 64)  | Playable, unsaved |
+| SQL Injection Arcade                    | `sql-injection-arcade`         | hut       | (832, 128) | Preview           |
+| Cyber News Central / The daily briefing | `threat-briefing`              | newsstand | (144, 480) | Complete          |
+| LLM Social Engineering Simulator        | `social-engineering-simulator` | office    | (432, 520) | Preview           |
+| Regex Defender                          | `regex-defender`               | shed      | (720, 496) | Preview           |
 
 All routes use `/games/<catalog-id>`. The four retired illustrative URLs redirect: `integrity-detective` → `cli-cyber-defender`, `mini-ctf` → `sql-injection-arcade`, `access-control` → `social-engineering-simulator`, `red-blue` → `regex-defender`. They do not add entries or buildings.
 
@@ -145,7 +145,7 @@ The supplied MP3 was renamed to remove the filename’s `#` for reliable static-
 
 ## Current implementation boundaries
 
-The Daily briefing newsstand opens the live Times and the Phishing library opens the playable investigation; the other four town buildings open the planned game previews. Cyber News Central is completed and accepted by Boey on 19 September 2026, and The Phishing Post-Mortem is implemented by Athithya on 21 September 2026 and pending review; the four remaining game implementations are still pending. `client/src/data/portalPreview.js` contains labelled illustrative profile/achievement data; it is not an authenticated session or saved learning record. The town is publicly reachable at `/`, with `/dashboard` redirecting there. AUTH-01/AUTH-02 remain pending. Do not claim the login screen, game previews, sample points or cohort access are working account features.
+The Daily briefing newsstand opens the live Times, the Phishing library opens the playable investigation, and the other four town buildings open the planned game previews. Cyber News Central is completed and accepted by Boey on 19 September 2026, and The Phishing Post-Mortem is implemented by Athithya on 21 September 2026 and pending review; the four remaining scored-game implementations are still pending. `client/src/data/portalPreview.js` contains labelled illustrative profile/achievement data; it is not an authenticated session or saved learning record. The town is publicly reachable at `/`, with `/dashboard` redirecting there. AUTH-01/AUTH-02 remain pending. Do not claim the login screen, game previews, sample points or cohort access are working account features.
 
 Reusable presentation contracts: `ProfileWidget` takes `username`, `title`, integer `points` and local `avatar`; `GlobalProgressBar` takes `completed`/`total` and clamps 0–100%; `TrophyCase` takes `{ id, name, description, icon }[]`; `SharlockTip` supports click/focus/hover and Escape.
 

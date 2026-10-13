@@ -36,7 +36,7 @@ test('explores every building without prerequisites or changing sample points', 
     if (game.id === 'phishing-post-mortem') {
       await card.getByRole('link', { name: 'Enter activity' }).click()
       await expect(page).toHaveURL(new RegExp(`${game.route}$`))
-      await expect(page.getByRole('heading', { name: 'The Phishing Post-Mortem' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: game.name, exact: true })).toBeVisible()
       await page.getByRole('link', { name: 'Back to town' }).click()
       await expect(page).toHaveURL('/')
       continue
