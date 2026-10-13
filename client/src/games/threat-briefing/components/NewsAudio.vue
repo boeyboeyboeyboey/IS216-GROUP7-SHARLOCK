@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import PixelIcon from '../../../components/town/PixelIcon.vue'
 
 const audio = ref(null)
@@ -10,6 +10,11 @@ const emit = defineEmits(['status'])
 watch(message, (value) => emit('status', value))
 let generation = 0
 let disposed = false
+const soundLabel = computed(() => {
+  if (starting.value) return 'Starting…'
+  if (wantsSound.value) return 'Mute'
+  return 'Sound'
+})
 
 function silence() {
   generation++
@@ -81,7 +86,7 @@ onBeforeUnmount(() => {
       @click="toggleSound"
     >
       <PixelIcon :name="wantsSound ? 'sound' : 'mute'" :size="20" />
-      <span>{{ starting ? 'Starting…' : wantsSound ? 'Mute' : 'Sound' }}</span>
+      <span>{{ soundLabel }}</span>
     </button>
   </div>
 </template>
