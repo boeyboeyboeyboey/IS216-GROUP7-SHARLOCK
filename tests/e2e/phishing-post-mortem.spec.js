@@ -220,3 +220,45 @@ test('enters from the town and returns to it', async ({ page }) => {
   await page.getByRole('link', { name: 'Back to town' }).click()
   await expect(page).toHaveURL('/')
 })
+
+test('keeps the shared town styles after leaving the game', async ({ page }) => {
+  await page.goto('/')
+  const sharedClipPath = await page.locator('body').evaluate((body) => {
+    const probe = document.createElement('span')
+    probe.className = 'visually-hidden'
+    body.append(probe)
+    const clipPath = getComputedStyle(probe).clipPath
+    probe.remove()
+    return clipPath
+  })
+  const bodyStyle = await page.locator('body').evaluate((body) => {
+    const style = getComputedStyle(body)
+    return { fontFamily: style.fontFamily, color: style.color, background: style.backgroundColor }
+  })
+
+  await page.goto('/games/phishing-post-mortem')
+  await expect(page.getByRole('heading', { name: 'The Phishing Post-Mortem' })).toBeVisible()
+  await page.getByRole('link', { name: 'Back to town' }).click()
+  await expect(page).toHaveURL('/')
+  const returnedClipPath = await page.locator('body').evaluate((body) => {
+    const probe = document.createElement('span')
+    probe.className = 'visually-hidden'
+    body.append(probe)
+    const clipPath = getComputedStyle(probe).clipPath
+    probe.remove()
+    return clipPath
+  })
+  expect(returnedClipPath).toBe(sharedClipPath)
+  await expect
+    .poll(() =>
+      page.locator('body').evaluate((body) => {
+        const style = getComputedStyle(body)
+        return {
+          fontFamily: style.fontFamily,
+          color: style.color,
+          background: style.backgroundColor,
+        }
+      }),
+    )
+    .toEqual(bodyStyle)
+})

@@ -24,11 +24,11 @@
   box-sizing: border-box;
 }
 
-.phish-intro {
+:where(.phish-game) .phish-intro {
   margin-bottom: 1.25rem;
 }
 
-.phish-back {
+:where(.phish-game) .phish-back {
   display: inline-block;
   min-height: 44px;
   padding: 0.6rem 0;
@@ -45,39 +45,39 @@
   letter-spacing: -0.01em;
 }
 
-.phish-strap {
+:where(.phish-game) .phish-strap {
   max-width: 62ch;
   margin: 0;
   color: var(--game-muted);
 }
 
-.phish-state {
+:where(.phish-game) .phish-state {
   padding: 1.5rem;
   background: var(--game-surface);
   border: 1px solid var(--game-line);
   border-radius: 6px;
 }
 
-.phish-error {
+:where(.phish-game) .phish-error {
   background: var(--game-bad-soft);
   border-color: var(--game-bad);
 }
 
-.phish-error p {
+:where(.phish-game) .phish-error p {
   margin: 0 0 1rem;
   color: var(--game-bad);
   font-weight: 600;
 }
 
 /* mail client chrome */
-.sharmail {
+:where(.phish-game) .sharmail {
   overflow: hidden;
   background: var(--game-surface);
   border: 1px solid var(--game-line-strong);
   border-radius: 8px;
 }
 
-.sharmail-bar {
+:where(.phish-game) .sharmail-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem 1rem;
@@ -88,41 +88,41 @@
   background: var(--game-accent);
 }
 
-.sharmail-brand {
+:where(.phish-game) .sharmail-brand {
   display: inline-flex;
   gap: 0.5rem;
   align-items: center;
 }
 
-.sharmail-mark {
+:where(.phish-game) .sharmail-mark {
   width: 24px;
   height: 24px;
 }
 
-.sharmail-wordmark {
+:where(.phish-game) .sharmail-wordmark {
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.12em;
 }
 
-.sharmail-mailbox {
+:where(.phish-game) .sharmail-mailbox {
   font-size: 0.95rem;
   opacity: 0.92;
 }
 
-.sharmail-body-grid {
+:where(.phish-game) .sharmail-body-grid {
   display: grid;
   grid-template-columns: 1fr;
 }
 
-.sharmail-rail {
+:where(.phish-game) .sharmail-rail {
   display: none;
   padding: 1rem 0.75rem;
   background: var(--game-bg);
   border-right: 1px solid var(--game-line);
 }
 
-.sharmail-rail-title {
+:where(.phish-game) .sharmail-rail-title {
   margin: 0 0 0.5rem;
   font-size: 0.75rem;
   font-weight: 700;
@@ -131,13 +131,13 @@
   letter-spacing: 0.08em;
 }
 
-.sharmail-rail ul {
+:where(.phish-game) .sharmail-rail ul {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.sharmail-rail li {
+:where(.phish-game) .sharmail-rail li {
   display: flex;
   justify-content: space-between;
   padding: 0.5rem 0.6rem;
@@ -146,17 +146,17 @@
   border-radius: 4px;
 }
 
-.sharmail-rail li.is-active {
+:where(.phish-game) .sharmail-rail li.is-active {
   font-weight: 700;
   color: var(--game-accent);
   background: var(--game-accent-soft);
 }
 
-.sharmail-count {
+:where(.phish-game) .sharmail-count {
   font-variant-numeric: tabular-nums;
 }
 
-.sharmail-rail-case {
+:where(.phish-game) .sharmail-rail-case {
   margin: 1rem 0 0;
   padding-top: 0.75rem;
   font-size: 0.85rem;
@@ -164,42 +164,42 @@
   border-top: 1px solid var(--game-line);
 }
 
-.sharmail-panes {
+:where(.phish-game) .sharmail-panes {
   display: grid;
   grid-template-columns: 1fr;
   min-width: 0;
 }
 
-.sharmail-pane {
+:where(.phish-game) .sharmail-pane {
   min-width: 0;
   padding: 1rem;
 }
 
-.sharmail-pane-list {
+:where(.phish-game) .sharmail-pane-list {
   border-bottom: 1px solid var(--game-line);
 }
 
-.sharmail-pane-head h2 {
+:where(.phish-game) .sharmail-pane-head h2 {
   margin: 0;
   font-size: 1.15rem;
   font-weight: 700;
 }
 
-.sharmail-pane-head p {
+:where(.phish-game) .sharmail-pane-head p {
   margin: 0.15rem 0 0.75rem;
   font-size: 0.85rem;
   color: var(--game-muted);
 }
 
 /* message list */
-.sharmail-list {
+:where(.phish-game) .sharmail-list {
   margin: 0;
   padding: 0;
   list-style: none;
   border-top: 1px solid var(--game-line);
 }
 
-.sharmail-row {
+:where(.phish-game) .sharmail-row {
   display: flex;
   gap: 0.7rem;
   align-items: flex-start;
@@ -214,16 +214,16 @@
   cursor: pointer;
 }
 
-.sharmail-row:hover {
+:where(.phish-game) .sharmail-row:hover {
   background: var(--game-bg);
 }
 
-.sharmail-row.is-open {
+:where(.phish-game) .sharmail-row.is-open {
   background: var(--game-accent-soft);
   border-left-color: var(--game-accent);
 }
 
-.sharmail-avatar {
+:where(.phish-game) .sharmail-avatar {
   display: grid;
   flex: 0 0 auto;
   place-items: center;
@@ -237,39 +237,39 @@
   border-radius: 50%;
 }
 
-.sharmail-row-text {
+:where(.phish-game) .sharmail-row-text {
   display: block;
   min-width: 0;
   flex: 1 1 auto;
 }
 
-.sharmail-row-top {
+:where(.phish-game) .sharmail-row-top {
   display: flex;
   gap: 0.5rem;
   align-items: baseline;
   justify-content: space-between;
 }
 
-.sharmail-sender {
+:where(.phish-game) .sharmail-sender {
   overflow: hidden;
   font-size: 0.95rem;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.sharmail-row.is-unread .sharmail-sender,
-.sharmail-row.is-unread .sharmail-subject {
+:where(.phish-game) .sharmail-row.is-unread .sharmail-sender,
+:where(.phish-game) .sharmail-row.is-unread .sharmail-subject {
   font-weight: 700;
 }
 
-.sharmail-when {
+:where(.phish-game) .sharmail-when {
   flex: 0 0 auto;
   font-size: 0.75rem;
   color: var(--game-muted);
   font-variant-numeric: tabular-nums;
 }
 
-.sharmail-subject {
+:where(.phish-game) .sharmail-subject {
   display: block;
   overflow: hidden;
   font-size: 0.9rem;
@@ -277,7 +277,7 @@
   text-overflow: ellipsis;
 }
 
-.sharmail-preview {
+:where(.phish-game) .sharmail-preview {
   display: -webkit-box;
   overflow: hidden;
   font-size: 0.82rem;
@@ -286,7 +286,7 @@
   -webkit-box-orient: vertical;
 }
 
-.sharmail-unread-dot {
+:where(.phish-game) .sharmail-unread-dot {
   flex: 0 0 auto;
   width: 8px;
   height: 8px;
@@ -295,7 +295,7 @@
   border-radius: 50%;
 }
 
-.visually-hidden {
+:where(.phish-game) .visually-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -305,7 +305,7 @@
 }
 
 /* reading pane */
-.sharmail-back {
+:where(.phish-game) .sharmail-back {
   min-height: 44px;
   margin-bottom: 0.75rem;
   padding: 0.5rem 0.9rem;
@@ -318,27 +318,27 @@
   cursor: pointer;
 }
 
-.sharmail-briefing h2 {
+:where(.phish-game) .sharmail-briefing h2 {
   margin: 0 0 0.5rem;
   font-size: 1.2rem;
 }
 
-.sharmail-briefing p {
+:where(.phish-game) .sharmail-briefing p {
   max-width: 68ch;
 }
 
-.sharmail-briefing-hint {
+:where(.phish-game) .sharmail-briefing-hint {
   color: var(--game-muted);
   font-size: 0.9rem;
 }
 
-.sharmail-reading-subject {
+:where(.phish-game) .sharmail-reading-subject {
   margin: 0 0 0.75rem;
   font-size: 1.25rem;
   font-weight: 700;
 }
 
-.sharmail-headers {
+:where(.phish-game) .sharmail-headers {
   margin: 0 0 1rem;
   padding: 0.75rem;
   background: var(--game-bg);
@@ -346,14 +346,14 @@
   border-radius: 4px;
 }
 
-.sharmail-headers > div {
+:where(.phish-game) .sharmail-headers > div {
   display: grid;
   grid-template-columns: 6.5rem 1fr;
   gap: 0.5rem;
   padding: 0.2rem 0;
 }
 
-.sharmail-headers dt {
+:where(.phish-game) .sharmail-headers dt {
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--game-muted);
@@ -361,27 +361,27 @@
   letter-spacing: 0.04em;
 }
 
-.sharmail-headers dd {
+:where(.phish-game) .sharmail-headers dd {
   margin: 0;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.sharmail-display-name {
+:where(.phish-game) .sharmail-display-name {
   font-weight: 600;
 }
 
-.sharmail-address {
+:where(.phish-game) .sharmail-address {
   font-family: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
   font-size: 0.85rem;
   color: var(--game-muted);
 }
 
-.sharmail-body p {
+:where(.phish-game) .sharmail-body p {
   max-width: 68ch;
 }
 
-.sharmail-links {
+:where(.phish-game) .sharmail-links {
   margin-top: 1rem;
   padding: 0.85rem;
   background: var(--game-bg);
@@ -389,30 +389,30 @@
   border-radius: 4px;
 }
 
-.sharmail-links h4 {
+:where(.phish-game) .sharmail-links h4 {
   margin: 0 0 0.35rem;
   font-size: 0.95rem;
 }
 
-.sharmail-links-note {
+:where(.phish-game) .sharmail-links-note {
   margin: 0 0 0.75rem;
   font-size: 0.85rem;
   color: var(--game-muted);
 }
 
-.sharmail-links ul {
+:where(.phish-game) .sharmail-links ul {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.sharmail-links li + li {
+:where(.phish-game) .sharmail-links li + li {
   margin-top: 0.85rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--game-line);
 }
 
-.sharmail-link-label {
+:where(.phish-game) .sharmail-link-label {
   display: block;
   margin-bottom: 0.4rem;
   color: var(--game-accent);
@@ -420,7 +420,7 @@
   overflow-wrap: anywhere;
 }
 
-.sharmail-inspect {
+:where(.phish-game) .sharmail-inspect {
   min-height: 44px;
   padding: 0.5rem 0.85rem;
   font: inherit;
@@ -433,21 +433,21 @@
   cursor: pointer;
 }
 
-.sharmail-destination {
+:where(.phish-game) .sharmail-destination {
   margin: 0.5rem 0 0;
   overflow-wrap: anywhere;
 }
 
-.sharmail-destination code {
+:where(.phish-game) .sharmail-destination code {
   font-size: 0.85rem;
   color: var(--game-bad);
 }
 
-.sharmail-accuse-row {
+:where(.phish-game) .sharmail-accuse-row {
   margin: 1rem 0;
 }
 
-.sharmail-accuse {
+:where(.phish-game) .sharmail-accuse {
   min-height: 44px;
   padding: 0.6rem 1rem;
   font: inherit;
@@ -459,15 +459,15 @@
   cursor: pointer;
 }
 
-.sharmail-accuse.is-accused {
+:where(.phish-game) .sharmail-accuse.is-accused {
   color: var(--game-good);
   background: var(--game-good-soft);
   border-color: var(--game-good);
 }
 
 /* security log and verdict */
-.sharmail-timeline,
-.sharmail-verdict {
+:where(.phish-game) .sharmail-timeline,
+:where(.phish-game) .sharmail-verdict {
   margin-top: 1.25rem;
   padding: 1rem;
   background: var(--game-bg);
@@ -475,48 +475,48 @@
   border-radius: 6px;
 }
 
-.sharmail-timeline h3,
-.sharmail-verdict h3 {
+:where(.phish-game) .sharmail-timeline h3,
+:where(.phish-game) .sharmail-verdict h3 {
   margin: 0 0 0.75rem;
   font-size: 1.05rem;
 }
 
-.sharmail-timeline ol {
+:where(.phish-game) .sharmail-timeline ol {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.sharmail-timeline li {
+:where(.phish-game) .sharmail-timeline li {
   display: grid;
   gap: 0.15rem;
   padding: 0.6rem 0;
   border-top: 1px solid var(--game-line);
 }
 
-.sharmail-timeline-time {
+:where(.phish-game) .sharmail-timeline-time {
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--game-muted);
   font-variant-numeric: tabular-nums;
 }
 
-.sharmail-timeline-label {
+:where(.phish-game) .sharmail-timeline-label {
   font-weight: 600;
 }
 
-.sharmail-timeline-detail {
+:where(.phish-game) .sharmail-timeline-detail {
   font-size: 0.9rem;
   color: var(--game-muted);
 }
 
-.sharmail-verdict-target {
+:where(.phish-game) .sharmail-verdict-target {
   display: grid;
   gap: 0.2rem;
   margin: 0 0 1rem;
 }
 
-.sharmail-verdict-label {
+:where(.phish-game) .sharmail-verdict-label {
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--game-muted);
@@ -524,20 +524,20 @@
   letter-spacing: 0.06em;
 }
 
-.sharmail-evidence {
+:where(.phish-game) .sharmail-evidence {
   margin: 0 0 1rem;
   padding: 0;
   border: 0;
 }
 
-.sharmail-evidence legend {
+:where(.phish-game) .sharmail-evidence legend {
   margin-bottom: 0.5rem;
   padding: 0;
   font-size: 0.9rem;
   font-weight: 700;
 }
 
-.sharmail-evidence-option {
+:where(.phish-game) .sharmail-evidence-option {
   display: flex;
   gap: 0.6rem;
   align-items: flex-start;
@@ -549,11 +549,11 @@
   cursor: pointer;
 }
 
-.sharmail-evidence-option + .sharmail-evidence-option {
+:where(.phish-game) .sharmail-evidence-option + .sharmail-evidence-option {
   margin-top: 0.4rem;
 }
 
-.sharmail-evidence-option input {
+:where(.phish-game) .sharmail-evidence-option input {
   width: 20px;
   height: 20px;
   margin-top: 0.15rem;
@@ -561,17 +561,17 @@
   accent-color: var(--game-accent);
 }
 
-.sharmail-evidence-option input:disabled + span {
+:where(.phish-game) .sharmail-evidence-option input:disabled + span {
   color: var(--game-muted);
 }
 
-.sharmail-evidence-hint {
+:where(.phish-game) .sharmail-evidence-hint {
   margin: 0.5rem 0 0;
   font-size: 0.85rem;
   color: var(--game-muted);
 }
 
-.sharmail-submit {
+:where(.phish-game) .sharmail-submit {
   min-height: 44px;
   padding: 0.7rem 1.2rem;
   font: inherit;
@@ -583,42 +583,42 @@
   cursor: pointer;
 }
 
-.sharmail-submit:disabled {
+:where(.phish-game) .sharmail-submit:disabled {
   color: var(--game-muted);
   background: var(--game-line);
   border-color: var(--game-line-strong);
   cursor: not-allowed;
 }
 
-.sharmail-verdict-note {
+:where(.phish-game) .sharmail-verdict-note {
   margin: 0.75rem 0 0;
   font-size: 0.85rem;
   color: var(--game-muted);
 }
 
 /* debrief */
-.sharmail-debrief h3 {
+:where(.phish-game) .sharmail-debrief h3 {
   margin: 1.5rem 0 0.5rem;
   font-size: 1.05rem;
 }
 
-.sharmail-debrief-head {
+:where(.phish-game) .sharmail-debrief-head {
   padding: 1rem;
   border: 1px solid var(--game-line-strong);
   border-radius: 6px;
 }
 
-.sharmail-debrief-head.is-correct {
+:where(.phish-game) .sharmail-debrief-head.is-correct {
   background: var(--game-good-soft);
   border-color: var(--game-good);
 }
 
-.sharmail-debrief-head.is-missed {
+:where(.phish-game) .sharmail-debrief-head.is-missed {
   background: var(--game-bad-soft);
   border-color: var(--game-bad);
 }
 
-.sharmail-debrief-eyebrow {
+:where(.phish-game) .sharmail-debrief-eyebrow {
   margin: 0;
   font-size: 0.75rem;
   font-weight: 700;
@@ -626,24 +626,24 @@
   letter-spacing: 0.08em;
 }
 
-.sharmail-debrief-head h2 {
+:where(.phish-game) .sharmail-debrief-head h2 {
   margin: 0.25rem 0 0.5rem;
   font-size: 1.6rem;
   font-variant-numeric: tabular-nums;
 }
 
-.sharmail-debrief-unsaved {
+:where(.phish-game) .sharmail-debrief-unsaved {
   margin: 0.75rem 0 0;
   font-size: 0.85rem;
   color: var(--game-muted);
 }
 
-.sharmail-debrief-summary,
-.sharmail-debrief p {
+:where(.phish-game) .sharmail-debrief-summary,
+:where(.phish-game) .sharmail-debrief p {
   max-width: 68ch;
 }
 
-.sharmail-debrief-patient {
+:where(.phish-game) .sharmail-debrief-patient {
   display: grid;
   gap: 0.2rem;
   padding: 0.75rem;
@@ -651,25 +651,25 @@
   border-left: 3px solid var(--game-accent);
 }
 
-.sharmail-chain {
+:where(.phish-game) .sharmail-chain {
   margin: 0;
   padding-left: 1.25rem;
 }
 
-.sharmail-chain li {
+:where(.phish-game) .sharmail-chain li {
   margin-bottom: 0.5rem;
   max-width: 68ch;
 }
 
-.sharmail-evidence-review,
-.sharmail-decoys {
+:where(.phish-game) .sharmail-evidence-review,
+:where(.phish-game) .sharmail-decoys {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.sharmail-evidence-review li,
-.sharmail-decoys li {
+:where(.phish-game) .sharmail-evidence-review li,
+:where(.phish-game) .sharmail-decoys li {
   padding: 0.75rem;
   background: var(--game-surface);
   border: 1px solid var(--game-line);
@@ -677,23 +677,23 @@
   border-radius: 4px;
 }
 
-.sharmail-evidence-review li + li,
-.sharmail-decoys li + li {
+:where(.phish-game) .sharmail-evidence-review li + li,
+:where(.phish-game) .sharmail-decoys li + li {
   margin-top: 0.5rem;
 }
 
-.sharmail-evidence-review li.is-correct {
+:where(.phish-game) .sharmail-evidence-review li.is-correct {
   border-left-color: var(--game-good);
 }
 
-.sharmail-evidence-verdict {
+:where(.phish-game) .sharmail-evidence-verdict {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
   margin: 0 0 0.35rem;
 }
 
-.sharmail-tag {
+:where(.phish-game) .sharmail-tag {
   padding: 0.15rem 0.5rem;
   font-size: 0.75rem;
   font-weight: 700;
@@ -701,31 +701,31 @@
   border-radius: 3px;
 }
 
-.sharmail-evidence-review li.is-correct .sharmail-tag {
+:where(.phish-game) .sharmail-evidence-review li.is-correct .sharmail-tag {
   color: var(--game-good);
   background: var(--game-good-soft);
   border-color: var(--game-good);
 }
 
-.sharmail-tag.is-chosen {
+:where(.phish-game) .sharmail-tag.is-chosen {
   color: var(--game-accent);
   background: var(--game-accent-soft);
   border-color: var(--game-accent);
 }
 
-.sharmail-evidence-claim {
+:where(.phish-game) .sharmail-evidence-claim {
   margin: 0 0 0.25rem;
   font-weight: 600;
 }
 
-.sharmail-evidence-note,
-.sharmail-decoys p {
+:where(.phish-game) .sharmail-evidence-note,
+:where(.phish-game) .sharmail-decoys p {
   margin: 0;
   font-size: 0.9rem;
   color: var(--game-muted);
 }
 
-.sharmail-decoy-subject {
+:where(.phish-game) .sharmail-decoy-subject {
   margin: 0 0 0.25rem;
   font-weight: 600;
   color: var(--game-ink);
@@ -741,21 +741,21 @@
 }
 
 @media (min-width: 768px) {
-  .sharmail-body-grid {
+  :where(.phish-game) .sharmail-body-grid {
     grid-template-columns: 190px 1fr;
   }
 
-  .sharmail-rail {
+  :where(.phish-game) .sharmail-rail {
     display: block;
   }
 }
 
 @media (min-width: 992px) {
-  .sharmail-panes {
+  :where(.phish-game) .sharmail-panes {
     grid-template-columns: minmax(280px, 330px) 1fr;
   }
 
-  .sharmail-pane-list {
+  :where(.phish-game) .sharmail-pane-list {
     max-height: 70vh;
     overflow-y: auto;
     border-right: 1px solid var(--game-line);
@@ -763,11 +763,11 @@
   }
 
   /* both panes are visible side by side, so the narrow-screen swap stops applying */
-  .sharmail-pane.is-mobile-hidden {
+  :where(.phish-game) .sharmail-pane.is-mobile-hidden {
     display: block;
   }
 
-  .sharmail-back {
+  :where(.phish-game) .sharmail-back {
     display: none;
   }
 }
