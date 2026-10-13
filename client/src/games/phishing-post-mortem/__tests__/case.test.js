@@ -137,14 +137,58 @@ describe('phishing case state', () => {
     expect(game.selectedEvidenceIds.value).toEqual([])
   })
 
-  it('surfaces the server message when a case cannot be opened', async () => {
-    fetchCase.mockRejectedValue({
-      response: { data: { error: { message: 'The case file could not be found.' } } },
-    })
+  it('retries a failed case load and clears its load error', async () => {
+    fetchCase
+      .mockRejectedValueOnce({
+        response: { data: { error: { message: 'The case file could not be found.' } } },
+      })
+      .mockResolvedValueOnce(caseFile)
     const { game } = harness()
     await game.load()
     await flushPromises()
-    expect(game.error.value).toBe('The case file could not be found.')
+    expect(game.loadError.value).toBe('The case file could not be found.')
     expect(game.caseFile.value).toBeNull()
+
+    await game.load()
+    await flushPromises()
+    expect(game.loadError.value).toBe('')
+    expect(game.caseFile.value.caseId).toBe('case-01')
+  })
+
+  it('keeps a failed verdict ready to retry with its original request ID', async () => {
+    fetchCase.mockResolvedValue(caseFile)
+    submitVerdict
+      .mockRejectedValueOnce({
+        response: { data: { error: { message: 'The verdict service is unavailable.' } } },
+      })
+      .mockResolvedValueOnce({ score: 100, maxScore: 100 })
+    const { game } = harness()
+    await game.load()
+    await flushPromises()
+    game.selectEmail('a01')
+    game.accuse('a02')
+    game.setEvidence(['ev-a', 'ev-b'])
+    game.showInbox()
+
+    await game.submit()
+    await flushPromises()
+
+    expect(game.submissionError.value).toBe('The verdict service is unavailable.')
+    expect(game.loadError.value).toBe('')
+    expect(game.caseFile.value.caseId).toBe('case-01')
+    expect(game.selectedEmailId.value).toBe('a01')
+    expect(game.emails.value.find((email) => email.id === 'a01').read).toBe(true)
+    expect(game.accusedEmailId.value).toBe('a02')
+    expect(game.selectedEvidenceIds.value).toEqual(['ev-a', 'ev-b'])
+    expect(game.pane.value).toBe('inbox')
+
+    await game.submit()
+    await flushPromises()
+
+    const firstPayload = submitVerdict.mock.calls[0][0]
+    const retryPayload = submitVerdict.mock.calls[1][0]
+    expect(retryPayload).toEqual(firstPayload)
+    expect(game.submissionError.value).toBe('')
+    expect(game.result.value.score).toBe(100)
   })
 })

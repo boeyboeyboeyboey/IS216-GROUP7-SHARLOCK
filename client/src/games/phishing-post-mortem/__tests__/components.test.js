@@ -1,8 +1,18 @@
-import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import PhishingPostMortem from '../PhishingPostMortem.vue'
 import EmailInspector from '../components/EmailInspector.vue'
 import InboxList from '../components/InboxList.vue'
 import VerdictPanel from '../components/VerdictPanel.vue'
+import { fetchCase, submitVerdict } from '../phishing.js'
+
+vi.mock('../phishing.js', async (original) => ({
+  ...(await original()),
+  fetchCase: vi.fn(),
+  submitVerdict: vi.fn(),
+}))
+
+afterEach(() => vi.clearAllMocks())
 
 const email = {
   id: 'a11',
@@ -35,6 +45,83 @@ describe('inbox list', () => {
     expect(wrapper.text()).toContain('Action required')
     await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('select-email')[0]).toEqual(['a11'])
+  })
+})
+
+describe('phishing case page', () => {
+  it('keeps a failed verdict visible and lets the learner retry it', async () => {
+    fetchCase.mockResolvedValue({
+      caseId: 'case-01',
+      datasetVersion: '2026-09-21',
+      title: 'Test case',
+      organisation: 'Testco',
+      briefing: 'Find it',
+      timezoneLabel: 'SGT (UTC+8)',
+      emails: [{ ...email, read: undefined }],
+      timeline: [{ id: 't1', at: '2026-09-14T00:30:00.000Z', label: 'Proxy', detail: 'opened' }],
+      evidenceOptions: options,
+    })
+    let finishRetry
+    submitVerdict
+      .mockRejectedValueOnce({
+        response: { data: { error: { message: 'The verdict service is unavailable.' } } },
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishRetry = resolve
+          }),
+      )
+
+    const wrapper = mount(PhishingPostMortem, {
+      global: { stubs: { RouterLink: { template: '<a><slot /></a>' } } },
+    })
+    await flushPromises()
+    await wrapper.get('.sharmail-row').trigger('click')
+    await wrapper.get('.sharmail-accuse').trigger('click')
+    await wrapper.findAll('input[type="checkbox"]')[0].setValue(true)
+    await wrapper.findAll('input[type="checkbox"]')[1].setValue(true)
+    await wrapper.get('.sharmail-submit').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.sharmail').exists()).toBe(true)
+    expect(wrapper.get('[role="alert"]').text()).toContain('The verdict service is unavailable.')
+    expect(wrapper.get('.sharmail-row').attributes('aria-current')).toBe('true')
+    expect(wrapper.get('.sharmail-accuse').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.findAll('input[type="checkbox"]')).toHaveLength(3)
+    const retryButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Retry verdict')
+    expect(retryButton.exists()).toBe(true)
+
+    const clues = wrapper.findAll('input[type="checkbox"]')
+    await clues[0].setValue(false)
+    expect(retryButton.attributes('disabled')).toBeDefined()
+    await clues[0].setValue(true)
+    expect(retryButton.attributes('disabled')).toBeUndefined()
+
+    await retryButton.trigger('click')
+    expect(retryButton.attributes('disabled')).toBeDefined()
+    finishRetry({
+      score: 100,
+      maxScore: 100,
+      result: { emailCorrect: true },
+      feedback: { summary: 'The evidence supports your verdict.' },
+      debrief: {
+        summary: 'The message started the incident.',
+        patientZero: {
+          subject: email.subject,
+          senderName: email.senderName,
+          senderAddress: email.senderAddress,
+        },
+        chain: ['A link was opened.'],
+        evidence: [],
+        decoys: [],
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('100 / 100 points')
+    expect(wrapper.find('.sharmail').exists()).toBe(true)
   })
 })
 

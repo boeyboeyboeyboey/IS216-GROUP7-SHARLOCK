@@ -26,17 +26,10 @@ async function openCase(page) {
   return active
 }
 
-async function openMessage(page, subject, isMobile) {
+async function openMessage(page, email, isMobile) {
   if (isMobile) await page.getByRole('button', { name: 'Back to inbox' }).click()
-  await page
-    .getByRole('button', { name: new RegExp(escapeRegExp(subject)) })
-    .first()
-    .click()
-  await expect(page.getByRole('heading', { name: subject, exact: true })).toBeVisible()
-}
-
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  await page.locator(`.sharmail-row[data-email-id="${email.id}"]`).click()
+  await expect(page.getByRole('heading', { name: email.subject, exact: true })).toBeVisible()
 }
 
 test('solves a case end to end and scores the full hundred', async ({ page }, testInfo) => {
@@ -46,7 +39,7 @@ test('solves a case end to end and scores the full hundred', async ({ page }, te
     (email) => email.id === active.answers.patientZeroId,
   )
 
-  await openMessage(page, patientZero.subject, isMobile)
+  await openMessage(page, patientZero, isMobile)
   await expect(page.getByText(patientZero.senderAddress, { exact: false })).toBeVisible()
   await page.getByRole('button', { name: 'Accuse this message' }).click()
   await expect(page.getByRole('button', { name: 'Accused as Patient Zero' })).toBeVisible()
@@ -68,7 +61,7 @@ test('a wrong verdict scores nothing and still reveals the chain', async ({ page
   const active = await openCase(page)
   const decoy = active.content.emails.find((email) => email.id !== active.answers.patientZeroId)
 
-  await openMessage(page, decoy.subject, isMobile)
+  await openMessage(page, decoy, isMobile)
   await page.getByRole('button', { name: 'Accuse this message' }).click()
   const [first, second] = active.content.evidenceOptions
   await page.getByRole('checkbox', { name: first.label }).check()
@@ -103,7 +96,7 @@ test('link destinations are inert and only shown on request', async ({ page }, t
   const withLink = active.content.emails.find((email) => email.links.length > 0)
   const link = withLink.links[0]
 
-  await openMessage(page, withLink.subject, isMobile)
+  await openMessage(page, withLink, isMobile)
   await expect(page.getByText(link.destination, { exact: false })).toHaveCount(0)
   await page.getByRole('button', { name: 'Inspect destination' }).first().click()
   await expect(page.getByText(link.destination, { exact: false })).toBeVisible()
@@ -118,7 +111,7 @@ test('replay hands over the other case', async ({ page }, testInfo) => {
     (email) => email.id === active.answers.patientZeroId,
   )
 
-  await openMessage(page, patientZero.subject, isMobile)
+  await openMessage(page, patientZero, isMobile)
   await page.getByRole('button', { name: 'Accuse this message' }).click()
   for (const evidenceId of active.answers.evidenceIds) {
     const option = active.content.evidenceOptions.find((entry) => entry.id === evidenceId)
@@ -144,7 +137,7 @@ test('the narrow layout swaps panes and returns focus to the message row', async
 
   await page.getByRole('button', { name: 'Back to inbox' }).click()
   await expect(page.getByRole('heading', { name: 'Inbox' })).toBeVisible()
-  const row = page.getByRole('button', { name: new RegExp(escapeRegExp(target.subject)) }).first()
+  const row = page.locator(`.sharmail-row[data-email-id="${target.id}"]`)
   await row.click()
   await expect(page.getByRole('heading', { name: target.subject, exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Back to inbox' }).click()
@@ -162,6 +155,47 @@ test('the inbox walks with the arrow keys', async ({ page }, testInfo) => {
   await expect(rows.first()).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(page.locator('.sharmail-reading')).toBeVisible()
+})
+
+test('recovers from a rejected verdict without losing the case', async ({ page }, testInfo) => {
+  const isMobile = testInfo.project.name === 'mobile-chromium'
+  const active = await openCase(page)
+  const patientZero = active.content.emails.find(
+    (email) => email.id === active.answers.patientZeroId,
+  )
+  let rejectFirstSubmission = true
+
+  await page.route('**/api/games/phishing-post-mortem/verdict', async (route) => {
+    if (rejectFirstSubmission) {
+      rejectFirstSubmission = false
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: { message: 'The verdict service is unavailable. Try again or reload this case.' },
+        }),
+      })
+      return
+    }
+    await route.continue()
+  })
+
+  await openMessage(page, patientZero, isMobile)
+  await page.getByRole('button', { name: 'Accuse this message' }).click()
+  for (const evidenceId of active.answers.evidenceIds) {
+    const option = active.content.evidenceOptions.find((entry) => entry.id === evidenceId)
+    await page.getByRole('checkbox', { name: option.label }).check()
+  }
+  await page.getByRole('button', { name: 'Submit final verdict' }).click()
+
+  await expect(page.getByRole('alert')).toContainText('Try again or reload this case.')
+  await expect(page.locator('.sharmail-row[aria-current="true"]')).toHaveAttribute(
+    'data-email-id',
+    patientZero.id,
+  )
+  await expect(page.getByRole('button', { name: 'Reload case' })).toBeVisible()
+  await page.getByRole('button', { name: 'Retry verdict' }).click()
+  await expect(page.getByRole('heading', { name: '100 / 100 points' })).toBeVisible()
 })
 
 test('fits every supported width without a horizontal page scrollbar', async ({ page }) => {

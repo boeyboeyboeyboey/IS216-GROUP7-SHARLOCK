@@ -7,7 +7,8 @@ export function usePhishingCase() {
   const caseFile = ref(null)
   const loading = ref(false)
   const submitting = ref(false)
-  const error = ref('')
+  const loadError = ref('')
+  const submissionError = ref('')
   const result = ref(null)
   const selectedEmailId = ref('')
   const accusedEmailId = ref('')
@@ -79,7 +80,8 @@ export function usePhishingCase() {
     // a generation guard keeps a slow earlier response from overwriting a newer case
     const request = (generation += 1)
     loading.value = true
-    error.value = ''
+    loadError.value = ''
+    submissionError.value = ''
     caseFile.value = null
     reset()
     try {
@@ -88,7 +90,7 @@ export function usePhishingCase() {
       caseFile.value = data
     } catch (requestError) {
       if (disposed || request !== generation) return
-      error.value = phishingErrorMessage(
+      loadError.value = phishingErrorMessage(
         requestError,
         'The case file could not be opened. Check your connection and try again.',
       )
@@ -101,7 +103,6 @@ export function usePhishingCase() {
     if (!canSubmit.value || !caseFile.value) return
     const request = generation
     submitting.value = true
-    error.value = ''
     try {
       const data = await submitVerdict(
         {
@@ -115,10 +116,11 @@ export function usePhishingCase() {
       )
       if (disposed || request !== generation) return
       result.value = data
+      submissionError.value = ''
       pane.value = 'message'
     } catch (requestError) {
       if (disposed || request !== generation) return
-      error.value = phishingErrorMessage(
+      submissionError.value = phishingErrorMessage(
         requestError,
         'That verdict could not be submitted. Try again in a moment.',
       )
@@ -141,7 +143,8 @@ export function usePhishingCase() {
     emails,
     loading,
     submitting,
-    error,
+    loadError,
+    submissionError,
     result,
     selectedEmailId,
     selectedEmail,

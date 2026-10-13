@@ -14,7 +14,8 @@ const {
   emails,
   loading,
   submitting,
-  error,
+  loadError,
+  submissionError,
   result,
   selectedEmailId,
   selectedEmail,
@@ -68,90 +69,97 @@ async function backToInbox() {
 
     <p v-if="loading" class="phish-state" role="status">Opening the case file...</p>
 
-    <div v-else-if="error" class="phish-state phish-error" role="alert">
-      <p>{{ error }}</p>
+    <div v-else-if="loadError" class="phish-state phish-error" role="alert">
+      <p>{{ loadError }}</p>
       <button type="button" class="sharmail-submit" @click="load()">Try again</button>
     </div>
 
-    <SharmailShell
-      v-else-if="caseFile"
-      :mailbox="caseFile.organisation"
-      :case-title="caseFile.title"
-      :unread="unread"
-    >
-      <section
-        class="sharmail-pane sharmail-pane-list"
-        :class="{ 'is-mobile-hidden': pane === 'message' }"
-        aria-label="Inbox"
-      >
-        <header class="sharmail-pane-head">
-          <h2>Inbox</h2>
-          <p>{{ emails.length }} messages &middot; {{ unread }} unread</p>
-        </header>
-        <InboxList
-          :emails="emails"
-          :selected-email-id="selectedEmailId"
-          @select-email="openMessage"
-        />
-      </section>
+    <template v-else-if="caseFile">
+      <SharmailShell :mailbox="caseFile.organisation" :case-title="caseFile.title" :unread="unread">
+        <section
+          class="sharmail-pane sharmail-pane-list"
+          :class="{ 'is-mobile-hidden': pane === 'message' }"
+          aria-label="Inbox"
+        >
+          <header class="sharmail-pane-head">
+            <h2>Inbox</h2>
+            <p>{{ emails.length }} messages &middot; {{ unread }} unread</p>
+          </header>
+          <InboxList
+            :emails="emails"
+            :selected-email-id="selectedEmailId"
+            @select-email="openMessage"
+          />
+        </section>
 
-      <section
-        ref="readingPane"
-        class="sharmail-pane sharmail-pane-reading"
-        :class="{ 'is-mobile-hidden': pane === 'inbox' }"
-        tabindex="-1"
-        aria-label="Reading pane"
-      >
-        <button type="button" class="sharmail-back" @click="backToInbox">Back to inbox</button>
+        <section
+          ref="readingPane"
+          class="sharmail-pane sharmail-pane-reading"
+          :class="{ 'is-mobile-hidden': pane === 'inbox' }"
+          tabindex="-1"
+          aria-label="Reading pane"
+        >
+          <button type="button" class="sharmail-back" @click="backToInbox">Back to inbox</button>
 
-        <CaseDebrief v-if="result" :result="result" @replay="replay" />
-
-        <template v-else>
-          <div v-if="!selectedEmail" class="sharmail-briefing">
-            <h2>{{ caseFile.title }}</h2>
-            <p>{{ caseFile.briefing }}</p>
-            <p class="sharmail-briefing-hint">
-              Open a message to inspect its sender, reply-to address and where its links really
-              point. Times are shown in {{ caseFile.timezoneLabel }}.
-            </p>
-          </div>
+          <CaseDebrief v-if="result" :result="result" @replay="replay" />
 
           <template v-else>
-            <EmailInspector :email="selectedEmail" @inspect-link="inspectLink" />
-            <div class="sharmail-accuse-row">
-              <button
-                type="button"
-                class="sharmail-accuse"
-                :class="{ 'is-accused': accusedEmailId === selectedEmail.id }"
-                :aria-pressed="accusedEmailId === selectedEmail.id"
-                @click="accuse(selectedEmail.id)"
-              >
-                {{
-                  accusedEmailId === selectedEmail.id
-                    ? 'Accused as Patient Zero'
-                    : 'Accuse this message'
-                }}
-              </button>
+            <div v-if="!selectedEmail" class="sharmail-briefing">
+              <h2>{{ caseFile.title }}</h2>
+              <p>{{ caseFile.briefing }}</p>
+              <p class="sharmail-briefing-hint">
+                Open a message to inspect its sender, reply-to address and where its links really
+                point. Times are shown in {{ caseFile.timezoneLabel }}.
+              </p>
             </div>
+
+            <template v-else>
+              <EmailInspector :email="selectedEmail" @inspect-link="inspectLink" />
+              <div class="sharmail-accuse-row">
+                <button
+                  type="button"
+                  class="sharmail-accuse"
+                  :class="{ 'is-accused': accusedEmailId === selectedEmail.id }"
+                  :aria-pressed="accusedEmailId === selectedEmail.id"
+                  @click="accuse(selectedEmail.id)"
+                >
+                  {{
+                    accusedEmailId === selectedEmail.id
+                      ? 'Accused as Patient Zero'
+                      : 'Accuse this message'
+                  }}
+                </button>
+              </div>
+            </template>
+
+            <EvidenceTimeline :events="caseFile.timeline" />
+
+            <VerdictPanel
+              :selected-email-id="accusedEmailId"
+              :selected-subject="accusedEmail?.subject ?? ''"
+              :evidence-options="caseFile.evidenceOptions"
+              :selected-evidence-ids="selectedEvidenceIds"
+              :disabled="submitting"
+              @update-evidence="setEvidence"
+              @submit-verdict="submit"
+            />
+
+            <p v-if="!canSubmit && accusedEmailId" class="sharmail-verdict-note">
+              Choose exactly two supporting clues to submit.
+            </p>
           </template>
+        </section>
+      </SharmailShell>
 
-          <EvidenceTimeline :events="caseFile.timeline" />
-
-          <VerdictPanel
-            :selected-email-id="accusedEmailId"
-            :selected-subject="accusedEmail?.subject ?? ''"
-            :evidence-options="caseFile.evidenceOptions"
-            :selected-evidence-ids="selectedEvidenceIds"
-            :disabled="submitting"
-            @update-evidence="setEvidence"
-            @submit-verdict="submit"
-          />
-
-          <p v-if="!canSubmit && accusedEmailId" class="sharmail-verdict-note">
-            Choose exactly two supporting clues to submit.
-          </p>
-        </template>
-      </section>
-    </SharmailShell>
+      <div v-if="submissionError" class="phish-state phish-error" role="alert">
+        <p>{{ submissionError }}</p>
+        <button type="button" class="sharmail-submit" :disabled="!canSubmit" @click="submit">
+          Retry verdict
+        </button>
+        <button type="button" class="sharmail-inspect" :disabled="submitting" @click="load()">
+          Reload case
+        </button>
+      </div>
+    </template>
   </div>
 </template>
