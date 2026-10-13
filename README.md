@@ -36,6 +36,8 @@ Skip it and **every** E2E test fails instantly with `browserType.launch: Executa
 
 Each developer must review their agent’s plan, changes and verification evidence. An agent must never assume that a backlog label means the corresponding code is untouched.
 
+Before publishing existing-code work, check the latest [CODE_STYLE.md](CODE_STYLE.md), consider worthwhile simplifications in the relevant feature, complete its applicable tests and owner review, and record the outcome. Keep the review to one bounded area; this is not blanket permission to rewrite contributor work.
+
 Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments.
 
 ## 3. Documentation Directory
@@ -43,6 +45,7 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 - **[TASKS.md](TASKS.md):** Feature specifications, availability checks, task claims, dependencies, contributors and verification evidence. Claim only after the collision check and plan approval.
 - **[DESIGN.md](DESIGN.md):** Mandatory shared pixel design, exact tokens/components, game-local design freedom, responsiveness and building registration.
 - **[agents.md](agents.md):** AI operating instructions, conflict detection, overwrite restrictions and review workflow.
+- **[CODE_STYLE.md](CODE_STYLE.md):** Authoritative readability rules, human review checklist and small-batch maintenance workflow.
 - **[Course reference index](TASKS.md#course-reference-index):** Supplied project brief, CS440 lecture decks and WAD2 teaching slides under `documentation/`. The 21 September additions include CS440 security basics, encryption, certificates, authentication, access control, network/software/web security and WAD2 Week 6 on Vue components, props, slots, events and local storage. Read the relevant sources before mapping learning objectives or making course/assessment claims; the index records filename/version ambiguities.
 
 **When adding UI:** follow the exact current [shared design contract](DESIGN.md#rules-for-new-pages-and-features): Pixelify Sans, cream/earthy-green tokens, square borders, hard shadows, pixel artwork/icons, the retained 3D navbar logo and existing town controls. Reuse the shared components. Admin/log content retains its functional-style exception. **Games may use their own design philosophy** inside their module; their styles must not change the shared navbar, town building/card or other pages. Task 3 hover-card refinement is skipped; Tasks 4–5 are accepted, with evidence in TASKS.md.
@@ -348,6 +351,9 @@ task until the following workflow reaches explicit plan approval.
 
 1. INGEST
 Read TASKS.md first, then README.md, DESIGN.md and agents.md in full.
+Then read CODE_STYLE.md for the readability rules and the bounded
+maintenance path. This path applies only to explicitly approved existing
+code; it does not weaken the collision guardrail for new features.
 Inspect git status, staged/unstaged diffs, relevant source, tests and
 available branch/PR information. Preserve all existing changes.
 Ask my name if it is not already known; never invent a contributor.
@@ -370,7 +376,16 @@ do not restart it. Tasks 4–5 are accepted; new implementation requires
 its own explicit plan approval. Follow TASKS.md's feature-folder convention
 and list the feature files, tests and minimal shared integration edits.
 
-2. DETECT COLLISIONS
+1a. REQUEST TYPE
+If my request explicitly asks to simplify or review existing code, use
+CODE_STYLE.md's read-only audit and proposal workflow. Present up to three
+bounded options with paths, unchanged behavior and narrow checks. Wait for
+the owning contributor's agreement and my explicit approval of the scope
+before editing. This does not authorize editing another contributor's code
+or Social's separately owned llm/ engine without its contributor's agreement.
+Otherwise, use the new-feature selection and collision workflow below.
+
+2. DETECT COLLISIONS FOR NEW FEATURE SELECTION
 Inspect the implementation before trusting a task's status.
 Search by feature name, concept, alternate names, routes, components,
 services, schemas, fixtures, tests and Git history.
@@ -384,8 +399,8 @@ activity. Its Times, newsstand and API are implemented; inspect the
 feature modules and claim. Do not treat the different title as an
 available new feature or create a duplicate.
 
-3. ENFORCE THE COLLISION GUARDRAIL
-If my chosen feature already has partial or complete work, STOP.
+3. ENFORCE THE COLLISION GUARDRAIL FOR NEW FEATURE SELECTION
+If a newly selected or proposed feature already has partial or complete work, STOP.
 You are strictly forbidden from touching, overwriting, refactoring,
 deleting, replacing or continuing that feature's existing code.
 Immediately identify the conflicting files/tasks/branches, explain what
@@ -394,7 +409,7 @@ or propose a brand-new feature.
 Do not evade this rule by renaming, copying or rebuilding the same
 feature elsewhere. Do not silently take over a teammate's work.
 
-4. ROUTE ME
+4. ROUTE ME TO A NEW FEATURE
 Present exactly these two paths:
 A. Choose an unimplemented, unclaimed backlog feature that passed inspection.
 B. Propose a brand-new custom feature.
@@ -428,7 +443,8 @@ Recheck Git, TASKS.md and affected files immediately before editing.
 If new overlapping work appears, return to the collision guardrail.
 
 Record the agreed task, my name, branch, affected files, dependencies
-and next action in TASKS.md. Use codex/<task-id>-<description>.
+and next action in TASKS.md. New branches use lowercase
+<task-id>-<description> with no codex/ prefix.
 Treat the claim as a coordination record, not proof that other machines
 have no competing work.
 

@@ -2,7 +2,7 @@
 
 ## 1. Start with read-only ingestion
 
-**Read [TASKS.md](TASKS.md) first**, then [README.md](README.md), [DESIGN.md](DESIGN.md) and this file in full. Check authorization, dependencies, In Progress, Review and coordination notes before reading the affected implementation. Do not assume tools automatically discover the lowercase `agents.md` filename; explicitly load it. The [README kickoff prompt](README.md#5-teammate-agent-kickoff-prompt) is the teammate entry point.
+**Read [TASKS.md](TASKS.md) first**, then [README.md](README.md), [DESIGN.md](DESIGN.md) and this file in full, followed by [CODE_STYLE.md](CODE_STYLE.md). Check authorization, dependencies, In Progress, Review and coordination notes before reading the affected implementation. Do not assume tools automatically discover the lowercase `agents.md` filename; explicitly load it. The [README kickoff prompt](README.md#5-teammate-agent-kickoff-prompt) is the teammate entry point.
 
 Use Cursor or another agentic coding environment: the module structure, task board and prompt workflow are designed for AI-assisted development. Human developers remain responsible for approving scope and reviewing changes.
 
@@ -47,7 +47,9 @@ Recommend concrete defaults and explain tradeoffs. Present the final plan and **
 
 Immediately before edits, reread affected task notes and inspect Git/files for changes since planning. New overlap returns to the collision guardrail. Record the task ID, real contributor, approved scope, branch, affected paths, dependencies, collision-check evidence and next action in TASKS.md. A claim coordinates people; it is not an atomic lock across machines.
 
-Use `codex/<task-id>-<description>` unless the user chooses another branch. Reuse shared infrastructure through established interfaces. Only the additive catalog/router registrations explicitly included in the approved plan may be made; preserve other entries and behavior. A missing shared contract requires a separately agreed prerequisite task, not a second implementation inside a game.
+Use lowercase `<task-id>-<description>` for new branches; omit the `codex/` prefix as Boey requested on 13 October 2026. Preserve historical branch references. Reuse shared infrastructure through established interfaces. Only the additive catalog/router registrations explicitly included in the approved plan may be made; preserve other entries and behavior. A missing shared contract requires a separately agreed prerequisite task, not a second implementation inside a game.
+
+For readability maintenance of existing code, follow [CODE_STYLE.md](CODE_STYLE.md): inspect one bounded area read-only, propose up to three useful changes with unchanged behavior and narrow checks, then wait for the owner’s agreement and explicit scope approval. This does not authorize a new-feature collision, whole-project rewrite, or edits to Social's separately owned `llm/` engine without that contributor's agreement. Preserve uncommitted work and inspect the latest policy on `main` before completing or publishing an older branch; never blindly pull, checkout, reset, or overwrite it.
 
 ## 3. Authorization and change boundaries
 
@@ -145,6 +147,7 @@ Documentation-only changes need links/anchors, synchronized specifications, trut
 
 ## 10. Documentation maintenance
 
+- [CODE_STYLE.md](CODE_STYLE.md) is the single authority for readability standards and staged maintenance review. Its rules do not create automatic refactor permission or change new-feature authorization.
 - README.md retains its approved five sections: minimal setup, tooling recommendation, directory, six activity blueprints and kickoff prompt.
 - TASKS.md owns authorization, availability/collision evidence, dependencies, active records, detailed feature specifications, operational verification and retained history.
 - agents.md owns the decision tree and engineering guardrails; DESIGN.md owns visual details.

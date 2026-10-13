@@ -28,6 +28,8 @@ Treat the current implementation as the reference, not a loose mood board. Every
 
 Before coding an approved UI task, identify whether it is a shared page, permitted admin/log content or a game module. State which existing components/tokens will be reused and how new styles are contained. A generic Bootstrap component must receive the existing shared styling; framework defaults are not a new visual direction.
 
+For readability conventions, use [CODE_STYLE.md](CODE_STYLE.md). Bootstrap utilities are preferred for ordinary grid, layout and spacing when they clarify the markup; this does not replace shared design tokens, town styling, or intentionally custom and isolated game themes.
+
 During review, compare shared surfaces with the current landing, profile and town; check 375/576/768/992/1200/1440px, breakpoint edges and landscape, keyboard/touch access, visible focus and no page-wide horizontal scrolling. Visit another shared page after leaving a game to check for style leakage. Do not redesign shared components as an incidental part of a game or feature; a requested change to the shared design needs its own explicit scope.
 
 ### Game design freedom and isolation
