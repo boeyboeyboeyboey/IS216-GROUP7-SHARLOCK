@@ -36,6 +36,16 @@ export const routes = [
     meta: { title: 'The Phishing Post-Mortem' },
   },
   {
+    path: '/games/social-engineering-simulator',
+    component: () => import('../games/social-engineering-simulator/SocialEngineeringSimulator.vue'),
+    meta: { title: 'LLM Social Engineering Simulator' },
+  },
+  {
+    path: '/games/cli-cyber-defender',
+    component: () => import('../games/cli-cyber-defender/CliDefenderGame.vue'),
+    meta: { title: 'CLI Cyber Defender' },
+  },
+  {
     path: '/games/:gameId',
     component: () => import('../views/GamePreview.vue'),
     meta: { title: 'Case preview' },

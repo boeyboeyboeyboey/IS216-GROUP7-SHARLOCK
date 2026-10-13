@@ -28,7 +28,7 @@ pnpm exec playwright install chromium
 
 Skip it and **every** E2E test fails instantly with `browserType.launch: Executable doesn't exist`. That looks like a broken suite but is only a missing download - Playwright pins a browser revision per version, so an upgrade invalidates the one already on disk.
 
-**Current implementation:** MEVN scaffold, pixel-styled town as the entry page, The Sharlock Times with live news, The Phishing Post-Mortem investigation game, combined About/introduction, four scored-game previews and database health check. The Phishing Post-Mortem is a playable unsaved prototype awaiting review. Authentication, permissions and persistent learning records remain pending. Localhost demonstration; zero project budget.
+**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator and CLI Cyber Defender games, plus combined About/introduction, two scored-game previews and database health check. The three games remain in Review and do not persist results. Authentication, permissions and persistent learning records remain pending. Localhost demonstration; zero project budget.
 
 ## 2. Tooling Recommendation
 
@@ -51,7 +51,7 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 
 ## 4. Game Backlog
 
-Four of the five scored games remain **proposed implementation blueprints**, not working features or automatic authorization to code. G-NEWS / Cyber News Central is **completed and accepted by Boey on 19 September 2026**, and **G-PHISH / The Phishing Post-Mortem is implemented by Athithya on 21 September 2026 and pending review**, both as recorded in TASKS.md. The town has six activities: the Times and Phishing Post-Mortem are playable, while four buildings open clearly labelled previews. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
+The five scored games have implementation blueprints, but a blueprint does not authorize work. G-NEWS / Cyber News Central is accepted by Boey; G-PHISH, G-SOC and G-CLI are playable unsaved implementations pending review; G-SQL and G-REGEX remain clearly labelled previews. The town has six activities. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
 
 ### Shared implementation blueprint
 
@@ -64,7 +64,7 @@ The following proposed persistence contract applies to the five scored games. Ra
 - Requests: reuse `client/src/services/api.js`; its base URL already contains `/api`.
 - State: keep gameplay in a module composable using `ref`, `reactive` and `computed`. Reserve Pinia for shared account/context state.
 - Visual boundary: follow [DESIGN.md](DESIGN.md#rules-for-new-pages-and-features). Game modules may choose their own design philosophy and scoped fonts/artwork/controls; shared navigation, town registration/cards and shared pages retain the exact hub scheme. Verify accessibility/responsiveness and no style leakage.
-- Town integration: all six activities have one catalog entry and building. Four scored games use the generic preview route and `isPreview: true`; news and the phishing post-mortem are implemented behind their own routes. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
+- Town integration: all six activities have one catalog entry and building. SQL-injection and regex use the generic preview route and `isPreview: true`; news, phishing, social-engineering and CLI are playable behind their existing routes. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
 
 **Proposed shared API**
 
@@ -101,7 +101,7 @@ Verify the core journey, invalid inputs, another user’s attempt ID, duplicate 
 
 ### G-CLI — CLI Cyber Defender
 
-**Concept:** Defend a fictional network through a simulated terminal during a 60-second incident shift.
+**Concept:** Defend a fictional network through a simulated terminal during a 100-second incident shift.
 
 **Difficulty:** ★★☆
 
@@ -110,7 +110,7 @@ Verify the core journey, invalid inputs, another user’s attempt ID, duplicate 
 **Gameplay / interaction loop**
 
 1. Read the command reference and start.
-2. Receive eight incidents. Generate eight random integer windows of 5–10 seconds whose total is exactly 60 seconds.
+2. Receive eight incidents. Generate eight random integer windows of 10–15 seconds whose total is exactly 100 seconds.
 3. Submit one defense command per incident, such as `block ip 192.0.2.10`, `disable user trainee-03` or `isolate host lab-02`.
 4. A correct command before its deadline increases the streak. Award `100 × min(3, streak)` points.
 5. A wrong command or missed window closes that incident and resets the streak. Maximum score: 2,100.
@@ -121,7 +121,7 @@ All commands manipulate fictional game state. Never invoke a shell, firewall, op
 **Architectural blueprint**
 
 - Route/ID: `/games/cli-cyber-defender` / `cli-cyber-defender`.
-- Existing town preview: `cottage` at `{ x: 112, y: 112 }` in the shared catalog. Reuse this entry/route when implementation is separately approved; gameplay remains unimplemented.
+- Town entry: `cottage` at `{ x: 112, y: 112 }` in the shared catalog, reused by the implementation recorded below; no second building or route.
 - `CliDefenderGame.vue`: owns the attempt and composes the following components.
 - `TerminalPanel.vue`: props `{ lines, disabled }`; emits `submit-command(command)`.
 - `IncidentBanner.vue`: props `{ incident, remainingMs }`.
@@ -133,6 +133,8 @@ All commands manipulate fictional game state. Never invoke a shell, firewall, op
 - Mongoose `state`: `{ mode, schedule: [{ incidentId, scenarioId, opensAt, closesAt, expectedAction, resolved, outcome }], streak, correctCount, missedCount }`. Keep `expectedAction` private.
 
 **Acceptance:** Test exact deadline boundaries, incorrect targets, duplicate submissions, multiplier resets, background-tab throttling and timer cleanup. Mobile users can insert templates and enter targets without a desktop keyboard.
+
+**Implemented in this version (12 October 2026, Xin Lei):** the game is playable at `/games/cli-cyber-defender` and its catalog entry is no longer a preview. Because AUTH-01, AUTH-02, DATA-01 and GAME-01 do not exist yet, nothing is persisted: runs live in server memory for at most ten idle minutes, every response carries `saved: false`, and the player-facing copy says results are not saved yet. Seven interim feature-local endpoints stand in for the shared attempt contract: `POST /api/games/cli-cyber-defender/runs` with `{ mode: "timed" | "practice" }`, side-effect-free `GET .../runs/:runId`, `POST .../runs/:runId/commands` with `{ actionId, incidentId, command }`, `POST .../runs/:runId/hint` with `{ incidentId }` (practice only), `POST .../runs/:runId/pause` and `.../resume` (empty bodies) and `POST .../runs/:runId/complete` with `{ actionId }`; `server/src/modules/games/cli-cyber-defender/README.md` records the GAME-01 migration. Approved refinements to the loop above: timed windows are 10–15 seconds (100 in total; Xin Lei lengthened them from 5–10 / 60) and resolving a challenge opens the next one immediately; an unparseable command returns a hint and leaves the challenge open, while a parseable wrong action or target closes it; Practice (no timer) can be ended early and offers one hint per challenge; and each game draws three easy, three medium and two hard incidents in that order. Pausing, from the Menu or by hiding the tab, freezes the server clock, refuses commands with `CLI_RUN_PAUSED` and covers the full-size console until the player resumes. After each closed challenge the server returns the correct command, a one-line explanation and concept tags (attack type, confidentiality/integrity/availability at risk, containment stage); alert names, decoys included, are tappable; and the screen adds a Challenge n / 8 counter, score count-up, streak meter, outcome stamps, flash/shake, perfect-game confetti and optional generated sound, all reduced-motion aware or off by default. The briefing states the player's role (a security analyst on shift), shows a looping demo and confirms Start game in a "Ready to play?" dialog; during a game a Menu replaces Back to town (Sound, Pause, End practice, Leave game, which confirms that points won't be saved). Components beyond the list above: `BriefingPanel`, `DemoTerminal`, `GameMenu`, `ConfirmDialog`, `PausedPanel`, `ReviewNote`, `ConceptTags`, `CliIcon` and `ShiftDebrief` (summary tiles, topic table and collapsible incidents; Play again restarts the same mode and Main menu returns to the briefing). The module uses the DESIGN.md game exception through an original green/amber-on-black terminal set in Silkscreen and Azeret Mono, contained under `.cli-game`.
 
 ### G-SOC — LLM Social Engineering Simulator
 
@@ -154,7 +156,7 @@ All commands manipulate fictional game state. Never invoke a shell, firewall, op
 **Architectural blueprint**
 
 - Route/ID: `/games/social-engineering-simulator` / `social-engineering-simulator`.
-- Existing town preview: `office` at `{ x: 432, y: 520 }` in the shared catalog. Reuse this entry/route when implementation is separately approved; gameplay remains unimplemented.
+- Existing town entry: `office` at `{ x: 432, y: 520 }` in the shared catalog, now used by the playable unsaved implementation documented below.
 - `SocialEngineeringGame.vue`: owns the attempt.
 - `ChatTimeline.vue`: props `{ messages, pending }`; accessible message log.
 - `ChatComposer.vue`: props `{ disabled, maxLength }`; emits `send(text)`.
@@ -164,7 +166,7 @@ All commands manipulate fictional game state. Never invoke a shell, firewall, op
 - `POST /api/chat` accepts `{ attemptId, actionId, expectedRevision, message }`; message length 1–500 characters. Return `{ reply, attempt }`. Route through the shared attempt-validation/action service.
 - Verification/reporting use shared actions `verify-colleague` and `report-conversation`, with empty payloads.
 - Server builds conversation history from the stored attempt. Reject client-supplied system prompts, message roles, model names and provider URLs.
-- Recommended zero-cost adapter: local Ollama, using its `/api/chat` with `stream: false`. Proposed server-only configuration: `LLM_BASE_URL` and `LLM_MODEL`. Select and test the exact local model during planning; do not assume teammates have sufficient hardware or access to a paid service.
+- Original zero-cost proposal: local Ollama through `/api/chat` with `stream: false`, using proposed server-only `LLM_BASE_URL` and `LLM_MODEL`. The later implementation has Ollama/cloud provider code; this proposal does not establish which provider is configured or tested at runtime.
 - Apply a 30-second upstream timeout and a 40-second client timeout for this request. Cap generated replies at 600 characters, eight learner turns and one in-flight generation per attempt. A failed generation preserves the turn for an idempotent retry.
 - Mongoose `state`: `{ scenarioId, trainingCodeHash, messages: [{ role, text, createdAt }], turnCount, verified, reported, codeDisclosed, pendingActionId }`. The synthetic display code may be regenerated from a protected scenario value; never use an actual account-recovery token.
 
@@ -175,6 +177,8 @@ All commands manipulate fictional game state. Never invoke a shell, firewall, op
 Prompt instructions are not an authorization boundary. Give the model no tools or access to application accounts. Render replies as escaped text; redact training-code disclosure from retained transcripts and never log request bodies. Do not claim a scripted fallback is live LLM output.
 
 **Acceptance:** Test prompt-override attempts, code disclosure, verification/report scoring, double-send, timeout/retry and malformed output. Record a separate real local-model rehearsal.
+
+**Current status:** Eric’s implementation is playable at `/games/social-engineering-simulator`, unsaved and pending review. It uses server-authoritative scoring and interim in-memory endpoints; AUTH-01/AUTH-02/DATA-01/GAME-01 and persistence remain pending. See TASKS.md for the implementation record, current adapter evidence and unverified provider configuration/live-model status.
 
 ### G-PHISH — The Phishing Post-Mortem
 
@@ -196,7 +200,7 @@ Prompt instructions are not an authorization boundary. Give the model no tools o
 **Architectural blueprint**
 
 - Route/ID: `/games/phishing-post-mortem` / `phishing-post-mortem`.
-- Existing town preview: `library` at `{ x: 480, y: 64 }` in the shared catalog. Reuse this entry/route when implementation is separately approved; gameplay remains unimplemented.
+- Existing town entry: `library` at `{ x: 480, y: 64 }` in the shared catalog, used by the playable unsaved investigation pending review.
 - `PhishingPostMortem.vue`: coordinates selection and verdict.
 - `InboxList.vue`: props `{ emails, selectedEmailId }`; emits `select-email(id)`.
 - `EmailInspector.vue`: props `{ email }`; emits `inspect-link(linkId)`.

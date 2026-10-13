@@ -44,6 +44,27 @@ describe('createChatSessionRunner', () => {
     })
   })
 
+  it('leaves the stored transcript untouched when the adapter fails', async () => {
+    const store = createChatSessionStore()
+    const adapter = {
+      chat: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('upstream down'))
+        .mockResolvedValueOnce({ content: 'ok' }),
+    }
+    const runner = createChatSessionRunner({ store, adapter })
+    const id = runner.start()
+
+    await expect(runner.send(id, { systemPrompt, content: 'hi' })).rejects.toThrow('upstream down')
+    expect(store.get(id)).toEqual([])
+
+    await runner.send(id, { systemPrompt, content: 'again' })
+    expect(adapter.chat).toHaveBeenLastCalledWith({
+      systemPrompt,
+      messages: [{ role: 'user', content: 'again' }],
+    })
+  })
+
   it('rejects sending to a session that was never started or already ended', async () => {
     const store = createChatSessionStore()
     const runner = createChatSessionRunner({ store, adapter: fakeAdapter([]) })

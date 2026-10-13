@@ -1,0 +1,1665 @@
+@import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;700&family=Silkscreen:wght@400;700&display=swap');
+
+/* every rule is scoped to .cli-game so the hub pixel scheme is untouched */
+.cli-game {
+  --game-bg: #0b120d;
+  --game-panel: #101b13;
+  --game-line: #23412b;
+  --game-ink: #c8f5d2;
+  --game-green: #4ef08a;
+  --game-green-dim: #8fd6a3;
+  --game-amber: #ffc857;
+  --game-red: #ff8a7a;
+  --game-cyan: #7fdcff;
+  --game-glow: rgba(78, 240, 138, 0.35);
+  --game-font:
+    'Azeret Mono', ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  --game-display: 'Silkscreen', 'Azeret Mono', ui-monospace, 'Courier New', monospace;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1rem;
+  background: var(--game-bg);
+  color: var(--game-ink);
+  font-family: var(--game-font);
+  font-variant-ligatures: none;
+  font-size: 16px;
+  line-height: 1.5;
+  border: 2px solid var(--game-line);
+  border-radius: 6px;
+}
+
+.cli-game *,
+.cli-game *::before,
+.cli-game *::after {
+  box-sizing: border-box;
+}
+
+.cli-game h1,
+.cli-game h2,
+.cli-game h3 {
+  font-family: var(--game-display);
+  font-weight: 400;
+  color: var(--game-green);
+  letter-spacing: 0;
+}
+
+.cli-game h1 {
+  font-size: 1.7rem;
+  line-height: 1;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.cli-game code {
+  font-family: var(--game-font);
+  color: var(--game-amber);
+  background: transparent;
+  font-size: 1em;
+  word-break: break-word;
+}
+
+.cli-game :focus-visible {
+  outline: 3px solid var(--game-amber);
+  outline-offset: 2px;
+}
+
+/* headings focused by the router or debrief are not tab stops, so they skip the focus ring */
+.cli-game [tabindex='-1']:focus {
+  outline: none;
+}
+
+.cli-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--game-cyan);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.cli-strap,
+.cli-note {
+  color: var(--game-green-dim);
+}
+
+.cli-note {
+  font-size: 0.95rem;
+}
+
+.cli-panel {
+  padding: 1rem;
+  background: var(--game-panel);
+  border: 1px solid var(--game-line);
+  border-radius: 4px;
+  animation: cli-rise 240ms ease-out;
+}
+
+.cli-heading {
+  font-size: 1.35rem;
+  line-height: 1.1;
+  margin: 0 0 0.75rem;
+}
+
+.cli-subheading {
+  font-size: 1.05rem;
+  line-height: 1.1;
+  margin: 1rem 0 0.5rem;
+}
+
+.cli-list {
+  padding-left: 1.25rem;
+  margin: 0 0 0.75rem;
+}
+
+/* bootstrap buttons, re-themed through their css variables. the shell's .portal-shell .btn rules
+   have the same specificity, so these win only because this file loads after main.css */
+.cli-game .btn {
+  --bs-btn-color: var(--game-green);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: var(--game-green);
+  --bs-btn-hover-color: var(--game-green);
+  --bs-btn-hover-bg: rgba(78, 240, 138, 0.12);
+  --bs-btn-hover-border-color: var(--game-green);
+  --bs-btn-active-color: var(--game-bg);
+  --bs-btn-active-bg: var(--game-green);
+  --bs-btn-active-border-color: var(--game-green);
+  --bs-btn-disabled-color: var(--game-green);
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: var(--game-line);
+  --bs-btn-disabled-opacity: 0.55;
+  --bs-btn-border-width: 2px;
+  --bs-btn-border-radius: 4px;
+  --bs-btn-font-family: var(--game-font);
+  --bs-btn-font-weight: 700;
+  --bs-btn-padding-x: 1rem;
+  --bs-btn-padding-y: 0.5rem;
+  min-height: 44px;
+  gap: 0.5rem;
+  box-shadow: none;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease;
+}
+
+.cli-game .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px var(--game-glow);
+}
+
+.cli-game .btn:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.cli-game .btn:disabled {
+  transform: none;
+  box-shadow: none;
+}
+
+.cli-game .btn:focus-visible {
+  outline: 3px solid var(--game-amber);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.cli-game .cli-btn-primary {
+  --bs-btn-color: var(--game-bg);
+  --bs-btn-bg: var(--game-green);
+  --bs-btn-hover-color: var(--game-bg);
+  --bs-btn-hover-bg: #7af5a7;
+  --bs-btn-disabled-color: var(--game-bg);
+  --bs-btn-disabled-bg: var(--game-green);
+}
+
+.cli-mode-tag {
+  font-size: 0.9rem;
+  color: var(--game-amber);
+  border: 1px dashed var(--game-amber);
+  padding: 0.25rem 0.5rem;
+}
+
+.cli-alert {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border: 2px solid var(--game-red);
+  color: var(--game-red);
+}
+
+.cli-alert p {
+  margin: 0 0 0.5rem;
+}
+
+.cli-game .cli-icon {
+  flex-shrink: 0;
+  vertical-align: -0.2em;
+}
+
+.cli-game .btn .cli-icon {
+  vertical-align: 0;
+}
+
+.cli-hud {
+  margin: 0;
+}
+
+.cli-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  height: 100%;
+  padding: 0.6rem 0.75rem;
+  background: var(--game-panel);
+  border: 1px solid var(--game-line);
+  border-radius: 4px;
+}
+
+.cli-stat-icon {
+  color: var(--game-green);
+}
+
+.cli-stat-score .cli-stat-icon {
+  color: var(--game-amber);
+}
+
+.cli-stat-streak .cli-stat-icon {
+  color: var(--game-red);
+}
+
+.cli-stat-window .cli-stat-icon {
+  color: var(--game-cyan);
+}
+
+.cli-stat-streak.is-hot {
+  border-color: var(--game-red);
+}
+
+.cli-stat-streak.is-hot .cli-stat-icon {
+  animation: cli-glow 900ms ease-in-out infinite alternate;
+}
+
+.cli-stat-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cli-stat-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--game-ink);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cli-stat-value.is-word {
+  font-size: 1rem;
+}
+
+.cli-stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.5rem;
+}
+
+.cli-stat-value {
+  font-family: var(--game-display);
+  font-size: 1.35rem;
+  font-weight: 400;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--game-green);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* narrow toolbars put the mode tag on its own row and the buttons in one even row;
+   wider ones keep the tag left and the buttons right */
+.cli-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: var(--game-panel);
+  border: 1px solid var(--game-line);
+  border-radius: 4px;
+}
+
+.cli-mode-tag {
+  justify-self: start;
+}
+
+.cli-toolbar-actions {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 0.5rem;
+}
+
+.cli-toolbar-note {
+  grid-column: 1 / -1;
+}
+
+/* on a narrow toolbar each button stacks its icon over a short label so all three share one row */
+@container (max-width: 420px) {
+  .cli-game .cli-tool {
+    --bs-btn-padding-x: 0.3rem;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.8rem;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+}
+
+@container (min-width: 640px) {
+  .cli-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .cli-toolbar-actions {
+    grid-auto-columns: auto;
+    justify-content: end;
+  }
+
+  .cli-game .cli-tool {
+    white-space: nowrap;
+  }
+}
+
+.cli-game .cli-tool {
+  justify-content: center;
+  line-height: 1.2;
+  --bs-btn-padding-x: 0.85rem;
+  --bs-btn-padding-y: 0.35rem;
+}
+
+.cli-hud-sub {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--game-green-dim);
+}
+
+.cli-banner {
+  padding: 0.75rem 1rem;
+  background: var(--game-panel);
+  border: 1px solid var(--game-line);
+  border-left: 4px solid var(--game-amber);
+}
+
+/* keyed on the incident id in the template, so each new alert remounts and replays this */
+.cli-banner-body {
+  animation: cli-alert-in 420ms ease-out;
+}
+
+.cli-banner-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 0.25rem;
+  font-size: 0.9rem;
+  color: var(--game-green-dim);
+}
+
+.cli-banner-title {
+  font-size: 1.1rem;
+  line-height: 1.1;
+  margin: 0 0 0.25rem;
+}
+
+.cli-banner-lines {
+  margin: 0 0 0.5rem;
+  padding-left: 1.25rem;
+  line-height: 2.1;
+  overflow-wrap: anywhere;
+}
+
+.cli-banner-idle {
+  margin: 0;
+  color: var(--game-green-dim);
+}
+
+.cli-game .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  --bs-badge-font-size: 0.8rem;
+  --bs-badge-font-weight: 700;
+  --bs-badge-border-radius: 2px;
+  --bs-badge-color: var(--game-ink);
+  background: transparent;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cli-game .cli-severity-low {
+  --bs-badge-color: var(--game-cyan);
+}
+
+.cli-game .cli-severity-medium {
+  --bs-badge-color: var(--game-amber);
+}
+
+.cli-game .cli-severity-high,
+.cli-game .cli-severity-critical {
+  --bs-badge-color: var(--game-red);
+}
+
+/* bootstrap progress used as the countdown; the bar width is set from the server deadline */
+.cli-game .progress {
+  --bs-progress-height: 8px;
+  --bs-progress-bg: var(--game-line);
+  --bs-progress-border-radius: 0;
+  --bs-progress-bar-bg: var(--game-green);
+  --bs-progress-bar-transition: width 100ms linear;
+}
+
+.cli-game .cli-countdown-urgent {
+  --bs-progress-bar-bg: var(--game-red);
+}
+
+.cli-countdown-urgent .progress-bar {
+  animation: cli-pulse 500ms ease-in-out infinite alternate;
+}
+
+.cli-terminal {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  background: #050906;
+  border: 1px solid var(--game-line);
+  border-radius: 4px;
+  box-shadow: inset 0 0 24px rgba(78, 240, 138, 0.08);
+  position: relative;
+}
+
+.cli-terminal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(0, 0, 0, 0.18) 3px
+  );
+}
+
+.cli-output {
+  flex: 1 1 auto;
+  height: 18rem;
+  overflow-y: auto;
+  padding: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.cli-line {
+  margin: 0;
+  white-space: pre-wrap;
+  animation: cli-line-in 160ms ease-out;
+}
+
+.cli-line-system {
+  color: var(--game-cyan);
+}
+
+.cli-line-alert {
+  color: var(--game-amber);
+  font-weight: 700;
+}
+
+/* new alert lines type themselves out left to right */
+.cli-line-alert,
+.cli-line-detail {
+  animation: cli-type 420ms steps(24, end) both;
+}
+
+.cli-line-detail,
+.cli-line-info {
+  color: var(--game-green-dim);
+}
+
+.cli-line-input {
+  color: var(--game-ink);
+}
+
+.cli-line-ok {
+  color: var(--game-green);
+  font-weight: 700;
+}
+
+.cli-line-fail,
+.cli-line-miss,
+.cli-line-error {
+  color: var(--game-red);
+}
+
+.cli-prompt {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem 0.75rem;
+  border-top: 1px solid var(--game-line);
+}
+
+.cli-prompt-label {
+  color: var(--game-green);
+  font-weight: 700;
+}
+
+/* blinking block cursor on the hidden prompt text, so it never joins the input's accessible name */
+.cli-prompt-symbol::after {
+  content: '_';
+  margin-left: 0.1em;
+  animation: cli-blink 1s steps(1) infinite;
+}
+
+.cli-prompt:has(.cli-input:focus) .cli-prompt-symbol::after {
+  visibility: hidden;
+  animation: none;
+}
+
+.cli-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.4rem 0.6rem;
+  background: var(--game-bg);
+  color: var(--game-ink);
+  caret-color: var(--game-green);
+  border: 2px solid var(--game-line);
+  border-radius: 4px;
+  font-family: var(--game-font);
+  font-size: 1rem;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+/* a narrow terminal keeps only the $ so the input and run button share one line */
+@container (max-width: 520px) {
+  .cli-prompt-host {
+    display: none;
+  }
+}
+
+.cli-prompt .btn {
+  flex: none;
+}
+
+.cli-input:focus {
+  border-color: var(--game-green);
+  box-shadow: 0 0 10px var(--game-glow);
+}
+
+/* the template buttons respond to their own container, not the viewport, so they fit the
+   terminal column at every breakpoint */
+.cli-reference {
+  container-type: inline-size;
+}
+
+.cli-template-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cli-game .cli-template {
+  width: 100%;
+  height: 100%;
+  min-height: 48px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  text-align: left;
+}
+
+.cli-game .cli-template .cli-icon {
+  margin-top: 0.1rem;
+}
+
+.cli-template-command {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.5ch;
+  white-space: nowrap;
+}
+
+.cli-template-arg {
+  color: var(--game-green-dim);
+}
+
+@container (min-width: 560px) {
+  .cli-template-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cli-game .cli-template {
+    align-items: center;
+  }
+
+  .cli-template-hint {
+    display: none;
+  }
+}
+
+@container (min-width: 780px) {
+  .cli-game .cli-template {
+    align-items: flex-start;
+  }
+
+  .cli-template-hint {
+    display: block;
+  }
+}
+
+.cli-template-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.cli-template-hint {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--game-green-dim);
+}
+
+.cli-score {
+  color: var(--game-green);
+}
+
+.cli-debrief-head {
+  margin-bottom: 0.75rem;
+}
+
+.cli-debrief-head .cli-heading {
+  margin-bottom: 0.25rem;
+}
+
+.cli-debrief-summary {
+  margin-top: 0;
+}
+
+.cli-debrief-summary .cli-score {
+  font-family: var(--game-display);
+  font-size: 1.2rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.cli-stat-mode {
+  font-family: var(--game-display);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--game-green);
+}
+
+.cli-debrief-section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--game-line);
+}
+
+.cli-debrief-section .cli-subheading {
+  margin-top: 0;
+}
+
+/* paused keeps the console's full size; the panel sits over the hidden alert and terminal */
+.cli-stage {
+  position: relative;
+}
+
+.cli-stage.is-paused > .row {
+  visibility: hidden;
+}
+
+.cli-stage > .cli-paused {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.cli-topic-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.cli-topic-table th,
+.cli-topic-table td {
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px dashed var(--game-line);
+}
+
+.cli-topic-table thead th {
+  font-size: 0.8rem;
+  color: var(--game-green-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--game-line);
+}
+
+.cli-topic-table tbody th {
+  font-weight: 700;
+  color: var(--game-ink);
+}
+
+.cli-topic-bar {
+  margin-right: 0.5rem;
+  color: var(--game-green);
+  letter-spacing: 0.05em;
+}
+
+.cli-steps {
+  display: flex;
+  gap: 3px;
+  margin-top: 0.3rem;
+}
+
+.cli-step {
+  flex: 1 1 0;
+  max-width: 14px;
+  height: 6px;
+  background: var(--game-line);
+}
+
+.cli-step.is-ok {
+  background: var(--game-green);
+}
+
+.cli-step.is-bad {
+  background: var(--game-red);
+}
+
+.cli-step.is-skip {
+  background: var(--game-green-dim);
+  opacity: 0.4;
+}
+
+.cli-step.is-current {
+  background: var(--game-amber);
+  animation: cli-pulse 700ms ease-in-out infinite alternate;
+}
+
+.cli-debrief-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cli-incident {
+  background: var(--game-panel);
+  border: 1px solid var(--game-line);
+  border-left: 4px solid var(--game-green);
+  border-radius: 4px;
+}
+
+.cli-incident-wrong,
+.cli-incident-missed {
+  border-left-color: var(--game-red);
+}
+
+.cli-incident-skipped {
+  border-left-color: var(--game-line);
+}
+
+.cli-incident > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  min-height: 48px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.cli-incident > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* a pixel chevron that turns when the incident opens */
+.cli-incident > summary::after {
+  content: '>';
+  margin-left: auto;
+  color: var(--game-green-dim);
+  transition: transform 160ms ease;
+}
+
+.cli-incident[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.cli-incident-number {
+  min-width: 1.5rem;
+  color: var(--game-green-dim);
+}
+
+.cli-incident-title {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.cli-incident-points {
+  color: var(--game-green);
+  font-size: 0.9rem;
+}
+
+.cli-incident-body {
+  padding: 0 0.75rem 0.75rem 2.6rem;
+}
+
+.cli-incident-commands {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.cli-incident-commands dt {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--game-green-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cli-incident-commands dd {
+  margin: 0;
+}
+
+.cli-incident-why {
+  margin: 0 0 0.4rem;
+  color: var(--game-green-dim);
+}
+
+/* --i comes from the v-for index, so the incidents appear one after another */
+.cli-debrief-item {
+  animation: cli-rise 280ms ease-out both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+.cli-debrief-title {
+  font-weight: 700;
+  color: var(--game-ink);
+}
+
+.cli-outcome {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 5.5rem;
+  margin-right: 0.5rem;
+  padding: 0 0.35rem;
+  border: 1px solid currentColor;
+  text-align: center;
+}
+
+.cli-outcome-correct {
+  color: var(--game-green);
+}
+
+.cli-outcome-wrong,
+.cli-outcome-missed {
+  color: var(--game-red);
+}
+
+.cli-outcome-skipped {
+  color: var(--game-green-dim);
+}
+
+/* tappable names in the alert; decoys are styled the same so the look gives nothing away */
+.cli-game .cli-entity {
+  display: inline-block;
+  min-height: 34px;
+  margin: 0.15rem 0;
+  padding: 0.2rem 0.45rem;
+  white-space: nowrap;
+  background: rgba(127, 220, 255, 0.08);
+  color: var(--game-cyan);
+  border: 1px dashed var(--game-cyan);
+  border-radius: 3px;
+  font-family: var(--game-font);
+  font-size: 0.95em;
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    transform 120ms ease;
+}
+
+.cli-game .cli-entity:hover:not(:disabled) {
+  background: rgba(127, 220, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.cli-game .cli-entity:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.cli-banner-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.cli-banner-foot .cli-banner-tip {
+  margin: 0;
+}
+
+.cli-game .cli-hint-button {
+  --bs-btn-padding-x: 0.75rem;
+  --bs-btn-padding-y: 0.25rem;
+  min-height: 40px;
+}
+
+.cli-role {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  color: var(--game-amber);
+}
+
+.cli-role .cli-icon {
+  margin-top: 0.2rem;
+}
+
+.cli-menu-note {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--game-green-dim);
+}
+
+.cli-banner-tip {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--game-green-dim);
+}
+
+.cli-hint-line {
+  margin-left: -0.5rem;
+  padding-left: 0.5rem;
+  background: rgba(255, 200, 87, 0.12);
+  border-left: 3px solid var(--game-amber);
+  animation: cli-hint-in 600ms ease-out;
+}
+
+.cli-hint-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--game-amber);
+  border: 1px solid var(--game-amber);
+}
+
+.cli-review {
+  padding: 0.75rem 1rem;
+  background: var(--game-panel);
+  border: 1px solid var(--game-line);
+  border-left: 4px solid var(--game-green);
+  animation: cli-rise 240ms ease-out;
+}
+
+.cli-review-wrong {
+  border-left-color: var(--game-red);
+}
+
+.cli-review p {
+  margin: 0 0 0.35rem;
+}
+
+.cli-review-head {
+  font-weight: 700;
+}
+
+.cli-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cli-tag {
+  padding: 0 0.4rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--game-line);
+  color: var(--game-green-dim);
+}
+
+.cli-tag-attack {
+  color: var(--game-amber);
+  border-color: var(--game-amber);
+}
+
+.cli-tag-cia {
+  color: var(--game-cyan);
+  border-color: rgba(127, 220, 255, 0.5);
+}
+
+.cli-line-why {
+  color: var(--game-ink);
+}
+
+.cli-line-tag {
+  color: var(--game-amber);
+  font-size: 0.9em;
+}
+
+.cli-streak-meter {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.cli-streak-pip {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--game-green);
+  transition: background-color 160ms ease;
+}
+
+.cli-streak-pip.is-on {
+  background: var(--game-green);
+}
+
+.cli-streak-meter.is-max .cli-streak-pip {
+  animation: cli-glow 900ms ease-in-out infinite alternate;
+}
+
+/* the console is the size container, because the toolbar cannot query its own width */
+.cli-console {
+  position: relative;
+  container-type: inline-size;
+}
+
+.cli-shake {
+  animation: cli-shake 360ms ease-in-out;
+}
+
+/* keyed overlay, remounted on every outcome so the flash replays */
+.cli-flash {
+  position: absolute;
+  inset: -0.5rem;
+  z-index: 2;
+  pointer-events: none;
+  border: 3px solid transparent;
+  border-radius: 6px;
+  animation: cli-flash 1100ms ease-in forwards;
+}
+
+.cli-flash-ok {
+  border-color: var(--game-green);
+  box-shadow: inset 0 0 40px rgba(78, 240, 138, 0.25);
+}
+
+.cli-flash-fail {
+  border-color: var(--game-red);
+  box-shadow: inset 0 0 40px rgba(255, 138, 122, 0.3);
+}
+
+.cli-debrief {
+  position: relative;
+  overflow: hidden;
+}
+
+.cli-perfect {
+  font-weight: 700;
+  color: var(--game-amber);
+}
+
+.cli-strong {
+  color: var(--game-green);
+}
+
+.cli-review-tag {
+  color: var(--game-amber);
+}
+
+.cli-confetti {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 100%;
+  pointer-events: none;
+}
+
+.cli-confetti-piece {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 8px;
+  animation: cli-confetti 1.6s ease-in forwards;
+}
+
+.cli-confetti-0 {
+  background: var(--game-green);
+}
+
+.cli-confetti-1 {
+  background: var(--game-amber);
+}
+
+.cli-confetti-2 {
+  background: var(--game-cyan);
+}
+
+.cli-confetti-3 {
+  background: var(--game-red);
+}
+
+.cli-radar {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--game-cyan);
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(127, 220, 255, 0.7), transparent 30%);
+  animation: cli-spin 1.6s linear infinite;
+}
+
+.cli-game .cli-stat-icon {
+  display: inline-flex;
+}
+
+.cli-pop {
+  animation: cli-pop 420ms ease-out;
+}
+
+.cli-flicker {
+  animation: cli-flicker 1.2s ease-in-out 2;
+}
+
+.cli-flip {
+  animation: cli-flip 1s ease-in-out infinite;
+}
+
+.cli-flash {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.cli-stamp {
+  margin-top: 30%;
+  padding: 0.3rem 1rem;
+  font-family: var(--game-display);
+  font-size: clamp(1.4rem, 1rem + 2vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  border: 3px solid currentColor;
+  border-radius: 4px;
+  background: rgba(5, 9, 6, 0.85);
+  animation: cli-stamp 600ms ease-out both;
+}
+
+.cli-flash-ok .cli-stamp {
+  color: var(--game-green);
+}
+
+.cli-flash-fail .cli-stamp,
+.cli-flash-miss .cli-stamp {
+  color: var(--game-red);
+}
+
+.cli-flash-miss {
+  border-color: var(--game-red);
+  box-shadow: inset 0 0 40px rgba(255, 138, 122, 0.3);
+}
+
+@keyframes cli-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes cli-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cli-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.35) rotate(-8deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes cli-flicker {
+  0%,
+  100% {
+    transform: scale(1) rotate(0);
+  }
+  30% {
+    transform: scale(1.08, 0.94) rotate(-4deg);
+  }
+  60% {
+    transform: scale(0.95, 1.06) rotate(3deg);
+  }
+}
+
+@keyframes cli-flip {
+  0%,
+  40% {
+    transform: rotate(0);
+  }
+  60%,
+  100% {
+    transform: rotate(180deg);
+  }
+}
+
+@keyframes cli-stamp {
+  0% {
+    transform: scale(1.8) rotate(-12deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(0.95) rotate(-6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(-6deg);
+    opacity: 1;
+  }
+}
+
+.cli-lead {
+  font-size: 1.05rem;
+  color: var(--game-ink);
+}
+
+.cli-brief-list {
+  container-type: inline-size;
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cli-brief-list li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  gap: 0.6rem;
+}
+
+.cli-brief-list .cli-icon {
+  margin-top: 0.2rem;
+}
+
+/* anything beside the icon stays in the text column, so a hint can never squeeze into 20px */
+.cli-brief-list li > :not(.cli-icon) {
+  grid-column: 2;
+}
+
+.cli-brief-text code {
+  margin-right: 0.35rem;
+}
+
+/* when the list is squeezed, each description drops onto its own line under the command */
+@container (max-width: 26rem) {
+  .cli-brief-text code {
+    display: block;
+    margin-right: 0;
+  }
+}
+
+.cli-brief-list .cli-icon {
+  color: var(--game-green);
+}
+
+.cli-brief-modes {
+  margin: 1.25rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--game-line);
+}
+
+.cli-brief-text {
+  color: var(--game-ink);
+}
+
+.cli-demo {
+  margin: 0 0 1rem;
+}
+
+.cli-demo-window {
+  max-width: 560px;
+  margin: 0 auto;
+  background: #050906;
+  border: 1px solid var(--game-line);
+  border-radius: 6px;
+  box-shadow: 0 0 24px rgba(78, 240, 138, 0.12);
+  overflow: hidden;
+}
+
+.cli-demo-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.35rem 0.6rem;
+  background: var(--game-panel);
+  border-bottom: 1px solid var(--game-line);
+  font-size: 0.8rem;
+  color: var(--game-green-dim);
+}
+
+.cli-demo-bar span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--game-line);
+}
+
+.cli-demo-bar strong {
+  margin-left: auto;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.cli-demo-body {
+  min-height: 8.5rem;
+  padding: 0.75rem 0.9rem;
+}
+
+.cli-demo-body p {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.5rem;
+}
+
+.cli-demo-alert {
+  color: var(--game-amber);
+  font-weight: 700;
+  animation: cli-alert-in 420ms ease-out;
+}
+
+.cli-demo-host {
+  color: var(--game-green);
+  font-weight: 700;
+}
+
+.cli-demo-typed {
+  color: var(--game-ink);
+}
+
+.cli-demo-caret {
+  color: var(--game-green);
+  animation: cli-blink 0.8s steps(1) infinite;
+}
+
+.cli-demo-ok {
+  width: fit-content;
+  padding: 0.15rem 0.6rem;
+  color: var(--game-green);
+  font-weight: 700;
+  border: 2px solid var(--game-green);
+  border-radius: 3px;
+  animation: cli-stamp 500ms ease-out both;
+}
+
+.cli-demo-steps {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 0 0.6rem;
+}
+
+.cli-demo-steps span {
+  width: 22px;
+  height: 4px;
+  background: var(--game-line);
+  transition: background-color 200ms ease;
+}
+
+.cli-demo-steps .is-active {
+  background: var(--game-green);
+}
+
+.cli-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cli-menu {
+  position: relative;
+}
+
+.cli-menu-list {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 5;
+  min-width: 11rem;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  background: var(--game-panel);
+  border: 2px solid var(--game-green);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  animation: cli-rise 160ms ease-out;
+}
+
+.cli-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  color: var(--game-green);
+  border: 0;
+  border-radius: 3px;
+  font-family: var(--game-font);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cli-menu-item:hover,
+.cli-menu-item:focus-visible {
+  background: rgba(78, 240, 138, 0.12);
+}
+
+.cli-menu-danger {
+  color: var(--game-red);
+}
+
+.cli-menu-danger:hover,
+.cli-menu-danger:focus-visible {
+  background: rgba(255, 138, 122, 0.12);
+}
+
+.cli-game .cli-menu-button {
+  --bs-btn-padding-y: 0.3rem;
+}
+
+.cli-dialog {
+  width: min(28rem, calc(100vw - 2rem));
+  padding: 0;
+  background: var(--game-panel);
+  color: var(--game-ink);
+  font-family: var(--game-font);
+  border: 2px solid var(--game-green);
+  border-radius: 6px;
+  box-shadow: 0 0 32px rgba(78, 240, 138, 0.25);
+}
+
+.cli-dialog::backdrop {
+  background: rgba(5, 9, 6, 0.75);
+}
+
+.cli-dialog[open] {
+  animation: cli-rise 200ms ease-out;
+}
+
+.cli-dialog-body {
+  padding: 1.25rem;
+}
+
+.cli-dialog-body p {
+  margin: 0 0 0.5rem;
+}
+
+.cli-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+@keyframes cli-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes cli-line-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes cli-alert-in {
+  from {
+    opacity: 0.4;
+    transform: translateY(-4px);
+    text-shadow: 0 0 8px var(--game-amber);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    text-shadow: none;
+  }
+}
+
+@keyframes cli-hint-in {
+  from {
+    background: rgba(255, 200, 87, 0.45);
+  }
+  to {
+    background: rgba(255, 200, 87, 0.12);
+  }
+}
+
+@keyframes cli-glow {
+  from {
+    box-shadow: 0 0 0 transparent;
+  }
+  to {
+    box-shadow: 0 0 8px var(--game-green);
+  }
+}
+
+@keyframes cli-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes cli-flash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes cli-confetti {
+  to {
+    transform: translateY(420px) rotate(var(--spin, 180deg));
+    opacity: 0;
+  }
+}
+
+@keyframes cli-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes cli-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+/* layout columns and rows come from bootstrap classes in the templates (sm, md, lg, xl tiers);
+   these queries only tune spacing and the terminal height at the same breakpoints */
+@media (min-width: 768px) {
+  .cli-game {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .cli-output {
+    height: 22rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .cli-game {
+    max-width: 1140px;
+  }
+
+  /* the terminal fills the row beside the alert column but never grows with its log,
+     so the prompt stays put while lines scroll inside */
+  .cli-output {
+    flex: 1 1 0;
+    height: 0;
+    min-height: 22rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  .cli-game {
+    max-width: 1320px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cli-terminal::after,
+  .cli-flash,
+  .cli-confetti {
+    display: none;
+  }
+
+  .cli-game *,
+  .cli-game *::before,
+  .cli-game *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

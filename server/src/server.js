@@ -1,5 +1,7 @@
 import { initializeNewsStorage } from './modules/news/models.js'
 import { createNewsStore } from './modules/news/store.js'
+import { createLlmAdapter } from './modules/games/social-engineering-simulator/llm/adapter.js'
+import { createSocialEngineeringService } from './modules/games/social-engineering-simulator/service.js'
 import { createApp } from './app.js'
 import { loadEnvironment } from './config/env.js'
 import { connectDatabase } from './config/database.js'
@@ -41,11 +43,20 @@ try {
       }),
     60000,
   ).unref()
+  // the adapter reports configured:false when no llm env is set, so the
+  // simulator endpoints fail gracefully instead of the server refusing to start
+  const llmAdapter = createLlmAdapter({
+    baseUrl: config.llmBaseUrl,
+    model: config.llmModel,
+    apiKey: config.llmApiKey,
+    authToken: config.llmAuthToken,
+  })
   server = createApp(database, {
     news: {
       apiKey: config.nodeEnv === 'test' ? undefined : config.guardianApiKey,
       store: newsStore,
     },
+    socialEngineering: { service: createSocialEngineeringService({ adapter: llmAdapter }) },
   }).listen(config.port, '127.0.0.1')
   server.on('listening', () =>
     console.log(`SHARLOCK API ready at http://localhost:${config.port}/api/health`),

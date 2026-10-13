@@ -13,11 +13,12 @@ export function createChatSessionRunner({ store, adapter }) {
       if (!existing) {
         throw new LlmError('LLM_SESSION_NOT_FOUND', 'Chat session not found or already ended.', 404)
       }
-      store.append(sessionId, { role: 'user', content })
+      // commit the turn only after the model replies so a failure leaves no stray message
       const { content: reply } = await adapter.chat({
         systemPrompt,
-        messages: store.get(sessionId),
+        messages: [...existing, { role: 'user', content }],
       })
+      store.append(sessionId, { role: 'user', content })
       store.append(sessionId, { role: 'assistant', content: reply })
       return reply
     },
