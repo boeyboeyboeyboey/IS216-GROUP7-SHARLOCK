@@ -50,6 +50,22 @@ describe('phishing verdict validation', () => {
       expect(error.message).not.toMatch(/case-0|patientZero/)
     }
   })
+
+  it('rejects an own __proto__ field from parsed JSON', () => {
+    const body = JSON.parse(
+      '{"caseId":"case-01","datasetVersion":"2026-09-21","actionId":"f47ac10b-58cc-4372-a567-0e02b2c3d479","selectedEmailId":"a11","evidenceIds":["ev-lookalike-domain","ev-click-then-credentials"],"__proto__":"unsupported"}',
+    )
+    let error
+    try {
+      parseVerdict(body)
+    } catch (caught) {
+      error = caught
+    }
+    expect(error).toBeInstanceOf(PhishingError)
+    expect(error.code).toBe('PHISH_INVALID_REQUEST')
+    expect(Object.hasOwn(error.fieldErrors, '__proto__')).toBe(true)
+    expect(error.fieldErrors['__proto__']).toBe('unsupported field')
+  })
 })
 
 describe('phishing case query', () => {

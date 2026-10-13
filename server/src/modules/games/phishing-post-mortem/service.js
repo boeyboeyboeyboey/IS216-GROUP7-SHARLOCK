@@ -5,6 +5,7 @@ import {
   EVIDENCE_POINTS,
   GAME_ID,
   MAX_SCORE,
+  REQUIRED_EVIDENCE,
   RULESET_VERSION,
   caseNotFound,
   datasetChanged,
@@ -75,7 +76,7 @@ export function createPhishingService({ random = Math.random } = {}) {
       briefing: content.briefing,
       timezoneLabel: content.timezoneLabel,
       maxScore: MAX_SCORE,
-      requiredEvidence: 2,
+      requiredEvidence: REQUIRED_EVIDENCE,
       emails: shuffle(content.emails, random).map(publicEmail),
       timeline: content.timeline.map((event) => ({
         id: event.id,

@@ -43,7 +43,7 @@ When GAME-01 exists:
 1. Replace the two routes with `POST /api/games/:gameId/attempts` and the `submit-verdict` action; `service.js` `scoreVerdict()` moves across unchanged as the ruleset's `applyAction`/`summarize`.
 2. Store `{ caseId, datasetVersion, emailOrder, selectedEmailId, evidenceIds, submittedAt }` as the attempt `state`, exactly as the TASKS.md blueprint specifies.
 3. Let the shared action service honour `actionId` for idempotency and enforce one verdict per attempt.
-4. Add `requireSession` in the router and pass the resolved actor into the service, which already takes it as an argument.
+4. Have the shared session/action layer authorize the actor and attempt before invoking the scorer. The current `scoreVerdict()` is stateless and accepts no actor argument; any later authentication integration requires an agreed interface.
 
 No client change is needed for steps 1 to 3 beyond the request URL.
 

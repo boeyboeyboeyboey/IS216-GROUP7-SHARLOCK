@@ -52,7 +52,7 @@ export function parseCaseQuery(query = {}) {
 export function parseVerdict(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body))
     throw invalid({ body: 'expected an object' })
-  const fieldErrors = {}
+  const fieldErrors = Object.create(null)
   for (const key of Object.keys(body))
     if (!VERDICT_FIELDS.includes(key)) fieldErrors[key] = 'unsupported field'
   const caseId = readToken(body.caseId, CASE_ID, 'caseId', fieldErrors)

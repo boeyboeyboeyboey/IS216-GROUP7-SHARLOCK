@@ -109,6 +109,19 @@ describe('POST /api/games/phishing-post-mortem/verdict', () => {
     expect(response.body.requestId).toBeTruthy()
   })
 
+  it('serializes an own __proto__ field error from a parsed JSON body', async () => {
+    const rawBody =
+      '{"caseId":"case-01","datasetVersion":"2026-09-21","actionId":"f47ac10b-58cc-4372-a567-0e02b2c3d479","selectedEmailId":"a11","evidenceIds":["ev-lookalike-domain","ev-click-then-credentials"],"__proto__":"unsupported"}'
+    const response = await request(app)
+      .post('/api/games/phishing-post-mortem/verdict')
+      .set('Content-Type', 'application/json')
+      .send(rawBody)
+      .expect(400)
+    expect(response.body.error.code).toBe('PHISH_INVALID_REQUEST')
+    expect(Object.hasOwn(response.body.error.fieldErrors, '__proto__')).toBe(true)
+    expect(response.body.error.fieldErrors['__proto__']).toBe('unsupported field')
+  })
+
   it('paces repeated verdicts from the same caller', async () => {
     const body = {
       ...base,
