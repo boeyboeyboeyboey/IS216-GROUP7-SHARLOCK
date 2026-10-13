@@ -1,17 +1,15 @@
 <script setup>
+import { computed } from 'vue'
 import SafeInline from './SafeInline.vue'
 import { newsDate, safeNewsLink } from '../news.js'
-defineProps({ article: { type: Object, required: true }, featured: Boolean })
+const props = defineProps({ article: { type: Object, required: true }, featured: Boolean })
+const safeArticleUrl = computed(() => safeNewsLink(props.article.url))
 </script>
 <template>
   <article class="gazette-article" :class="{ 'gazette-featured': featured }">
     <p class="gazette-kicker">{{ featured ? 'THE LEAD STORY' : 'IN THE NEWS' }} · THE GUARDIAN</p>
     <h2>
-      <a
-        v-if="safeNewsLink(article.url)"
-        :href="safeNewsLink(article.url)"
-        target="_blank"
-        rel="noopener noreferrer"
+      <a v-if="safeArticleUrl" :href="safeArticleUrl" target="_blank" rel="noopener noreferrer"
         >{{ article.title }}<span class="visually-hidden"> (opens in a new tab)</span></a
       ><span v-else>{{ article.title }}</span>
     </h2>
@@ -24,9 +22,9 @@ defineProps({ article: { type: Object, required: true }, featured: Boolean })
     </p>
     <p v-if="article.copyright" class="gazette-copyright">{{ article.copyright }}</p>
     <a
-      v-if="safeNewsLink(article.url)"
+      v-if="safeArticleUrl"
       class="gazette-read"
-      :href="safeNewsLink(article.url)"
+      :href="safeArticleUrl"
       target="_blank"
       rel="noopener noreferrer"
       >Read at The Guardian ↗<span class="visually-hidden"> (opens in a new tab)</span></a
