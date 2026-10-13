@@ -175,6 +175,10 @@
   padding: 1rem;
 }
 
+:where(.phish-game) .sharmail-pane.is-mobile-hidden {
+  display: none;
+}
+
 :where(.phish-game) .sharmail-pane-list {
   border-bottom: 1px solid var(--game-line);
 }

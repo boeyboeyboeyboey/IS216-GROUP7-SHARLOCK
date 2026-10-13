@@ -125,23 +125,37 @@ test('replay hands over the other case', async ({ page }, testInfo) => {
   await expect(page.locator('.sharmail-briefing h2')).toHaveText(other.content.title)
 })
 
-test('the narrow layout swaps panes and returns focus to the message row', async ({
+test('the inbox panes follow the responsive layout and return focus to the message row', async ({
   page,
 }, testInfo) => {
-  test.skip(
-    testInfo.project.name !== 'mobile-chromium',
-    'pane swapping is a narrow-screen behaviour',
-  )
+  const isMobile = testInfo.project.name === 'mobile-chromium'
   const active = await openCase(page)
   const target = active.content.emails[3]
+  const inbox = page.locator('.sharmail-pane-list')
+  const reading = page.locator('.sharmail-pane-reading')
 
-  await page.getByRole('button', { name: 'Back to inbox' }).click()
-  await expect(page.getByRole('heading', { name: 'Inbox' })).toBeVisible()
+  await expect(reading).toBeVisible()
+  if (isMobile) await expect(inbox).toBeHidden()
+  else await expect(inbox).toBeVisible()
+
+  if (isMobile) {
+    await page.getByRole('button', { name: 'Back to inbox' }).click()
+    await expect(page.getByRole('heading', { name: 'Inbox' })).toBeVisible()
+    await expect(inbox).toBeVisible()
+    await expect(reading).toBeHidden()
+  }
+
   const row = page.locator(`.sharmail-row[data-email-id="${target.id}"]`)
   await row.click()
   await expect(page.getByRole('heading', { name: target.subject, exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Back to inbox' }).click()
-  await expect(row).toBeFocused()
+  await expect(reading).toBeVisible()
+  if (isMobile) {
+    await expect(inbox).toBeHidden()
+    await page.getByRole('button', { name: 'Back to inbox' }).click()
+    await expect(row).toBeFocused()
+  } else {
+    await expect(inbox).toBeVisible()
+  }
 })
 
 test('the inbox walks with the arrow keys', async ({ page }, testInfo) => {
