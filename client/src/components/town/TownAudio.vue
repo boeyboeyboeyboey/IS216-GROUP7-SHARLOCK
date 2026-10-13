@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onBeforeUnmount, watch } from 'vue'
+import { computed, ref, onBeforeUnmount, watch } from 'vue'
 import PixelIcon from './PixelIcon.vue'
 const props = defineProps({ suspended: Boolean })
 const audio = ref(null)
@@ -8,6 +8,11 @@ const starting = ref(false)
 const errorMessage = ref('')
 let disposed = false
 let generation = 0
+const soundLabel = computed(() => {
+  if (starting.value) return 'Starting…'
+  if (isMuted.value) return 'Sound off'
+  return 'Sound on'
+})
 
 function failPlayback() {
   if (disposed) return
@@ -85,9 +90,7 @@ onBeforeUnmount(() => {
       :disabled="starting || suspended"
       @click="toggleSound"
     >
-      <PixelIcon :name="isMuted ? 'mute' : 'sound'" :size="20" /><span>{{
-        starting ? 'Starting…' : isMuted ? 'Sound off' : 'Sound on'
-      }}</span>
+      <PixelIcon :name="isMuted ? 'mute' : 'sound'" :size="20" /><span>{{ soundLabel }}</span>
     </button>
     <p v-if="errorMessage" class="audio-error" role="status">{{ errorMessage }}</p>
   </div>
