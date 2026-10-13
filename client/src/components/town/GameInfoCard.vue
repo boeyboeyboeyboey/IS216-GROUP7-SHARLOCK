@@ -1,8 +1,13 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import PixelIcon from './PixelIcon.vue'
-defineProps({ game: { type: Object, required: true } })
+const props = defineProps({ game: { type: Object, required: true } })
 defineEmits(['close'])
+const actionLabel = computed(() => {
+  if (props.game.activation === 'direct') return 'Read the Times'
+  if (props.game.isPreview) return 'View activity preview'
+  return 'Enter activity'
+})
 const heading = ref(null)
 defineExpose({ focus: () => heading.value?.focus({ preventScroll: true }) })
 </script>
@@ -45,13 +50,7 @@ defineExpose({ focus: () => heading.value?.focus({ preventScroll: true }) })
         <li v-for="topic in game.backgroundKnowledge" :key="topic">{{ topic }}</li>
       </ul>
       <RouterLink :to="game.route" class="pixel-button enter-activity"
-        >{{
-          game.activation === 'direct'
-            ? 'Read the Times'
-            : game.isPreview
-              ? 'View activity preview'
-              : 'Enter activity'
-        }}<PixelIcon name="arrow" :size="16" /></RouterLink
+        >{{ actionLabel }}<PixelIcon name="arrow" :size="16" /></RouterLink
       ><span v-if="game.isPreview" class="game-preview-label">{{
         game.activation === 'direct'
           ? 'News connection verification pending'
