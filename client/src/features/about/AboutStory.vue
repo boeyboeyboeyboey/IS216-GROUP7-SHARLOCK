@@ -79,8 +79,9 @@ import SharlockTip from '../../components/portal/SharlockTip.vue'
         foundational concepts easier to apply through interactive, controlled exercises.
       </p>
       <p class="preview-notice">
-        Read The Sharlock Times and explore our activity previews. Sample points and badges are
-        illustrative; accounts, saved results, and playable games are still being developed.
+        Read The Sharlock Times and explore the town's games and previews. The playable games do not
+        save results yet. Profile points and badges are illustrative; accounts and saved learning
+        records are still being developed.
       </p>
     </section>
     <ConnectionStatus />
