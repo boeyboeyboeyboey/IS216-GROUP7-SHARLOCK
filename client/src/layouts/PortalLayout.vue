@@ -59,13 +59,14 @@ watch(
     if (menuOpen.value) {
       routeChanged = true
       closeMenu()
-    } else if (
-      !route.meta.newsDialog &&
-      !(route.name === 'town' && previousPath?.split(/[?#]/)[0] === '/games/threat-briefing')
-    ) {
-      await nextTick()
-      focusPage()
+      return
     }
+    if (route.meta.newsDialog) return
+    const returningToTownFromNews =
+      route.name === 'town' && previousPath?.split(/[?#]/)[0] === '/games/threat-briefing'
+    if (returningToTownFromNews) return
+    await nextTick()
+    focusPage()
   },
 )
 onBeforeUnmount(() => {
