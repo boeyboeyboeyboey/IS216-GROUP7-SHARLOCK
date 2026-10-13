@@ -10,19 +10,28 @@ export function notFound(_request, response) {
 export function handleError(error, _request, response, _next) {
   const malformedJson = error.type === 'entity.parse.failed'
   const tooLarge = error.type === 'entity.too.large'
-  const status = malformedJson ? 400 : tooLarge ? 413 : 500
-  if (status === 500) {
+  const publicError = {
+    status: 500,
+    code: 'INTERNAL_ERROR',
+    message: 'Request could not be completed.',
+  }
+  if (malformedJson) {
+    publicError.status = 400
+    publicError.code = 'INVALID_JSON'
+    publicError.message = 'Request body must be valid JSON.'
+  } else if (tooLarge) {
+    publicError.status = 413
+    publicError.code = 'BODY_TOO_LARGE'
+    publicError.message = 'Request body is too large.'
+  }
+  if (publicError.status === 500) {
     // log only the request id so internal errors cannot expose secrets
     console.error(JSON.stringify({ event: 'request_failed', requestId: response.locals.requestId }))
   }
-  response.status(status).json({
+  response.status(publicError.status).json({
     error: {
-      code: malformedJson ? 'INVALID_JSON' : tooLarge ? 'BODY_TOO_LARGE' : 'INTERNAL_ERROR',
-      message: malformedJson
-        ? 'Request body must be valid JSON.'
-        : tooLarge
-          ? 'Request body is too large.'
-          : 'Request could not be completed.',
+      code: publicError.code,
+      message: publicError.message,
     },
     requestId: response.locals.requestId,
   })
