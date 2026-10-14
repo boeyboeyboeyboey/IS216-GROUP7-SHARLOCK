@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/auth.js'
 import { gameCatalog } from '../../client/src/data/gameCatalog.js'
 
 test.beforeEach(async ({ page }) => {
@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   )
 })
 
-test('explores every building without prerequisites or changing sample points', async ({
+test('explores every building without prerequisites while showing account state', async ({
   page,
 }) => {
   await page.goto('/')
@@ -65,7 +65,7 @@ test('explores every building without prerequisites or changing sample points', 
     await expect(page).toHaveURL(new RegExp(`${game.route}$`))
     await expect(page.getByRole('heading', { name: 'A new case is taking shape.' })).toBeVisible()
     await page.getByRole('link', { name: 'Keep exploring', exact: true }).click()
-    await expect(page.locator('.town-player')).toContainText('120 points')
+    await expect(page.locator('.town-player')).toContainText('Results are not saved')
   }
   for (const [previous, current] of [
     ['mini-ctf', 'sql-injection-arcade'],
@@ -168,7 +168,11 @@ test('plays the repository soundtrack only after a click and stops on departure'
   await page.getByRole('button', { name: 'Turn on town sound' }).click()
   await expect(page.getByRole('button', { name: 'Mute town sound' })).toBeVisible()
   const handle = await audio.elementHandle()
-  await page.getByRole('link', { name: 'View sample detective profile' }).click()
+  await page.getByRole('link', { name: 'View your detective profile' }).click()
+  await expect(page).toHaveURL(/\/profile$/)
+  await expect(
+    page.getByRole('heading', { name: 'A curious mind looks good on you.' }),
+  ).toBeVisible()
   expect(await handle.evaluate((el) => el.paused && el.muted)).toBe(true)
   await page.goto('/dashboard')
   expect(await audio.evaluate((el) => el.muted && el.paused)).toBe(true)
@@ -183,7 +187,7 @@ test('navigates to the profile and handles mobile focus and dismissal', async ({
     await opener.click()
     const drawer = page.getByRole('dialog', { name: 'Your detective desk' })
     await expect(drawer).toBeVisible()
-    await expect(drawer.getByText('120 points')).toBeVisible()
+    await expect(drawer.getByText('Results are not saved')).toBeVisible()
     await expect.poll(() => drawer.evaluate((el) => el.contains(document.activeElement))).toBe(true)
     await page.keyboard.press('Escape')
     await expect(drawer).toBeHidden()
@@ -195,7 +199,7 @@ test('navigates to the profile and handles mobile focus and dismissal', async ({
   await expect(page).toHaveURL(/\/profile$/)
   await expect(page.getByRole('heading', { level: 1 })).toBeFocused()
   await expect(page.getByRole('heading', { name: 'Your trophy case' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'First clue', exact: true })).toBeVisible()
+  await expect(page.getByText('Your first badge is waiting')).toBeVisible()
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Your trophy case' })).toBeVisible()
 })

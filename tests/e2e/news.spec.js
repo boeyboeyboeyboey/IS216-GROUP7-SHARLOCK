@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/auth.js'
 
 function fixture(section = 'cybersecurity', range = 'week', overrides = {}) {
   const now = Date.now()
@@ -188,7 +188,7 @@ test('handles direct malformed links, keyboard close and leaving without style o
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.getByRole('button', { name: 'Close newspaper' }).click()
   await expect(page).toHaveURL('/')
-  await page.getByRole('link', { name: 'View sample detective profile' }).click()
+  await page.getByRole('link', { name: 'View your detective profile' }).click()
   await expect(page).toHaveURL(/\/profile$/)
   await expect(page.getByRole('heading', { level: 1 })).toBeFocused()
   await expect(page.locator('dialog')).toHaveCount(0)
@@ -313,7 +313,7 @@ test('plays the supplied newspaper loop, keeps one player across tabs and restor
   await page.getByRole('button', { name: 'Close newspaper' }).click()
   expect(await handle.evaluate((el) => el.paused && el.muted && !el.isConnected)).toBe(true)
   await expect.poll(() => townAudio.evaluate((el) => !el.paused && !el.muted)).toBe(true)
-  await page.getByRole('link', { name: 'View sample detective profile' }).click()
+  await page.getByRole('link', { name: 'View your detective profile' }).click()
   await expect(page.locator('audio')).toHaveCount(0)
 })
 

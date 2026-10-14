@@ -8,7 +8,7 @@ export const routes = [
     path: '/',
     name: 'town',
     component: Dashboard,
-    meta: { title: 'Sharlock Town', theme: 'town' },
+    meta: { title: 'Sharlock Town', theme: 'town', requiresAccount: true },
     children: [
       {
         path: '/games/threat-briefing',
@@ -19,8 +19,26 @@ export const routes = [
     ],
   },
   { path: '/dashboard', redirect: (to) => ({ path: '/', query: to.query, hash: to.hash }) },
-  { path: '/profile', component: Profile, meta: { title: 'Detective profile' } },
-  { path: '/progress', component: Profile, meta: { title: 'Learning progress' } },
+  {
+    path: '/profile',
+    component: Profile,
+    meta: { title: 'Detective profile', accountAware: true },
+  },
+  {
+    path: '/progress',
+    component: Profile,
+    meta: { title: 'Learning progress', accountAware: true },
+  },
+  {
+    path: '/login',
+    component: () => import('../features/auth/pages/LoginPage.vue'),
+    meta: { title: 'Sign in', authPage: true },
+  },
+  {
+    path: '/register',
+    component: () => import('../features/auth/pages/RegisterPage.vue'),
+    meta: { title: 'Create account', authPage: true },
+  },
   ...[
     ['integrity-detective', 'cli-cyber-defender'],
     ['mini-ctf', 'sql-injection-arcade'],
@@ -33,22 +51,22 @@ export const routes = [
   {
     path: '/games/phishing-post-mortem',
     component: () => import('../games/phishing-post-mortem/PhishingPostMortem.vue'),
-    meta: { title: 'The Phishing Post-Mortem' },
+    meta: { title: 'The Phishing Post-Mortem', requiresAccount: true },
   },
   {
     path: '/games/social-engineering-simulator',
     component: () => import('../games/social-engineering-simulator/SocialEngineeringSimulator.vue'),
-    meta: { title: 'LLM Social Engineering Simulator' },
+    meta: { title: 'LLM Social Engineering Simulator', requiresAccount: true },
   },
   {
     path: '/games/cli-cyber-defender',
     component: () => import('../games/cli-cyber-defender/CliDefenderGame.vue'),
-    meta: { title: 'CLI Cyber Defender' },
+    meta: { title: 'CLI Cyber Defender', requiresAccount: true },
   },
   {
     path: '/games/:gameId',
     component: () => import('../views/GamePreview.vue'),
-    meta: { title: 'Case preview' },
+    meta: { title: 'Case preview', requiresAccount: true },
   },
   {
     path: '/about',
@@ -60,16 +78,6 @@ export const routes = [
       'leaderboard',
       'A little friendly competition',
       'Cohort rankings will celebrate your learning alongside your classmates.',
-    ],
-    [
-      'login',
-      'Your next chapter starts here',
-      'Sign-in will keep your discoveries and achievements together.',
-    ],
-    [
-      'register',
-      'Join the investigation',
-      'Student registration is coming soon. You can explore the town preview now.',
     ],
     [
       'instructor',

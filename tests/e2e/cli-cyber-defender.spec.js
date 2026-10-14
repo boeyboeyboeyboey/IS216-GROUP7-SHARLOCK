@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/auth.js'
 import { formatCommand } from '../../server/src/modules/games/cli-cyber-defender/parser.js'
 import { SCENARIOS } from '../../server/src/modules/games/cli-cyber-defender/scenarios.js'
 import { DEMO_SCENES } from '../../client/src/games/cli-cyber-defender/cliDefender.js'
@@ -158,7 +158,9 @@ test('plays a perfect practice shift to 2,100 and replays', async ({ page }) => 
   await expect(debrief).toBeFocused()
   await expect(page.getByText('2,100 / 2,100 points')).toBeVisible()
   await expect(page.locator('.cli-outcome-correct')).toHaveCount(8)
-  await expect(page.getByText(/not saved/)).toBeVisible()
+  await expect(page.locator('.cli-debrief .cli-note').first()).toContainText(
+    'Practice results are not saved.',
+  )
   await expect(page.getByRole('link', { name: 'Back to town' })).toHaveCount(1)
   await page.getByRole('button', { name: 'Play again' }).click()
   await expect(commandInput(page)).toBeFocused()

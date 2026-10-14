@@ -148,7 +148,7 @@ For live Times stories, privately add `GUARDIAN_API_KEY` from [Guardian Open Pla
 
 Open **http://localhost:5173**. The existing workspace and scripts require pnpm; retain the single `pnpm-lock.yaml`.
 
-AUTH-01-A adds backend registration, login, session restoration and logout under `/api/auth`, with automatic sign-in after registration and six capybara avatar presets. See the [auth API contract](server/src/modules/auth/README.md) and [preset assets and prompts](client/public/images/avatars/README.md). The login/register pages remain previews; frontend account access, town/game gating and class onboarding are separate approved steps. Startup creates the required user/session collections and indexes without seeding accounts or changing existing learning records.
+AUTH-01-A provides backend registration, login, session restoration and logout under `/api/auth`. AUTH-01-B connects the pixel-themed account pages: open `/register`, choose a capybara avatar, enter matching passwords and create an account to enter town automatically; use `/login` for an existing account. Town, games and The Sharlock Times require sign-in in the browser; About remains public, while signed-out Profile/Progress pages offer account links. Account/avatars are saved, but game results and class enrollment remain future work. See the [browser journey](client/src/features/auth/README.md), [auth API contract](server/src/modules/auth/README.md) and [preset assets and prompts](client/public/images/avatars/README.md). Startup creates the required user/session collections and indexes without seeding accounts or changing existing learning records.
 
 Before the browser tests run for the first time, and again after any `@playwright/test` version change, install the matching browser:
 
@@ -158,7 +158,7 @@ pnpm exec playwright install chromium
 
 Skip it and **every** E2E test fails instantly with `browserType.launch: Executable doesn't exist`. That looks like a broken suite but is only a missing download - Playwright pins a browser revision per version, so an upgrade invalidates the one already on disk.
 
-**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator and CLI Cyber Defender games, plus combined About/introduction, two scored-game previews and database health check. The three games remain in Review and do not persist results. The backend account/session foundation and six capybara presets are implemented in AUTH-01-A and ready for review; frontend account access, cohort permissions and persistent learning records remain pending. Localhost demonstration; zero project budget.
+**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator and CLI Cyber Defender games, plus combined About/introduction, two scored-game previews and database health check. The three games remain in Review and do not persist results. AUTH-01-A/B provide the backend and browser account journey with six capybara presets; cohort enrollment/permissions, server game-resource ownership and persistent learning records remain pending. Localhost demonstration; zero project budget.
 
 ## 3. Tooling Recommendation
 

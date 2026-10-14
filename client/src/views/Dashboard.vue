@@ -1,11 +1,14 @@
 <script setup>
 defineOptions({ name: 'SharlockDashboard' })
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TownMap from '../components/town/TownMap.vue'
 import PixelIcon from '../components/town/PixelIcon.vue'
 import { gameCatalog } from '../data/gameCatalog.js'
-import { previewProfile } from '../data/portalPreview.js'
+import { useAuthStore } from '../features/auth/store.js'
+import { avatarFor } from '../features/auth/avatars.js'
+const auth = useAuthStore()
+const avatar = computed(() => avatarFor(auth.user?.avatarId))
 const route = useRoute()
 const router = useRouter()
 const townMap = ref(null)
@@ -40,19 +43,11 @@ function closeNewspaper() {
           <RouterLink to="/about">About Sharlock</RouterLink>
         </p>
       </div>
-      <RouterLink to="/profile" class="town-player" aria-label="View sample detective profile">
-        <img
-          src="/images/town/capybara-mint.svg"
-          width="80"
-          height="60"
-          alt="2D pixel-art capybara avatar with a mint scarf"
-        />
+      <RouterLink to="/profile" class="town-player" aria-label="View your detective profile">
+        <img :src="avatar.path" width="80" height="80" :alt="avatar.label" class="avatar-image" />
         <span
-          ><strong>{{ previewProfile.title }}</strong
-          ><span
-            ><PixelIcon name="star" :size="16" /> {{ previewProfile.points }} points
-            <small>· Sample</small></span
-          ></span
+          ><strong>{{ auth.user?.username }}</strong
+          ><span>Results are not saved</span></span
         >
       </RouterLink>
     </section>
@@ -64,8 +59,8 @@ function closeNewspaper() {
       @activate="router.push($event)"
     />
     <p class="town-footnote">
-      <PixelIcon name="star" :size="16" /> A place to explore at your own pace. Read the Times or
-      explore the activity previews; points are illustrative.
+      <PixelIcon name="star" :size="16" /> Explore at your own pace. Your account is saved; game
+      results and learning progress are not saved yet.
     </p>
     <RouterView @request-close="closeNewspaper" />
   </div>
