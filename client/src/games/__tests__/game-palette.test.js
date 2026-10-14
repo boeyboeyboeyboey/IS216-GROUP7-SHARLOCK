@@ -32,16 +32,23 @@ function contrast(first, second) {
 }
 
 const GAMES = [
-  { name: 'phishing', css: phishCss, rootClass: '.phish-game', extra: [] },
+  {
+    name: 'phishing',
+    css: phishCss,
+    rootClass: '.phish-game',
+    extra: [['ink', 'bad-soft']],
+    ui: [],
+  },
   {
     name: 'social engineering',
     css: socCss,
     rootClass: '.soc-game',
     extra: [['warn', 'warn-soft']],
+    ui: [],
   },
 ]
 
-describe.each(GAMES)('$name palette', ({ css, rootClass, extra }) => {
+describe.each(GAMES)('$name palette', ({ css, rootClass, extra, ui }) => {
   const tokens = readTokens(css, rootClass)
   const color = (name) => (name.startsWith('#') ? name : tokens[`--game-${name}`])
 
@@ -75,6 +82,10 @@ describe.each(GAMES)('$name palette', ({ css, rootClass, extra }) => {
     for (const background of ['surface', 'bg']) {
       const ratio = contrast(color('accent'), color(background))
       expect(ratio, `accent against ${background}`).toBeGreaterThanOrEqual(3)
+    }
+    for (const [foreground, background] of ui) {
+      const ratio = contrast(color(foreground), color(background))
+      expect(ratio, `${foreground} against ${background}`).toBeGreaterThanOrEqual(3)
     }
   })
 })

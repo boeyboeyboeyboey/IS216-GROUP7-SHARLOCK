@@ -23,6 +23,7 @@ const {
   accusedEmail,
   selectedEvidenceIds,
   pane,
+  reviewing,
   canSubmit,
   load,
   replay,
@@ -32,6 +33,7 @@ const {
   inspectLink,
   setEvidence,
   showInbox,
+  backToDebrief,
 } = usePhishingCase()
 
 const readingPane = ref(null)
@@ -40,7 +42,7 @@ const unread = computed(() => emails.value.filter((email) => !email.read).length
 onMounted(() => load())
 
 // the reading pane scrolls inside the page, so a new message or the debrief starts at the top
-watch([selectedEmailId, result], async () => {
+watch([selectedEmailId, result, reviewing], async () => {
   await nextTick()
   readingPane.value?.scrollTo({ top: 0 })
 })
@@ -50,6 +52,19 @@ async function openMessage(id) {
   selectEmail(id)
   await nextTick()
   readingPane.value?.focus({ preventScroll: true })
+}
+
+const isPatientZero = computed(
+  () => reviewing.value && result.value?.debrief?.patientZero?.id === selectedEmailId.value,
+)
+const wasAccused = computed(
+  () => reviewing.value && result.value?.result?.selectedEmailId === selectedEmailId.value,
+)
+
+async function returnToDebrief() {
+  backToDebrief()
+  await nextTick()
+  document.getElementById('phish-debrief-heading')?.focus({ preventScroll: true })
 }
 
 async function backToInbox() {
@@ -107,9 +122,22 @@ async function backToInbox() {
         >
           <button type="button" class="sharmail-back" @click="backToInbox">Back to inbox</button>
 
-          <CaseDebrief v-if="result" :result="result" @replay="replay" />
+          <CaseDebrief v-if="result && !reviewing" :result="result" @replay="replay" />
 
           <template v-else>
+            <div v-if="reviewing" class="sharmail-review-bar">
+              <button type="button" class="sharmail-inspect" @click="returnToDebrief">
+                Back to debrief
+              </button>
+              <p class="sharmail-review-note">Case closed. This message is read-only.</p>
+              <p v-if="isPatientZero || wasAccused" class="sharmail-review-tags" role="status">
+                <span v-if="isPatientZero" class="sharmail-tag">This was Patient Zero</span>
+                <span v-if="wasAccused" class="sharmail-tag is-chosen"
+                  >You accused this message</span
+                >
+              </p>
+            </div>
+
             <div v-if="!selectedEmail" class="sharmail-briefing">
               <h2>{{ caseFile.title }}</h2>
               <p>{{ caseFile.briefing }}</p>
@@ -121,7 +149,7 @@ async function backToInbox() {
 
             <template v-else>
               <EmailInspector :email="selectedEmail" @inspect-link="inspectLink" />
-              <div class="sharmail-accuse-row">
+              <div v-if="!reviewing" class="sharmail-accuse-row">
                 <button
                   type="button"
                   class="sharmail-accuse"

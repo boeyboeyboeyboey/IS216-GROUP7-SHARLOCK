@@ -61,6 +61,14 @@ test('solves a case end to end and scores the full hundred', async ({ page }, te
   await expect(page.getByText('Verdict upheld')).toBeVisible()
   await expect(page.getByText('Not saved.', { exact: false })).toBeVisible()
   await expect(page.getByText(active.answers.chain[0], { exact: false })).toBeVisible()
+
+  // finished cases stay readable: reopen Patient Zero from the inbox, then return to the debrief
+  await openMessage(page, patientZero, isMobile)
+  await expect(page.getByText('This was Patient Zero')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Accuse this message' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Submit final verdict' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Back to debrief' }).click()
+  await expect(page.getByRole('heading', { name: '100 / 100 points' })).toBeVisible()
 })
 
 test('a wrong verdict scores nothing and still reveals the chain', async ({ page }, testInfo) => {

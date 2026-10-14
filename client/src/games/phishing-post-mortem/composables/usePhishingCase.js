@@ -16,6 +16,7 @@ export function usePhishingCase() {
   const inspectedLinkIds = ref([])
   const selectedEvidenceIds = ref([])
   const pane = ref('message')
+  const reviewing = ref(false)
 
   let controller
   let generation = 0
@@ -47,6 +48,7 @@ export function usePhishingCase() {
     inspectedLinkIds.value = []
     selectedEvidenceIds.value = []
     result.value = null
+    reviewing.value = false
     pane.value = 'message'
     actionId = newActionId()
   }
@@ -54,6 +56,13 @@ export function usePhishingCase() {
   function selectEmail(id) {
     selectedEmailId.value = id
     if (!readEmailIds.value.includes(id)) readEmailIds.value = [...readEmailIds.value, id]
+    pane.value = 'message'
+    // after the verdict a message opens read-only, with a way back to the debrief
+    if (result.value) reviewing.value = true
+  }
+
+  function backToDebrief() {
+    reviewing.value = false
     pane.value = 'message'
   }
 
@@ -116,6 +125,7 @@ export function usePhishingCase() {
       )
       if (disposed || request !== generation) return
       result.value = data
+      reviewing.value = false
       submissionError.value = ''
       pane.value = 'message'
     } catch (requestError) {
@@ -153,6 +163,7 @@ export function usePhishingCase() {
     selectedEvidenceIds,
     inspectedLinkIds,
     pane,
+    reviewing,
     canSubmit,
     load,
     replay,
@@ -162,5 +173,6 @@ export function usePhishingCase() {
     inspectLink,
     setEvidence,
     showInbox,
+    backToDebrief,
   }
 }

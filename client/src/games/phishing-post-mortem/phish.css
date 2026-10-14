@@ -939,3 +939,38 @@
     flex: none;
   }
 }
+
+/* a finished case stays readable: reopened messages carry a bar back to the debrief */
+.phish-game .sharmail-review-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  padding: 0.5rem 0.75rem;
+  background: var(--game-bad-soft);
+  border: 1px solid var(--game-bad);
+  border-radius: 6px;
+}
+
+.phish-game .sharmail-review-note {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.phish-game .sharmail-review-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+  margin: 0;
+}
+
+.phish-game .sharmail-review-bar .sharmail-tag {
+  color: var(--game-ink);
+  white-space: nowrap;
+  background: var(--game-surface);
+  border-width: 2px;
+  border-color: var(--game-bad);
+}
