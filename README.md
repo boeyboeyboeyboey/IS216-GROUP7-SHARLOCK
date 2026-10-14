@@ -81,8 +81,10 @@ Apply the same collision inspection to every custom proposal before
 accepting it. No chosen task means no implementation.
 
 5. CLARIFY AND AGREE BEFORE CODING
-After an open feature is selected, ask focused clarifying questions and
-conduct a dialogue with me. Finalize:
+For every feature or separately approved feature-change plan, include a
+focused question-and-answer checkpoint on the user journey, design,
+intended behavior and technical implementation. Build on answers I have
+already given instead of repeating questions. Finalize:
 - The learning objective, difficulty and required background knowledge.
 - Gameplay rules, scoring, feedback, replay and failure behavior.
 - Mobile, touch, keyboard and reduced-motion behavior.
@@ -93,8 +95,15 @@ conduct a dialogue with me. Finalize:
 - External services, zero-cost feasibility and test/acceptance criteria.
 
 Recommend concrete defaults, but do not treat silence as agreement.
-Present the final implementation plan and wait for my explicit approval
-before writing a single line of implementation code.
+Summarize settled decisions and open questions in the plan and task
+record. During implementation, ask follow-up questions when new ambiguity
+could materially affect experience, behavior, data/security, architecture,
+dependencies, acceptance or scope. Pause affected work for a required
+answer or approval and continue independent approved work. Clarification
+does not replace scope approval or contributor agreement. Present the
+final plan and wait for my explicit approval before implementation; do not
+repeatedly request approval for an unchanged scope. Silence is not
+agreement.
 
 6. BEGIN ONLY AFTER APPROVAL
 Recheck Git, TASKS.md and affected files immediately before editing.

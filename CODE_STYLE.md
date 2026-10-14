@@ -20,6 +20,8 @@ This guide is the single authority for code readability and staged maintenance r
 
 These guidelines do not require automatic rewrites of existing code. Apply them to new code and to files included in an explicitly approved maintenance batch. There is no new lint gate, dependency, universal formatting transformation, or feature implementation authorized by this guide.
 
+When planning or implementing an approved maintenance batch, ask focused questions about intended behavior and design when needed; clarify material discoveries before changing the agreed behavior or scope. Follow [agents.md §2.D](agents.md#d-clarify-and-confirm-before-coding) and do not repeat approval requests for an unchanged scope.
+
 ## Staged maintenance workflow
 
 1. **Audit read-only.** Read the current policy and the selected feature's code, tests, owner notes, and relevant task record. Limit the audit to one user flow or a coherent small area; do not audit the whole repository by default.
