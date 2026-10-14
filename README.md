@@ -162,6 +162,8 @@ Skip it and **every** E2E test fails instantly with `browserType.launch: Executa
 
 DATA-01-A/AUTH-02-A adds the backend class foundation: institutions, cohorts, memberships, instructor assignments, own-account read endpoints and current server context/access checks. Startup creates only the four required collections/indexes. Enrollment, staff provisioning, seeds and saved game integration remain future work; there is no new class screen yet. See the [class API and permission contract](server/src/modules/cohorts/README.md).
 
+LOG-01-A/SEED-01-A adds a metadata-only audit backend with 90-day retention, current-admin-only reads and a private first-admin tool. `pnpm db:bootstrap-admin` requires an interactive terminal, explicit database confirmation and transaction-capable MongoDB; it never promotes an existing account or runs automatically. Its real normal-database run requires separate approval, and no normal-database administrator has been created. Demo/class seeding and admin screens remain future work. See the [audit contract](server/src/modules/audit/README.md) and [private setup/transaction contract](server/src/modules/admin/README.md). Disposable transaction tests opt into `node scripts/run-with-test-db.mjs integration --replica-set`; existing test commands remain standalone and skip the transaction-only cases by default.
+
 ## 3. Tooling Recommendation
 
 **Use Cursor or another agentic coding environment.** The repository architecture, task board and kickoff prompt are designed specifically for AI-assisted development.

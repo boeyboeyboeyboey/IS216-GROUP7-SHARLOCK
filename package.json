@@ -11,6 +11,7 @@
   "scripts": {
     "setup:env": "node scripts/setup-env.mjs",
     "db:local": "node scripts/start-local-db.mjs",
+    "db:bootstrap-admin": "node scripts/bootstrap-admin.mjs",
     "dev": "concurrently --kill-others --names server,client \"pnpm dev:server\" \"pnpm dev:client\"",
     "dev:client": "pnpm --filter @sharlock/client dev",
     "dev:server": "pnpm --filter @sharlock/server dev",

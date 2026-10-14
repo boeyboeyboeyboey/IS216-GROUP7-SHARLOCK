@@ -6,12 +6,13 @@ import { createSocialEngineeringRouter } from './modules/games/social-engineerin
 import { createCliDefenderRouter } from './modules/games/cli-cyber-defender/router.js'
 import { createAuthRouter } from './modules/auth/router.js'
 import { createCohortRouter } from './modules/cohorts/router.js'
+import { createAuditRouter } from './modules/audit/router.js'
 import { createHealthRouter } from './routes/health.js'
 import { handleError, notFound } from './middleware/errors.js'
 
 export function createApp(
   database,
-  { auth, news = {}, phishing = {}, socialEngineering = {}, cliDefender = {} } = {},
+  { auth, audit = {}, news = {}, phishing = {}, socialEngineering = {}, cliDefender = {} } = {},
 ) {
   const app = express()
   app.disable('x-powered-by')
@@ -26,6 +27,10 @@ export function createApp(
   const authRuntime = createAuthRouter(database, auth)
   app.use('/api/auth', authRuntime.router)
   app.use('/api', createCohortRouter(database, { requireSession: authRuntime.requireSession }))
+  app.use(
+    '/api',
+    createAuditRouter(database, { ...audit, requireSession: authRuntime.requireSession }),
+  )
   app.use('/api', createHealthRouter(database))
   app.use('/api', createNewsRouter(database, news))
   app.use('/api', createPhishingRouter(phishing))

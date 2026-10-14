@@ -34,6 +34,13 @@ export function createPermissionService(database) {
   }
 
   async function requireCapability(actor, capability, resource = {}) {
+    if (capability === 'admin:audit:read') {
+      const currentActor = await resolveActor(actor)
+      if (!currentActor.globalRoles.includes('admin')) {
+        throw new CohortError('CAPABILITY_FORBIDDEN', 'This action is unavailable.', 403)
+      }
+      return currentActor
+    }
     if (!cohortCapabilities.has(capability)) {
       throw new CohortError('CAPABILITY_FORBIDDEN', 'This action is unavailable.', 403)
     }

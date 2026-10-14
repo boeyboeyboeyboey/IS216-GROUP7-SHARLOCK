@@ -4,6 +4,7 @@ import { createLlmAdapter } from './modules/games/social-engineering-simulator/l
 import { createSocialEngineeringService } from './modules/games/social-engineering-simulator/service.js'
 import { initializeAuthStorage } from './modules/auth/storage.js'
 import { initializeCohortStorage } from './modules/cohorts/storage.js'
+import { initializeAuditStorage } from './modules/audit/storage.js'
 import { createApp } from './app.js'
 import { loadEnvironment } from './config/env.js'
 import { connectDatabase } from './config/database.js'
@@ -48,6 +49,11 @@ try {
     await initializeCohortStorage(database)
   } catch {
     throw new Error('Class storage could not initialize. Check database access and restart.')
+  }
+  try {
+    await initializeAuditStorage(database)
+  } catch {
+    throw new Error('Audit storage could not initialize. Check database access and restart.')
   }
   const newsStore = createNewsStore(database)
   newsCleanup = setInterval(
