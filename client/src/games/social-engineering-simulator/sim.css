@@ -436,8 +436,10 @@
 }
 
 .soc-breakdown-points {
+  flex: none;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .soc-debrief-note {
