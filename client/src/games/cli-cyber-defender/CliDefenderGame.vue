@@ -117,7 +117,7 @@ watch([phase, paused], async ([next, isPaused]) => {
 </script>
 
 <template>
-  <div class="cli-game">
+  <div class="cli-game is-fitted">
     <div class="cli-intro">
       <nav class="cli-nav" aria-label="Game navigation">
         <RouterLink v-if="!inGame" to="/" class="cli-back"

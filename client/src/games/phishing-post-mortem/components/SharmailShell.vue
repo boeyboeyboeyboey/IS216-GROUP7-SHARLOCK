@@ -50,5 +50,6 @@ defineProps({
       </nav>
       <div class="sharmail-panes"><slot /></div>
     </div>
+    <slot name="footer" />
   </div>
 </template>

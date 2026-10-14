@@ -32,12 +32,13 @@ const {
 
 const personaName = computed(() => persona.value?.displayName ?? 'Colleague')
 const inConversation = computed(() => ['chatting', 'awaiting', 'ended'].includes(status.value))
+const fitsViewport = computed(() => inConversation.value || status.value === 'briefing')
 
 onMounted(start)
 </script>
 
 <template>
-  <div class="soc-game">
+  <div class="soc-game" :class="{ 'is-fitted': fitsViewport }">
     <div class="soc-intro">
       <RouterLink to="/" class="soc-back">Back to town</RouterLink>
       <h1 tabindex="-1">LLM Social Engineering Simulator</h1>

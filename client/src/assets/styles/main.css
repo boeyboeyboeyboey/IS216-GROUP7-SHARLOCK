@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap');
 
 :root {
+  --shell-chrome: 236px;
   --bg-primary: #dfead6;
   --accent-primary: #a8c98a;
   --accent-secondary: #e3eacb;
@@ -1013,5 +1014,44 @@ main:focus {
   }
   .portal-footer {
     flex-wrap: wrap;
+  }
+}
+
+/* laptop-height windows: activity previews and fitted games trim the shell padding and fit without page scroll */
+@media (min-width: 768px) and (min-height: 600px) {
+  .portal-main:has(.case-preview, .is-fitted) {
+    --shell-chrome: 176px;
+    padding-top: 0.75rem;
+    padding-bottom: 1rem;
+    min-height: 0;
+  }
+  .case-preview {
+    margin: 0 auto;
+  }
+  .case-preview > .text-link {
+    margin-bottom: 0.5rem;
+  }
+  .case-preview-art {
+    width: 104px;
+    height: 104px;
+    margin: 0.5rem auto;
+  }
+  .case-preview .eyebrow {
+    margin-bottom: 0.25rem;
+  }
+  .case-preview h1 {
+    font-size: 1.9rem;
+    margin-bottom: 0.25rem;
+  }
+  .case-preview .page-description {
+    margin-top: 0.25rem;
+    margin-bottom: 0.75rem;
+  }
+  .case-status {
+    padding: 0.75rem 1.25rem;
+    margin: 0.75rem 0;
+  }
+  .case-status p {
+    margin-top: 0.5rem;
   }
 }

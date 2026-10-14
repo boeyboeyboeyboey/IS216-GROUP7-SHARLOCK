@@ -775,3 +775,165 @@
     display: none;
   }
 }
+
+/* laptop-height windows with both panes side by side: the mail client fills the window and each
+   pane scrolls inside itself instead of the page */
+@media (min-width: 992px) and (min-height: 600px) {
+  .phish-game.is-fitted {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - var(--shell-chrome));
+    min-height: 480px;
+  }
+
+  .phish-game.is-fitted .phish-intro {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 1rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .phish-game.is-fitted .phish-back {
+    min-height: 0;
+    padding: 0.25rem 0;
+  }
+
+  .phish-game.is-fitted h1 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .phish-game.is-fitted .phish-strap {
+    flex-basis: 100%;
+    max-width: none;
+    font-size: 0.85rem;
+    line-height: 1.35;
+  }
+
+  .phish-game.is-fitted .sharmail {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .phish-game.is-fitted .sharmail-bar {
+    flex: none;
+    padding: 0.4rem 1rem;
+  }
+
+  .phish-game.is-fitted .sharmail-body-grid {
+    flex: 1 1 auto;
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .phish-game.is-fitted .sharmail-rail {
+    overflow-y: auto;
+  }
+
+  .phish-game.is-fitted .sharmail-panes {
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  /* positioned so the absolutely placed visually-hidden spans scroll with the pane instead of
+     stretching the page */
+  .phish-game.is-fitted .sharmail-pane-list,
+  .phish-game.is-fitted .sharmail-pane-reading {
+    position: relative;
+    max-height: none;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+/* verdict bar docked under the mail client, so it stays put whichever message is open */
+.phish-game .sharmail-verdict {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0;
+  padding: 0.6rem 1rem;
+  background: var(--game-bg);
+  border: 0;
+  border-top: 1px solid var(--game-line-strong);
+  border-radius: 0;
+}
+
+.phish-game .sharmail-verdict-target {
+  flex: 1 1 14rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.phish-game .sharmail-verdict-target strong,
+.phish-game .sharmail-verdict-target em {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phish-game .sharmail-verdict-status {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--game-muted);
+}
+
+.phish-game .sharmail-evidence-toggle {
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--game-accent);
+  background: var(--game-surface);
+  border: 1px solid var(--game-accent);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.phish-game .sharmail-evidence-toggle[aria-expanded='true'] {
+  background: var(--game-accent-soft);
+}
+
+/* the clue list opens upward over the panes, so the bar itself never moves */
+.phish-game .sharmail-verdict .sharmail-evidence {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  z-index: 5;
+  max-height: calc(100dvh - 330px);
+  margin: 0;
+  padding: 0.75rem 1rem;
+  overflow-y: auto;
+  background: var(--game-surface);
+  border-top: 1px solid var(--game-line-strong);
+  box-shadow: 0 -6px 14px rgba(31, 41, 51, 0.12);
+}
+
+.phish-game .sharmail-evidence-grid {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.phish-game .sharmail-evidence-grid .sharmail-evidence-option + .sharmail-evidence-option {
+  margin-top: 0;
+}
+
+@media (min-width: 700px) {
+  .phish-game .sharmail-evidence-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 992px) and (min-height: 600px) {
+  .phish-game.is-fitted .sharmail-verdict {
+    flex: none;
+  }
+}

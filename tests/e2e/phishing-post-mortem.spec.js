@@ -26,6 +26,12 @@ async function openCase(page) {
   return active
 }
 
+// the clue checkboxes live in a panel opened from the docked verdict bar
+async function openEvidence(page) {
+  const toggle = page.getByRole('button', { name: /^Evidence \d\/2$/ })
+  if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click()
+}
+
 async function openMessage(page, email, isMobile) {
   if (isMobile) await page.getByRole('button', { name: 'Back to inbox' }).click()
   await page.locator(`.sharmail-row[data-email-id="${email.id}"]`).click()
@@ -44,6 +50,7 @@ test('solves a case end to end and scores the full hundred', async ({ page }, te
   await page.getByRole('button', { name: 'Accuse this message' }).click()
   await expect(page.getByRole('button', { name: 'Accused as Patient Zero' })).toBeVisible()
 
+  await openEvidence(page)
   for (const evidenceId of active.answers.evidenceIds) {
     const option = active.content.evidenceOptions.find((entry) => entry.id === evidenceId)
     await page.getByRole('checkbox', { name: option.label }).check()
@@ -64,6 +71,7 @@ test('a wrong verdict scores nothing and still reveals the chain', async ({ page
   await openMessage(page, decoy, isMobile)
   await page.getByRole('button', { name: 'Accuse this message' }).click()
   const [first, second] = active.content.evidenceOptions
+  await openEvidence(page)
   await page.getByRole('checkbox', { name: first.label }).check()
   await page.getByRole('checkbox', { name: second.label }).check()
   await page.getByRole('button', { name: 'Submit final verdict' }).click()
@@ -113,6 +121,7 @@ test('replay hands over the other case', async ({ page }, testInfo) => {
 
   await openMessage(page, patientZero, isMobile)
   await page.getByRole('button', { name: 'Accuse this message' }).click()
+  await openEvidence(page)
   for (const evidenceId of active.answers.evidenceIds) {
     const option = active.content.evidenceOptions.find((entry) => entry.id === evidenceId)
     await page.getByRole('checkbox', { name: option.label }).check()
@@ -196,6 +205,7 @@ test('recovers from a rejected verdict without losing the case', async ({ page }
 
   await openMessage(page, patientZero, isMobile)
   await page.getByRole('button', { name: 'Accuse this message' }).click()
+  await openEvidence(page)
   for (const evidenceId of active.answers.evidenceIds) {
     const option = active.content.evidenceOptions.find((entry) => entry.id === evidenceId)
     await page.getByRole('checkbox', { name: option.label }).check()

@@ -129,81 +129,83 @@ onMounted(() => heading.value?.focus())
       </button>
     </div>
 
-    <section class="cli-debrief-section" aria-labelledby="cli-topics-heading">
-      <h3 id="cli-topics-heading" class="cli-subheading">Topics</h3>
-      <table class="cli-topic-table">
-        <thead>
-          <tr>
-            <th scope="col">Topic</th>
-            <th scope="col">Correct</th>
-            <th scope="col">Result</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="topic in topicRows" :key="topic.topic">
-            <th scope="row">{{ topic.label }}</th>
-            <td>
-              <span class="cli-topic-bar" aria-hidden="true">{{ topic.bar }}</span>
-              {{ topic.correct }}/{{ topic.total }}
-            </td>
-            <td>
-              <span :class="topic.achieved ? 'cli-strong' : 'cli-review-tag'">{{
-                topic.achieved ? 'Strong' : 'Review'
-              }}</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+    <div class="cli-debrief-scroll">
+      <section class="cli-debrief-section" aria-labelledby="cli-topics-heading">
+        <h3 id="cli-topics-heading" class="cli-subheading">Topics</h3>
+        <table class="cli-topic-table">
+          <thead>
+            <tr>
+              <th scope="col">Topic</th>
+              <th scope="col">Correct</th>
+              <th scope="col">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="topic in topicRows" :key="topic.topic">
+              <th scope="row">{{ topic.label }}</th>
+              <td>
+                <span class="cli-topic-bar" aria-hidden="true">{{ topic.bar }}</span>
+                {{ topic.correct }}/{{ topic.total }}
+              </td>
+              <td>
+                <span :class="topic.achieved ? 'cli-strong' : 'cli-review-tag'">{{
+                  topic.achieved ? 'Strong' : 'Review'
+                }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
-    <section class="cli-debrief-section" aria-labelledby="cli-incidents-heading">
-      <h3 id="cli-incidents-heading" class="cli-subheading">Incident by incident</h3>
-      <p class="cli-note">Tap an incident to see why. Mistakes open first.</p>
-      <ol class="cli-debrief-list">
-        <li
-          v-for="(item, index) in result.debrief"
-          :key="item.incidentId"
-          class="cli-debrief-item"
-          :style="{ '--i': index }"
-        >
-          <details
-            :class="['cli-incident', `cli-incident-${item.outcome}`]"
-            :open="['wrong', 'missed'].includes(item.outcome)"
+      <section class="cli-debrief-section" aria-labelledby="cli-incidents-heading">
+        <h3 id="cli-incidents-heading" class="cli-subheading">Incident by incident</h3>
+        <p class="cli-note">Tap an incident to see why. Mistakes open first.</p>
+        <ol class="cli-debrief-list">
+          <li
+            v-for="(item, index) in result.debrief"
+            :key="item.incidentId"
+            class="cli-debrief-item"
+            :style="{ '--i': index }"
           >
-            <summary class="cli-debrief-title">
-              <span class="cli-incident-number">{{ index + 1 }}</span>
-              <span :class="['cli-outcome', `cli-outcome-${item.outcome}`]">
-                <CliIcon :name="OUTCOME_ICONS[item.outcome]" :size="14" />{{
-                  OUTCOME_LABELS[item.outcome]
-                }}
-              </span>
-              <span class="cli-incident-title">{{ item.title }}</span>
-              <span v-if="item.hintUsed" class="cli-hint-tag">hint used</span>
-              <span v-if="item.pointsAwarded" class="cli-incident-points"
-                >+{{ item.pointsAwarded }}</span
-              >
-            </summary>
-            <div class="cli-incident-body">
-              <dl class="cli-incident-commands">
-                <div>
-                  <dt>Your command</dt>
-                  <dd>
-                    <code>{{ item.yourCommand ?? 'none' }}</code>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Correct response</dt>
-                  <dd>
-                    <code>{{ item.expectedCommand }}</code>
-                  </dd>
-                </div>
-              </dl>
-              <p class="cli-incident-why">{{ item.explanation }}</p>
-              <ConceptTags :concepts="item.concepts" />
-            </div>
-          </details>
-        </li>
-      </ol>
-    </section>
+            <details
+              :class="['cli-incident', `cli-incident-${item.outcome}`]"
+              :open="['wrong', 'missed'].includes(item.outcome)"
+            >
+              <summary class="cli-debrief-title">
+                <span class="cli-incident-number">{{ index + 1 }}</span>
+                <span :class="['cli-outcome', `cli-outcome-${item.outcome}`]">
+                  <CliIcon :name="OUTCOME_ICONS[item.outcome]" :size="14" />{{
+                    OUTCOME_LABELS[item.outcome]
+                  }}
+                </span>
+                <span class="cli-incident-title">{{ item.title }}</span>
+                <span v-if="item.hintUsed" class="cli-hint-tag">hint used</span>
+                <span v-if="item.pointsAwarded" class="cli-incident-points"
+                  >+{{ item.pointsAwarded }}</span
+                >
+              </summary>
+              <div class="cli-incident-body">
+                <dl class="cli-incident-commands">
+                  <div>
+                    <dt>Your command</dt>
+                    <dd>
+                      <code>{{ item.yourCommand ?? 'none' }}</code>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Correct response</dt>
+                    <dd>
+                      <code>{{ item.expectedCommand }}</code>
+                    </dd>
+                  </div>
+                </dl>
+                <p class="cli-incident-why">{{ item.explanation }}</p>
+                <ConceptTags :concepts="item.concepts" />
+              </div>
+            </details>
+          </li>
+        </ol>
+      </section>
+    </div>
   </section>
 </template>

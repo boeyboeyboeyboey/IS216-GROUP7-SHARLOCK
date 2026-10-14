@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import CaseDebrief from './components/CaseDebrief.vue'
 import EmailInspector from './components/EmailInspector.vue'
 import EvidenceTimeline from './components/EvidenceTimeline.vue'
@@ -39,6 +39,12 @@ const unread = computed(() => emails.value.filter((email) => !email.read).length
 
 onMounted(() => load())
 
+// the reading pane scrolls inside the page, so a new message or the debrief starts at the top
+watch([selectedEmailId, result], async () => {
+  await nextTick()
+  readingPane.value?.scrollTo({ top: 0 })
+})
+
 // the narrow layout swaps panes, so focus has to follow the reader in both directions
 async function openMessage(id) {
   selectEmail(id)
@@ -57,7 +63,7 @@ async function backToInbox() {
 </script>
 
 <template>
-  <div class="phish-game">
+  <div class="phish-game is-fitted">
     <div class="phish-intro">
       <RouterLink to="/" class="phish-back">Back to town</RouterLink>
       <h1 tabindex="-1">The Phishing Post-Mortem</h1>
@@ -133,22 +139,21 @@ async function backToInbox() {
             </template>
 
             <EvidenceTimeline :events="caseFile.timeline" />
-
-            <VerdictPanel
-              :selected-email-id="accusedEmailId"
-              :selected-subject="accusedEmail?.subject ?? ''"
-              :evidence-options="caseFile.evidenceOptions"
-              :selected-evidence-ids="selectedEvidenceIds"
-              :disabled="submitting"
-              @update-evidence="setEvidence"
-              @submit-verdict="submit"
-            />
-
-            <p v-if="!canSubmit && accusedEmailId" class="sharmail-verdict-note">
-              Choose exactly two supporting clues to submit.
-            </p>
           </template>
         </section>
+
+        <template #footer>
+          <VerdictPanel
+            v-if="!result"
+            :selected-email-id="accusedEmailId"
+            :selected-subject="accusedEmail?.subject ?? ''"
+            :evidence-options="caseFile.evidenceOptions"
+            :selected-evidence-ids="selectedEvidenceIds"
+            :disabled="submitting"
+            @update-evidence="setEvidence"
+            @submit-verdict="submit"
+          />
+        </template>
       </SharmailShell>
 
       <div v-if="submissionError" class="phish-state phish-error" role="alert">

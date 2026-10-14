@@ -1663,3 +1663,138 @@
     animation: none !important;
   }
 }
+
+/* laptop-height windows: every phase fits the window; the terminal, briefing and incident list
+   scroll inside their own panel instead of the page */
+@media (min-width: 768px) and (min-height: 600px) {
+  .cli-game.is-fitted {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - var(--shell-chrome));
+    min-height: 480px;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .cli-game.is-fitted .cli-intro {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 1rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .cli-game.is-fitted .cli-intro h1 {
+    order: -1;
+    margin: 0;
+    font-size: 1.2rem;
+  }
+
+  .cli-game.is-fitted .cli-nav {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .cli-game.is-fitted .cli-back {
+    min-height: 0;
+    padding: 0.25rem 0;
+  }
+
+  .cli-game.is-fitted .cli-strap {
+    display: none;
+  }
+
+  .cli-game.is-fitted > .cli-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0.75rem 1rem;
+    overflow-y: auto;
+  }
+
+  .cli-game.is-fitted .cli-heading {
+    margin-bottom: 0.4rem;
+  }
+
+  .cli-game.is-fitted .cli-subheading {
+    margin: 0.5rem 0 0.3rem;
+  }
+
+  .cli-game.is-fitted .cli-brief-list li {
+    margin-bottom: 0.15rem;
+  }
+
+  .cli-game.is-fitted .cli-briefing p {
+    margin-bottom: 0.4rem;
+  }
+
+  /* the demo window is the first thing to go when height is tight */
+  @media (max-height: 820px) {
+    .cli-game.is-fitted .cli-demo {
+      display: none;
+    }
+  }
+
+  .cli-game.is-fitted .cli-debrief {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cli-game.is-fitted .cli-debrief-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .cli-game.is-fitted .cli-debrief-section {
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+  }
+
+  .cli-game.is-fitted .cli-console.d-grid {
+    flex: 1 1 auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0.5rem !important;
+    min-height: 0;
+  }
+
+  .cli-game.is-fitted .cli-stage {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .cli-game.is-fitted .cli-stage > .row {
+    min-height: 100%;
+  }
+
+  .cli-game.is-fitted .cli-output {
+    height: auto;
+    min-height: 5rem;
+  }
+
+  .cli-game.is-fitted .cli-stat {
+    padding: 0.35rem 0.6rem;
+  }
+
+  /* once the terminal column is wide enough the command templates share one row, so the terminal
+     keeps its height; narrower columns keep the original stacked grid */
+  @container (min-width: 520px) {
+    .cli-game.is-fitted .cli-template-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.4rem;
+    }
+
+    .cli-game.is-fitted .cli-template {
+      min-height: 0;
+      align-items: center;
+      gap: 0.4rem;
+      padding-inline: 0.5rem;
+    }
+
+    .cli-game.is-fitted .cli-template-hint {
+      display: none;
+    }
+  }
+}

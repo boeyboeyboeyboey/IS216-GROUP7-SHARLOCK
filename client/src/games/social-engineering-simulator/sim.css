@@ -449,6 +449,153 @@
   margin-top: 1.25rem;
 }
 
+/* live chat fits the window: the thread flexes, everything else keeps its size */
+.soc-game.is-fitted {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--shell-chrome));
+  min-height: 480px;
+}
+
+.soc-game.is-fitted .soc-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.soc-game.is-fitted .soc-back {
+  min-height: 0;
+  padding: 0.25rem 0;
+}
+
+.soc-game.is-fitted h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.soc-game.is-fitted .soc-strap {
+  display: none;
+}
+
+.soc-game.is-fitted .soc-brief {
+  flex: 0 1 auto;
+  min-height: 0;
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+}
+
+.soc-game.is-fitted .soc-brief h2 {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.soc-game.is-fitted .soc-brief p,
+.soc-game.is-fitted .soc-brief-rules {
+  margin-bottom: 0.6rem;
+}
+
+.soc-game.is-fitted .soc-conversation {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.soc-game.is-fitted .soc-thread {
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: none;
+}
+
+.soc-game.is-fitted .soc-convo-head,
+.soc-game.is-fitted .soc-alert,
+.soc-game.is-fitted .soc-composer,
+.soc-game.is-fitted .soc-decisions {
+  flex: none;
+}
+
+.soc-game.is-fitted .soc-composer {
+  gap: 0.3rem;
+  padding: 0.5rem 1.1rem;
+}
+
+.soc-game.is-fitted .soc-composer-input {
+  height: 3.4rem;
+  padding: 0.4rem 0.6rem;
+  resize: none;
+}
+
+.soc-game.is-fitted .soc-convo-head {
+  padding: 0.5rem 1.1rem;
+}
+
+.soc-game.is-fitted .soc-button {
+  min-height: 0;
+  padding: 0.4rem 0.75rem;
+}
+
+.soc-game.is-fitted .soc-decision-desc {
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.soc-game.is-fitted .soc-decisions {
+  padding: 0.6rem 1.1rem 0.75rem;
+}
+
+.soc-game.is-fitted .soc-decisions h3 {
+  font-size: 0.95rem;
+}
+
+.soc-game.is-fitted .soc-decisions-hint {
+  display: none;
+}
+
+/* debrief: score on the left, story on the right, scrolling inside if the window is short */
+.soc-game.is-fitted .soc-conversation {
+  overflow-y: auto;
+}
+
+.soc-game.is-fitted .soc-debrief {
+  padding: 1rem 1.1rem;
+}
+
+.soc-game.is-fitted .soc-debrief-head {
+  padding: 0.75rem 1rem;
+}
+
+.soc-game.is-fitted .soc-debrief-head h2 {
+  margin: 0.1rem 0 0.2rem;
+  font-size: 1.6rem;
+}
+
+.soc-game.is-fitted .soc-debrief h3 {
+  margin: 0.75rem 0 0.4rem;
+}
+
+.soc-game.is-fitted .soc-debrief p {
+  margin: 0 0 0.5rem;
+}
+
+.soc-game.is-fitted .soc-debrief .soc-button-primary {
+  margin-top: 0.75rem;
+}
+
+@media (min-width: 900px) {
+  .soc-game.is-fitted .soc-debrief {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0 1.5rem;
+    align-content: start;
+  }
+
+  .soc-game.is-fitted .soc-debrief-story h3:first-child {
+    margin-top: 0;
+  }
+}
+
 /* focus is always visible, whatever the control */
 .soc-game a:focus-visible,
 .soc-game button:focus-visible,

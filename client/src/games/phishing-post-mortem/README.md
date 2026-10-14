@@ -4,18 +4,18 @@ The playable G-PHISH investigation. The player reads a mailbox of twenty synthet
 
 ## Files
 
-| File                              | Responsibility                                                                             |
-| --------------------------------- | ------------------------------------------------------------------------------------------ |
-| `PhishingPostMortem.vue`          | Route entry, layout, pane focus handling, loading and error states.                        |
-| `components/SharmailShell.vue`    | SHARMAIL chrome: wordmark, mailbox name, folder rail.                                      |
-| `components/InboxList.vue`        | Message rows, unread state, arrow-key walking. Emits `select-email`.                       |
-| `components/EmailInspector.vue`   | Headers, body and inert link inspection. Emits `inspect-link`.                             |
-| `components/EvidenceTimeline.vue` | The security log.                                                                          |
-| `components/VerdictPanel.vue`     | Accused message, two-clue selection, submit. Emits `update-evidence` and `submit-verdict`. |
-| `components/CaseDebrief.vue`      | Score, evidence chain, clue review, decoy explanations. Emits `replay`.                    |
-| `composables/usePhishingCase.js`  | All module state: case, selection, accusation, clues, request lifecycle.                   |
-| `phishing.js`                     | Request wrapper over the shared Axios client, plus date and initials helpers.              |
-| `phish.css`                       | Every style, scoped under `.phish-game`.                                                   |
+| File                              | Responsibility                                                                                                                                                                                               |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PhishingPostMortem.vue`          | Route entry, layout, pane focus handling, loading and error states.                                                                                                                                          |
+| `components/SharmailShell.vue`    | SHARMAIL chrome: wordmark, mailbox name, folder rail.                                                                                                                                                        |
+| `components/InboxList.vue`        | Message rows, unread state, arrow-key walking. Emits `select-email`.                                                                                                                                         |
+| `components/EmailInspector.vue`   | Headers, body and inert link inspection. Emits `inspect-link`.                                                                                                                                               |
+| `components/EvidenceTimeline.vue` | The security log.                                                                                                                                                                                            |
+| `components/VerdictPanel.vue`     | Verdict bar docked under the mail client (shell `footer` slot), outside any message: accused message, an Evidence toggle that opens the two-clue list, submit. Emits `update-evidence` and `submit-verdict`. |
+| `components/CaseDebrief.vue`      | Score, evidence chain, clue review, decoy explanations. Emits `replay`.                                                                                                                                      |
+| `composables/usePhishingCase.js`  | All module state: case, selection, accusation, clues, request lifecycle.                                                                                                                                     |
+| `phishing.js`                     | Request wrapper over the shared Axios client, plus date and initials helpers.                                                                                                                                |
+| `phish.css`                       | Every style, scoped under `.phish-game`.                                                                                                                                                                     |
 
 ## State ownership
 

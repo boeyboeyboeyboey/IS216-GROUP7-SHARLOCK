@@ -92,6 +92,14 @@ No task is currently in progress.
 
 ## Review
 
+**UI-FIT — Fit town and game pages to a laptop-height window** · Status: **Review** · Contributor: **Eric** · Requested and approved in chat: **14 October 2026** · Branch: `main` (uncommitted).
+
+- **Scope:** at 768px wide and 600px tall or more, the town map, activity previews and every state of the social-engineering, CLI and phishing games (briefing, play, debrief) fit the window without page scroll; long content scrolls inside its own panel. Shared token `--shell-chrome` plus a `:has()` padding rule in `main.css`, town fit rules in `town.css`, preview rules in `main.css`. Prose pages (About, Profile) are out of scope.
+- **Other contributors' games, CSS and class bindings only:** CLI (Xin Lei: `cli.css`, `is-fitted` class, one wrapper div in `ShiftDebrief.vue`) and Phishing (Athithya: `phish.css`, `is-fitted` class, a reading-pane scroll reset in `PhishingPostMortem.vue`). No logic, props, emits, API or test-ID changes. Owners should review.
+- **Verification (1280 × 720, desktop):** a temporary Playwright height check passed for all 14 town and game states; `pnpm test:e2e` otherwise matched its baseline. `pnpm test:unit` shows the same 21 failures with and without these changes, and the mobile portal drag test already failed before them. Not run: integration suite, narrow and portrait widths beyond the existing specs, browser zoom above 100%.
+- **Phishing verdict bar (14 October 2026, requested in chat):** `VerdictPanel.vue` now renders as a bar docked under the mail client through a new `footer` slot on `SharmailShell.vue`, with an Evidence toggle that opens the clue list, so the verdict no longer sits inside a message. Props, emits, composable and server are unchanged; `tests/e2e/phishing-post-mortem.spec.js` opens the Evidence panel before ticking clues. Phishing e2e **21/21** passed; two phishing unit tests fail identically without this change.
+- **Known limits:** the town map keeps its 100–200% zoom contract, so at 720px tall it pans inside a shorter frame; below 600px tall or 768px wide pages scroll normally; the phishing two-pane fit applies from 992px wide.
+
 **CODE-25 — Phishing pane visibility** · Status: **Review** · Maintenance contributor: **Boey** · Feature owner: **Athithya** · Branch: `code-readability-review`.
 
 - **Approval / policy / baseline:** Boey replied “approve” on 14 October 2026 to the exact scoped mobile follow-up proposed after CODE-22/23/24. CODE_STYLE.md v1 applies. Local/cached/live review HEAD is `42ef8b191224f6162c86a97c851977c7ead9a27b`; local/cached/live main remains `07d9f3ca0a8869cde9e8457d41707a3d8365e917`. Before edits, staging was empty and only the two pre-existing Finder metadata files were dirty. The affected CSS and E2E sources match the verified review snapshot; no other task is In Progress. Teammate-machine/unpushed work and other remote branches/PRs were not inspected.

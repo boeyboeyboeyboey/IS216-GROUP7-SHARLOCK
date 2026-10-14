@@ -16,29 +16,33 @@ const outcomeLabel = computed(
 
 <template>
   <section class="soc-debrief" aria-labelledby="soc-debrief-heading">
-    <div class="soc-debrief-head" :class="`is-${result.outcome}`">
-      <p class="soc-debrief-eyebrow">Debrief &middot; {{ outcomeLabel }}</p>
-      <h2 id="soc-debrief-heading">{{ result.score }} / {{ result.maxScore }}</h2>
-      <p class="soc-debrief-unsaved">practice &mdash; not saved</p>
+    <div class="soc-debrief-score">
+      <div class="soc-debrief-head" :class="`is-${result.outcome}`">
+        <p class="soc-debrief-eyebrow">Debrief &middot; {{ outcomeLabel }}</p>
+        <h2 id="soc-debrief-heading">{{ result.score }} / {{ result.maxScore }}</h2>
+        <p class="soc-debrief-unsaved">practice &mdash; not saved</p>
+      </div>
+
+      <p class="soc-debrief-summary">{{ result.debrief.summary }}</p>
+
+      <h3>Score breakdown</h3>
+      <ul class="soc-breakdown">
+        <li v-for="item in result.breakdown" :key="item.key">
+          <span class="soc-breakdown-label">{{ item.label }}</span>
+          <span class="soc-breakdown-points">{{ item.points }} / {{ item.max }}</span>
+        </li>
+      </ul>
     </div>
 
-    <p class="soc-debrief-summary">{{ result.debrief.summary }}</p>
+    <div class="soc-debrief-story">
+      <h3>What happened</h3>
+      <p>{{ result.debrief.tactic }}</p>
+      <p>{{ result.debrief.saferesponse }}</p>
+      <p v-if="result.debrief.note" class="soc-debrief-note">{{ result.debrief.note }}</p>
 
-    <h3>Score breakdown</h3>
-    <ul class="soc-breakdown">
-      <li v-for="item in result.breakdown" :key="item.key">
-        <span class="soc-breakdown-label">{{ item.label }}</span>
-        <span class="soc-breakdown-points">{{ item.points }} / {{ item.max }}</span>
-      </li>
-    </ul>
-
-    <h3>What happened</h3>
-    <p>{{ result.debrief.tactic }}</p>
-    <p>{{ result.debrief.saferesponse }}</p>
-    <p v-if="result.debrief.note" class="soc-debrief-note">{{ result.debrief.note }}</p>
-
-    <button type="button" class="soc-button soc-button-primary" @click="$emit('restart')">
-      Try another colleague
-    </button>
+      <button type="button" class="soc-button soc-button-primary" @click="$emit('restart')">
+        Try another colleague
+      </button>
+    </div>
   </section>
 </template>

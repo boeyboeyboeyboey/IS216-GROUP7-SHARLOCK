@@ -50,7 +50,11 @@ function placeCard() {
   let left = anchor.right - bounds.left + 10
   if (left + width > bounds.width - 12) left = anchor.left - bounds.left - width - 10
   left = Math.max(12, Math.min(left, bounds.width - width - 12))
-  const top = Math.max(12, Math.min(anchor.top - bounds.top, bounds.height - height - 12))
+  // the card may overlap the toolbar and controls, so clamp to the whole map panel
+  const panel = frame.value.parentElement.getBoundingClientRect()
+  const minTop = panel.top - bounds.top + 12
+  const maxTop = panel.bottom - bounds.top - height - 12
+  const top = Math.max(minTop, Math.min(anchor.top - bounds.top, maxTop))
   cardStyle.value = { left: `${left}px`, top: `${top}px` }
 }
 async function reveal(game, pin = false) {
