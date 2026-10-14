@@ -1,9 +1,13 @@
-/* every rule is scoped to .soc-game so the hub pixel scheme is untouched */
+/* every rule is scoped to .soc-game; it follows the hub's pixel look (Pixelify Sans, square
+   controls, dark borders, hard shadows) using the shared town tokens */
 .soc-game {
-  --game-bg: #eef3e6;
-  --game-surface: #ffffff;
-  --game-line: #d3dcc8;
+  --game-bg: #dfead6;
+  --game-surface: #fff8df;
+  --game-line: #b9c7b0;
   --game-line-strong: #b9c7b0;
+  --game-edge: #50634d;
+  --game-shadow: 4px 4px 0 var(--game-edge);
+  --game-shadow-small: 2px 2px 0 var(--game-edge);
   --game-ink: #1b2430;
   --game-muted: #566173;
   --game-accent: #50634d;
@@ -16,12 +20,13 @@
   --game-warn-soft: #fbf1dc;
   --game-bad: #9a3324;
   --game-bad-soft: #fbecea;
-  --game-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --game-font: var(--font-pixel);
+  --game-number-font: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
   max-width: 860px;
   margin: 0 auto;
   font-family: var(--game-font);
   color: var(--game-ink);
-  line-height: 1.5;
+  line-height: 1.35;
 }
 
 .soc-game *,
@@ -46,7 +51,6 @@
   margin: 0.25rem 0 0.5rem;
   font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.1rem);
   font-weight: 700;
-  letter-spacing: -0.01em;
 }
 
 .soc-strap {
@@ -58,8 +62,8 @@
 .soc-state {
   padding: 1.5rem;
   background: var(--game-surface);
-  border: 1px solid var(--game-line);
-  border-radius: 8px;
+  border: 3px solid var(--game-edge);
+  box-shadow: var(--game-shadow);
 }
 
 .soc-error {
@@ -77,8 +81,8 @@
 .soc-brief {
   padding: 1.5rem;
   background: var(--game-surface);
-  border: 1px solid var(--game-line-strong);
-  border-radius: 10px;
+  border: 3px solid var(--game-edge);
+  box-shadow: var(--game-shadow);
 }
 
 .soc-brief-eyebrow,
@@ -107,8 +111,7 @@
   letter-spacing: 0.04em;
   color: inherit;
   background: transparent;
-  border: 1px solid currentColor;
-  border-radius: 4px;
+  border: 2px solid currentColor;
 }
 
 .soc-brief-code {
@@ -135,8 +138,8 @@
 /* conversation */
 .soc-conversation {
   background: var(--game-surface);
-  border: 1px solid var(--game-line-strong);
-  border-radius: 10px;
+  border: 3px solid var(--game-edge);
+  box-shadow: var(--game-shadow);
   overflow: hidden;
 }
 
@@ -149,6 +152,7 @@
   padding: 0.85rem 1.1rem;
   color: var(--game-bar-ink);
   background: var(--game-bar);
+  border-bottom: 3px solid var(--game-edge);
 }
 
 .soc-convo-persona {
@@ -158,6 +162,7 @@
 
 .soc-convo-turns {
   margin: 0;
+  font-family: var(--game-number-font);
   font-size: 0.85rem;
   opacity: 0.92;
   font-variant-numeric: tabular-nums;
@@ -184,19 +189,19 @@
   flex-direction: column;
   max-width: 85%;
   padding: 0.6rem 0.8rem;
-  border-radius: 10px;
+  border: 2px solid var(--game-edge);
+  box-shadow: var(--game-shadow-small);
 }
 
 .soc-message.is-colleague {
   align-self: flex-start;
   background: var(--game-surface);
-  border: 1px solid var(--game-line);
 }
 
 .soc-message.is-you {
   align-self: flex-end;
-  color: #ffffff;
-  background: var(--game-accent);
+  color: var(--game-bar-ink);
+  background: var(--game-bar);
 }
 
 .soc-message-author {
@@ -226,7 +231,7 @@
   padding: 0.75rem 1.1rem;
   font-size: 0.9rem;
   background: var(--game-warn-soft);
-  border-top: 1px solid var(--game-line);
+  border-top: 2px solid var(--game-edge);
   color: var(--game-warn);
 }
 
@@ -242,7 +247,7 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem 1.1rem;
-  border-top: 1px solid var(--game-line);
+  border-top: 2px solid var(--game-edge);
 }
 
 .soc-composer-label {
@@ -257,8 +262,7 @@
   font: inherit;
   color: var(--game-ink);
   background: var(--game-surface);
-  border: 1px solid var(--game-line-strong);
-  border-radius: 6px;
+  border: 2px solid var(--game-edge);
   resize: vertical;
 }
 
@@ -275,6 +279,7 @@
 }
 
 .soc-composer-count {
+  font-family: var(--game-number-font);
   font-size: 0.8rem;
   color: var(--game-muted);
   font-variant-numeric: tabular-nums;
@@ -283,7 +288,7 @@
 /* decisions */
 .soc-decisions {
   padding: 1rem 1.1rem 1.25rem;
-  border-top: 1px solid var(--game-line);
+  border-top: 2px solid var(--game-edge);
   background: var(--game-surface);
 }
 
@@ -312,23 +317,37 @@
   text-align: left;
   color: var(--game-ink);
   background: var(--game-surface);
-  border: 1px solid var(--game-line-strong);
-  border-radius: 6px;
+  border: 2px solid var(--game-edge);
+  box-shadow: var(--game-shadow-small);
   cursor: pointer;
+}
+
+.soc-button:hover:not(:disabled) {
+  background: var(--game-accent-soft);
+}
+
+.soc-button:active:not(:disabled) {
+  box-shadow: 1px 1px 0 var(--game-edge);
+  transform: translate(1px, 1px);
 }
 
 .soc-button:disabled {
   color: var(--game-muted);
   background: var(--game-bg);
-  border-color: var(--game-line);
+  border-color: var(--game-line-strong);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
 .soc-button-primary {
   color: #ffffff;
   background: var(--game-accent);
-  border-color: var(--game-accent);
+  border-color: var(--game-edge);
   text-align: center;
+}
+
+.soc-button-primary:hover:not(:disabled) {
+  background: var(--game-edge);
 }
 
 .soc-button-primary:disabled {
@@ -356,13 +375,15 @@
   font-weight: 700;
 }
 
-.soc-decision-desc {
+.soc-decision-desc,
+.soc-decision-note {
   font-size: 0.85rem;
   font-weight: 400;
   color: var(--game-muted);
 }
 
-.soc-button-danger .soc-decision-desc {
+.soc-button-danger .soc-decision-desc,
+.soc-button-danger .soc-decision-note {
   color: var(--game-bad);
   opacity: 0.85;
 }
@@ -374,8 +395,8 @@
 
 .soc-debrief-head {
   padding: 1rem;
-  border: 1px solid var(--game-line-strong);
-  border-radius: 8px;
+  border: 3px solid var(--game-edge);
+  box-shadow: var(--game-shadow-small);
 }
 
 .soc-debrief-head.is-resisted {
@@ -395,6 +416,7 @@
 
 .soc-debrief-head h2 {
   margin: 0.25rem 0 0.4rem;
+  font-family: var(--game-number-font);
   font-size: 1.8rem;
   font-variant-numeric: tabular-nums;
 }
@@ -427,8 +449,7 @@
   gap: 1rem;
   padding: 0.55rem 0.75rem;
   background: var(--game-bg);
-  border: 1px solid var(--game-line);
-  border-radius: 6px;
+  border: 2px solid var(--game-edge);
 }
 
 .soc-breakdown li + li {
@@ -437,6 +458,7 @@
 
 .soc-breakdown-points {
   flex: none;
+  font-family: var(--game-number-font);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -445,8 +467,7 @@
 .soc-debrief-note {
   padding: 0.65rem 0.8rem;
   background: var(--game-accent-soft);
-  border-left: 3px solid var(--game-accent);
-  border-radius: 4px;
+  border-left: 5px solid var(--game-accent);
 }
 
 .soc-debrief .soc-button-primary {
@@ -541,7 +562,8 @@
     padding: 0.4rem 0.75rem;
   }
 
-  .soc-game.is-fitted .soc-decision-desc {
+  .soc-game.is-fitted .soc-decision-desc,
+  .soc-game.is-fitted .soc-decision-note {
     font-size: 0.78rem;
     line-height: 1.3;
   }

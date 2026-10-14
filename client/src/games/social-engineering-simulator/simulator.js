@@ -19,7 +19,8 @@ export const DECISIONS = [
   {
     id: 'share-code',
     label: 'Share the code',
-    description: 'Hand over the reset code (this is the unsafe choice).',
+    description: 'Hand over the reset code.',
+    note: '(this is the unsafe choice)',
   },
 ]
 

@@ -44,7 +44,10 @@ const GAMES = [
     css: socCss,
     rootClass: '.soc-game',
     extra: [['warn', 'warn-soft']],
-    ui: [],
+    ui: [
+      ['edge', 'surface'],
+      ['edge', 'bg'],
+    ],
   },
 ]
 
@@ -87,5 +90,30 @@ describe.each(GAMES)('$name palette', ({ css, rootClass, extra, ui }) => {
       const ratio = contrast(color(foreground), color(background))
       expect(ratio, `${foreground} against ${background}`).toBeGreaterThanOrEqual(3)
     }
+  })
+})
+
+describe('social engineering pixel theme', () => {
+  const tokens = readTokens(socCss, '.soc-game')
+
+  it('uses the hub pixel font', () => {
+    expect(tokens['--game-font']).toMatch(/var\(--font-pixel\)/)
+  })
+
+  it('shows scores and counters in a plain numeral font, because the pixel 5 reads as an S', () => {
+    expect(tokens['--game-number-font']).toBeDefined()
+    for (const selector of [
+      '.soc-debrief-head h2',
+      '.soc-breakdown-points',
+      '.soc-convo-turns',
+      '.soc-composer-count',
+    ]) {
+      const block = socCss.slice(socCss.indexOf(`${selector} {`)).split('}')[0]
+      expect(block, selector).toContain('font-family: var(--game-number-font)')
+    }
+  })
+
+  it('has square corners', () => {
+    expect(socCss).not.toMatch(/border-radius:\s*[1-9]/)
   })
 })

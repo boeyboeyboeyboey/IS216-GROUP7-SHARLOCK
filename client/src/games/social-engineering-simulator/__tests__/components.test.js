@@ -86,6 +86,14 @@ describe('decision bar', () => {
     expect(wrapper.emitted('decide')[0]).toEqual(['verify-independently'])
   })
 
+  it('puts the unsafe-choice warning on its own line under the description', () => {
+    const wrapper = mount(DecisionBar, { props: { disabled: false } })
+    const danger = wrapper.get('.soc-button-danger')
+    expect(danger.get('.soc-decision-desc').text()).toBe('Hand over the reset code.')
+    expect(danger.get('.soc-decision-note').text()).toBe('(this is the unsafe choice)')
+    expect(wrapper.findAll('.soc-decision-note')).toHaveLength(1)
+  })
+
   it('disables every choice when asked', () => {
     const wrapper = mount(DecisionBar, { props: { disabled: true } })
     expect(

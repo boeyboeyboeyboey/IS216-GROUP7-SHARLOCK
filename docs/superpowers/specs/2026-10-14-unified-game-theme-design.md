@@ -55,9 +55,9 @@ Mockup shown to Eric (not saved in the repo): a window with a green title bar (`
 - **Social Engineering follows the same mapping as Phishing**, so the two read as a pair.
 - **Type stays the system stack** in both games, which is what B means. Nothing is added to the games' fonts.
 
-## Parked: Option C (all pixel, including content)
+## Option C (all pixel, including content): adopted for Social Engineering, parked for Phishing
 
-Considered and set aside for later, not rejected. Everything, even email and chat text, would use the town's pixel font and square, hard-shadow controls. Most unified, but it works against the games' realism. Two things to settle before anyone builds it:
+On 15 October 2026 Eric asked for the Social Engineering Simulator to follow the pixel theme. Its chat has no spoofed-text clues, so the concerns below do not apply to it, and it now uses the hub's pixel font, square controls, dark borders and hard shadows. For Phishing the option stays parked, not rejected. Everything, even email and chat text, would use the town's pixel font and square, hard-shadow controls. Most unified, but it works against the games' realism. Two things to settle before anyone builds it:
 
 1. **Lookalike senders.** Phishing clues depend on small differences such as `aurora-dynarnics` ("rn") against `aurora-dynamics` ("m"). Address, reply-to and link-destination fields would probably need a plain tinted monospace, which was shown to Eric and not decided.
 2. **Cyrillic lookalikes.** Letters such as Cyrillic `а` (U+0430) are drawn the same as Latin `a` in any font, so no font choice fixes them. If the game ever teaches this, "Inspect destination" should flag non-Latin characters and show their names, optionally with the punycode form. Whether the pixel font has its own Cyrillic glyphs is unverified; if it does not, the browser substitutes another font for those letters, which would be an accidental clue.

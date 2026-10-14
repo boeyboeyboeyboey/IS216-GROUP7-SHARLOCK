@@ -25,6 +25,7 @@ defineEmits(['decide'])
       >
         <span class="soc-decision-label">{{ decision.label }}</span>
         <span class="soc-decision-desc">{{ decision.description }}</span>
+        <span v-if="decision.note" class="soc-decision-note">{{ decision.note }}</span>
       </button>
     </div>
   </section>
