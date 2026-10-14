@@ -148,6 +148,8 @@ For live Times stories, privately add `GUARDIAN_API_KEY` from [Guardian Open Pla
 
 Open **http://localhost:5173**. The existing workspace and scripts require pnpm; retain the single `pnpm-lock.yaml`.
 
+AUTH-01-A adds backend registration, login, session restoration and logout under `/api/auth`, with automatic sign-in after registration and six capybara avatar presets. See the [auth API contract](server/src/modules/auth/README.md) and [preset assets and prompts](client/public/images/avatars/README.md). The login/register pages remain previews; frontend account access, town/game gating and class onboarding are separate approved steps. Startup creates the required user/session collections and indexes without seeding accounts or changing existing learning records.
+
 Before the browser tests run for the first time, and again after any `@playwright/test` version change, install the matching browser:
 
 ```sh
@@ -156,7 +158,7 @@ pnpm exec playwright install chromium
 
 Skip it and **every** E2E test fails instantly with `browserType.launch: Executable doesn't exist`. That looks like a broken suite but is only a missing download - Playwright pins a browser revision per version, so an upgrade invalidates the one already on disk.
 
-**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator and CLI Cyber Defender games, plus combined About/introduction, two scored-game previews and database health check. The three games remain in Review and do not persist results. Authentication, permissions and persistent learning records remain pending. Localhost demonstration; zero project budget.
+**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator and CLI Cyber Defender games, plus combined About/introduction, two scored-game previews and database health check. The three games remain in Review and do not persist results. The backend account/session foundation and six capybara presets are implemented in AUTH-01-A and ready for review; frontend account access, cohort permissions and persistent learning records remain pending. Localhost demonstration; zero project budget.
 
 ## 3. Tooling Recommendation
 

@@ -1,15 +1,16 @@
 import { beforeAll, beforeEach, afterAll, describe, expect, it, vi } from 'vitest'
 import request from 'supertest'
-import { createApp } from '../../../src/app.js'
 import { connectDatabase } from '../../../src/config/database.js'
 import { loadEnvironment } from '../../../src/config/env.js'
 import { initializeNewsStorage, newsModels } from '../../../src/modules/news/models.js'
 import { createNewsStore } from '../../../src/modules/news/store.js'
+import { createTestApp, disposeTestAuthApps, initializeTestAuth } from '../auth/helpers.js'
 
 let database
 let models
 let app
 let provider
+let authOptions
 const article = {
   id: 'test',
   title: 'Synthetic newspaper test',
@@ -26,6 +27,7 @@ beforeAll(async () => {
     throw new Error('News integration tests require an isolated test database')
   database = await connectDatabase(config.databaseUri)
   await initializeNewsStorage(database)
+  authOptions = await initializeTestAuth(database, config)
   models = newsModels(database)
 })
 beforeEach(async () => {
@@ -35,9 +37,12 @@ beforeEach(async () => {
     configured: true,
     fetchEdition: vi.fn(async () => ({ articles: [article], partial: false })),
   }
-  app = createApp(database, { news: { provider } })
+  app = createTestApp(database, authOptions, { news: { provider } })
 })
-afterAll(async () => database?.close())
+afterAll(async () => {
+  await disposeTestAuthApps()
+  await database?.close()
+})
 
 describe('news HTTP and Mongo persistence', () => {
   it('persists one shared edition, serializes a safe DTO and reuses it after a new app instance', async () => {
@@ -50,7 +55,7 @@ describe('news HTTP and Mongo persistence', () => {
     expect(results[0].body).not.toHaveProperty('_id')
     expect(await models.Cache.countDocuments()).toBe(1)
     expect((await models.Quota.findById(new Date().toISOString().slice(0, 10))).used).toBe(1)
-    const anotherApp = createApp(database, { news: { provider } })
+    const anotherApp = createTestApp(database, authOptions, { news: { provider } })
     await request(anotherApp).get('/api/news').expect(200)
     expect(provider.fetchEdition).toHaveBeenCalledTimes(1)
     expect(
@@ -115,7 +120,7 @@ describe('news HTTP and Mongo persistence', () => {
     expect(await models.Cache.countDocuments()).toBe(0)
   })
   it('returns a safe configuration state and leaves the rest of the app usable', async () => {
-    const unconfigured = createApp(database)
+    const unconfigured = createTestApp(database, authOptions)
     const result = await request(unconfigured).get('/api/news').expect(503)
     expect(result.body.error.code).toBe('NEWS_NOT_CONFIGURED')
     expect(result.body.requestId).toBe(result.headers['x-request-id'])

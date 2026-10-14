@@ -2,12 +2,14 @@ import { initializeNewsStorage } from './modules/news/models.js'
 import { createNewsStore } from './modules/news/store.js'
 import { createLlmAdapter } from './modules/games/social-engineering-simulator/llm/adapter.js'
 import { createSocialEngineeringService } from './modules/games/social-engineering-simulator/service.js'
+import { initializeAuthStorage } from './modules/auth/storage.js'
 import { createApp } from './app.js'
 import { loadEnvironment } from './config/env.js'
 import { connectDatabase } from './config/database.js'
 
 let database
 let server
+let app
 let newsCleanup
 let shuttingDown = false
 
@@ -17,6 +19,7 @@ async function shutdown() {
   clearInterval(newsCleanup)
   const timeout = setTimeout(() => process.exit(1), 5000).unref()
   if (server) await new Promise((resolve) => server.close(resolve))
+  await app?.locals.disposeAuth?.()
   if (database) await database.close()
   clearTimeout(timeout)
 }
@@ -35,6 +38,11 @@ try {
   } catch {
     throw new Error('News storage could not initialize. Check database access and restart.')
   }
+  try {
+    await initializeAuthStorage(database)
+  } catch {
+    throw new Error('Auth storage could not initialize. Check database access and restart.')
+  }
   const newsStore = createNewsStore(database)
   newsCleanup = setInterval(
     () =>
@@ -51,13 +59,19 @@ try {
     apiKey: config.llmApiKey,
     authToken: config.llmAuthToken,
   })
-  server = createApp(database, {
+  app = createApp(database, {
+    auth: {
+      nodeEnv: config.nodeEnv,
+      clientOrigin: config.clientOrigin,
+      sessionSecret: config.sessionSecret,
+    },
     news: {
       apiKey: config.nodeEnv === 'test' ? undefined : config.guardianApiKey,
       store: newsStore,
     },
     socialEngineering: { service: createSocialEngineeringService({ adapter: llmAdapter }) },
-  }).listen(config.port, '127.0.0.1')
+  })
+  server = app.listen(config.port, '127.0.0.1')
   server.on('listening', () =>
     console.log(`SHARLOCK API ready at http://localhost:${config.port}/api/health`),
   )

@@ -1,12 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import request from 'supertest'
-import { createApp } from '../../../src/app.js'
 import { connectDatabase } from '../../../src/config/database.js'
 import { loadEnvironment } from '../../../src/config/env.js'
 import { readAnswers, readCase } from '../../unit/phishing-post-mortem/fixtures.js'
+import { createTestApp, disposeTestAuthApps, initializeTestAuth } from '../auth/helpers.js'
 
 let database
 let app
+let authOptions
 const FIXED_NOW = Date.parse('2026-09-21T12:00:00Z')
 // the news feature is stubbed so this suite exercises only the phishing routes
 const newsStub = { store: {}, provider: { configured: false } }
@@ -16,9 +17,14 @@ beforeAll(async () => {
   if (config.nodeEnv !== 'test')
     throw new Error('Phishing integration tests require an isolated test database')
   database = await connectDatabase(config.databaseUri)
-  app = createApp(database, { news: newsStub, phishing: { now: () => FIXED_NOW } })
+  authOptions = await initializeTestAuth(database, config)
+  app = createTestApp(database, authOptions, {
+    news: newsStub,
+    phishing: { now: () => FIXED_NOW },
+  })
 })
 afterAll(async () => {
+  await disposeTestAuthApps()
   await database?.close()
 })
 
