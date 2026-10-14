@@ -158,7 +158,9 @@ pnpm exec playwright install chromium
 
 Skip it and **every** E2E test fails instantly with `browserType.launch: Executable doesn't exist`. That looks like a broken suite but is only a missing download - Playwright pins a browser revision per version, so an upgrade invalidates the one already on disk.
 
-**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator and CLI Cyber Defender games, plus combined About/introduction, two scored-game previews and database health check. The three games remain in Review and do not persist results. AUTH-01-A/B provide the backend and browser account journey with six capybara presets; cohort enrollment/permissions, server game-resource ownership and persistent learning records remain pending. Localhost demonstration; zero project budget.
+**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator and CLI Cyber Defender games, plus combined About/introduction, two scored-game previews and database health check. The three games remain in Review and do not persist results. AUTH-01-A/B provide the backend and browser account journey with six capybara presets; class onboarding, permission integration across other APIs, server game-resource ownership and persistent learning records remain pending. Localhost demonstration; zero project budget.
+
+DATA-01-A/AUTH-02-A adds the backend class foundation: institutions, cohorts, memberships, instructor assignments, own-account read endpoints and current server context/access checks. Startup creates only the four required collections/indexes. Enrollment, staff provisioning, seeds and saved game integration remain future work; there is no new class screen yet. See the [class API and permission contract](server/src/modules/cohorts/README.md).
 
 ## 3. Tooling Recommendation
 

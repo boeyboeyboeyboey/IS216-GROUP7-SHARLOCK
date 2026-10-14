@@ -1,6 +1,6 @@
 # Authentication foundation
 
-This backend slice provides student registration, account sign-in, session restoration and sign-out for later account UI work. It does not gate the town or existing activities, create cohorts, save game attempts or grant access based on client-submitted roles.
+This backend module provides student registration, account sign-in, session restoration and sign-out. AUTH-01-B connects the [browser account journey](../../../../client/src/features/auth/README.md). DATA-01-A/AUTH-02-A reuses this session runtime for authenticated class reads. Existing game APIs retain their unsaved contracts; authentication alone does not grant cohort access or saved attempt ownership.
 
 ## Request flow
 
@@ -34,7 +34,13 @@ Sessions use `express-session` with the maintained `connect-mongo` store over th
 
 Password operations are Argon2id at 19 MiB, two iterations and one lane, with two process-wide operations allowed at once and no waiting queue. IP limits cover CSRF bootstrap, registration and login. A separate HMAC-keyed email/IP counter records only failed credential checks and expires after fifteen minutes; raw addresses and credentials are not used as limiter keys or logged.
 
-This module does not include password recovery, email verification, account administration, cohort enrollment, client screens, town/game access checks, account profile changes or persistent learning records. The current game APIs remain available under their existing contracts until separately approved integration.
+This server module does not include password recovery, email verification, account administration, cohort enrollment, account profile changes or persistent learning records. The current game APIs remain available under their existing contracts until separately approved integration.
+
+## Reusable protected-request boundary
+
+`createAuthRouter` returns `requireSession`, an array using the same session middleware/store and current-account lookup as the auth routes. The class router applies it only to `/api/me/memberships` and `/api/me/teaching-assignments`. It sets no-store, checks idle/absolute expiry and current account status/authVersion, and supplies the server-derived `response.locals.authUser`. Invalid sessions are destroyed and receive a safe 401; no second session store or browser role claim is introduced. Health, News and game routes retain their existing behavior.
+
+The [class foundation](../cohorts/README.md) adds relationship and parent-status checks through shared permission/context services. Session identity is separate from class authority. Future mutations must also reuse CSRF/origin protection, and future attempts must persist their validated immutable context.
 
 ## Policy sources and verification boundary
 

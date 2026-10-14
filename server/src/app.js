@@ -5,6 +5,7 @@ import { createPhishingRouter } from './modules/games/phishing-post-mortem/route
 import { createSocialEngineeringRouter } from './modules/games/social-engineering-simulator/router.js'
 import { createCliDefenderRouter } from './modules/games/cli-cyber-defender/router.js'
 import { createAuthRouter } from './modules/auth/router.js'
+import { createCohortRouter } from './modules/cohorts/router.js'
 import { createHealthRouter } from './routes/health.js'
 import { handleError, notFound } from './middleware/errors.js'
 
@@ -24,6 +25,7 @@ export function createApp(
   app.use(express.json({ limit: '16kb' }))
   const authRuntime = createAuthRouter(database, auth)
   app.use('/api/auth', authRuntime.router)
+  app.use('/api', createCohortRouter(database, { requireSession: authRuntime.requireSession }))
   app.use('/api', createHealthRouter(database))
   app.use('/api', createNewsRouter(database, news))
   app.use('/api', createPhishingRouter(phishing))

@@ -1,0 +1,23 @@
+# Cohort data and self-service reads
+
+The cohort module owns the Institution, Cohort, Membership and InstructorAssignment schemas, their indexes, strict query parsing and two authenticated read routes. The models bind to the application's existing Mongoose connection. Startup can initialize only these four collections and their declared indexes through `initializeCohortStorage`; it does not seed, drop or synchronize collections.
+
+`GET /api/me/memberships?page=&limit=` returns the signed-in actor's membership rows, including pending and removed entries. `GET /api/me/teaching-assignments?page=&limit=` returns active assignments only when the current actor has the instructor or admin global role. Both responses include bounded page metadata and explicit cohort/institution names and statuses. Missing parent records remain visible with null names and `unavailable` statuses; these read DTOs do not grant access.
+
+The router receives the shared authentication middleware array through `requireSession` and applies it only to the two cohort reads. The host app supplies it and mounts this router at `/api`; this module does not create another session runtime. `CohortError` responses use the shared `{ error, requestId }` shape. Unexpected errors continue to the application's safe error handler.
+
+`createPermissionService` exports `resolveActor`, `requireCapability` and `listEligibleCohorts`. It supports `cohort:play`, `cohort:teach` and `cohort:review`: students need an active membership, staff need an active assignment, and administrators need an active cohort and institution. All active users may use personal context. Inactive or missing cohort/institution records are denied. `createContextService` exports `resolveAttemptContext` and `listEligibleContexts`; the latter returns `{ personal, cohorts, page, total }`, where `total` counts eligible cohorts. These checks resolve current permissions but do not establish persisted attempt ownership or immutable attempt context.
+
+`parseRequestedContext` validates the exact requested personal/cohort context shape. It only normalizes the request; permission services recheck current membership, assignment, account status and cohort/institution status before any activity uses that context. This module does not create or mutate memberships, assignments, cohorts, attempts or seed data, and it does not return rosters.
+
+## API response and policy bounds
+
+Lists return `{ memberships, page, total }` or `{ assignments, page, total }`. Each row is exactly `{ id, cohortId, cohortName, institutionName, status, cohortStatus, institutionStatus }`; no other user's identity or roster is returned. Page is 1–10,000 and defaults to 1; limit is 1–50 and defaults to 20. Unknown/repeated/object query values reject with a safe 400. Missing/expired/revoked sessions receive 401. Unsupported capabilities receive 403; absent or out-of-scope class requests receive the same 404. Request IDs accompany errors.
+
+Shared schemas use active/inactive institution and cohort status, pending/active/removed membership status, and active/removed assignment status. Names are trimmed and bounded to 100 characters, term to 50, and normalized lowercase institution slug to 3–64. Unique indexes protect slug, institution/name/term and user/cohort pairs. These schemas do not replace future staff-authorized reference/transition validation, CSRF/origin protection or audit requirements on production mutations.
+
+The separation of identity and access follows the distinction in the supplied [07-access-control.pptx](../../../../documentation/CS440%20%28Cybersecurity%20Fundamentals%29%20Course%20Details/07-access-control.pptx), slides 4 and 6. The multi-class/assignment policy is a team design choice. Fresh checks and deny-by-default follow [OWASP Authorization](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html), reviewed 14 October 2026.
+
+## Verification boundary
+
+Policy/model units passed 38 cases. Guarded real Mongo integration passed eight class cases plus eight existing auth regressions; the live-membership removal case was strengthened afterward and passed its targeted recheck. Coverage includes own-only DTOs/pagination, real cookie sessions, logout/expiry/status/version invalidation, current roles/relationships, inactive/missing parents, context eligibility and concurrent unique-index races. Test-only probe routes exercise shared services over HTTP; they are absent from production. No browser, live provider or normal database operation is claimed. Exact commands and retained evidence are in [TASKS.md](../../../../TASKS.md#review).

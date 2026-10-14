@@ -9,6 +9,7 @@ import {
   parseRegistrationInput,
 } from './policy.js'
 import { createAuthService } from './service.js'
+import { createProtectedSessionAccess, loadSessionActor } from './access.js'
 import {
   clearSessionCookie,
   createAnonymousSessionValues,
@@ -77,10 +78,7 @@ export function createAuthRouter(database, settings) {
 
     try {
       if (sessionData?.userId) {
-        const user = await authService.findActiveSessionUser(
-          sessionData.userId,
-          sessionData.authVersion,
-        )
+        const user = await loadSessionActor(request, authService)
         if (!user) {
           await destroySession(request)
           clearSessionCookie(response, authSettings.secureCookie)
@@ -229,5 +227,9 @@ export function createAuthRouter(database, settings) {
 
   router.use(requestError)
 
-  return Object.freeze({ router, dispose: rateLimits.dispose })
+  return Object.freeze({
+    router,
+    requireSession: createProtectedSessionAccess(sessionRuntime, authService),
+    dispose: rateLimits.dispose,
+  })
 }
