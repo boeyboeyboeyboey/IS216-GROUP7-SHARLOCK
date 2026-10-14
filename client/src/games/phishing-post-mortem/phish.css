@@ -1,13 +1,15 @@
 /* every rule in this file is scoped to .phish-game so the hub pixel scheme is untouched */
 .phish-game {
-  --game-bg: #f3f4f6;
+  --game-bg: #eef3e6;
   --game-surface: #ffffff;
-  --game-line: #d8dce3;
-  --game-line-strong: #b6bdc8;
+  --game-line: #d3dcc8;
+  --game-line-strong: #b9c7b0;
   --game-ink: #1f2933;
   --game-muted: #5b6672;
-  --game-accent: #1b64d1;
-  --game-accent-soft: #e8f0fd;
+  --game-accent: #50634d;
+  --game-accent-soft: #e3eacb;
+  --game-bar: #a8c98a;
+  --game-bar-ink: #25331f;
   --game-good: #1c6b47;
   --game-good-soft: #e7f3ec;
   --game-bad: #9a3324;
@@ -84,8 +86,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  color: #ffffff;
-  background: var(--game-accent);
+  color: var(--game-bar-ink);
+  background: var(--game-bar);
 }
 
 :where(.phish-game) .sharmail-brand {

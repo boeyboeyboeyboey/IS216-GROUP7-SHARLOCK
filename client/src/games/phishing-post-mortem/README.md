@@ -30,7 +30,7 @@ Replay calls `load(currentCaseId)`, which asks the server for a different case.
 
 ## Design boundary
 
-This module uses the DESIGN.md game exception: a neutral desktop mail-client look with a system font stack, a blue accent and its own controls, rather than the hub's pixel scheme. Realism is the point - a spoofed display name only teaches if the inbox looks like an inbox.
+This module uses the DESIGN.md game exception: a desktop mail-client look with a system font stack, the town's green and cream accents and its own controls, rather than the hub's pixel scheme. Realism is the point - a spoofed display name only teaches if the inbox looks like an inbox.
 
 Every rule in `phish.css` sits under `.phish-game`, and the palette is defined as `--game-*` variables on that wrapper. Nothing touches `:root`, `html`, `body`, `.portal-shell`, the navbar or another module. SHARMAIL is an original fictional mail client; it deliberately borrows no real product's branding, wordmark or icons. The town building, its metadata card, the shared navbar and every shared page keep the hub pixel scheme.
 
