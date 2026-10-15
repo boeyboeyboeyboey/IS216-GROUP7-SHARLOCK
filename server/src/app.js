@@ -8,6 +8,8 @@ import { createAuthRouter } from './modules/auth/router.js'
 import { createCohortRouter } from './modules/cohorts/router.js'
 import { createAuditRouter } from './modules/audit/router.js'
 import { createAdminRouter } from './modules/admin/router.js'
+import { createAttemptRouter } from './modules/attempts/router.js'
+import { createProfileRouter } from './modules/profile/router.js'
 import { createHealthRouter } from './routes/health.js'
 import { handleError, notFound } from './middleware/errors.js'
 
@@ -18,6 +20,7 @@ export function createApp(
     admin = {},
     audit = {},
     cohorts = {},
+    attempts = {},
     news = {},
     phishing = {},
     socialEngineering = {},
@@ -52,6 +55,20 @@ export function createApp(
     requireMutation: authRuntime.requireMutation,
   })
   app.use('/api', cohortRouter)
+  const attemptRouter = createAttemptRouter(database, {
+    ...attempts,
+    now: attempts.now ?? authRuntime.now,
+    requireSession: authRuntime.requireSession,
+    requireMutation: authRuntime.requireMutation,
+  })
+  app.use('/api', attemptRouter)
+  app.use(
+    '/api',
+    createProfileRouter(database, {
+      requireSession: authRuntime.requireSession,
+      requireMutation: authRuntime.requireMutation,
+    }),
+  )
   app.use(
     '/api',
     createAuditRouter(database, { ...audit, requireSession: authRuntime.requireSession }),
@@ -66,6 +83,7 @@ export function createApp(
   app.locals.disposeAuth = () => {
     adminRouter.dispose()
     cohortRouter.dispose()
+    attemptRouter.dispose()
     authRuntime.dispose()
   }
   return app

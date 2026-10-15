@@ -1,0 +1,133 @@
+.profile-view .profile-edit-button {
+  margin-left: auto;
+}
+
+.profile-view .profile-editor {
+  display: grid;
+  gap: 1.25rem;
+  width: min(100%, 620px);
+  margin: 1rem 0 2rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-pixel);
+}
+
+.profile-view .profile-editor__field {
+  display: grid;
+  min-width: 0;
+  gap: 0.4rem;
+}
+
+.profile-view .profile-editor__field label,
+.profile-view .profile-editor legend {
+  font-weight: 700;
+}
+
+.profile-view .profile-editor__field input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.65rem 0.75rem;
+  border: 2px solid var(--border-strong);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text-main);
+  box-shadow: var(--shadow-pixel);
+}
+
+.profile-view .profile-editor__field input:focus-visible,
+.profile-view .profile-editor .auth-avatar-choice__input:focus-visible + img {
+  outline: 3px solid var(--text-main);
+  outline-offset: 3px;
+}
+
+.profile-view .profile-editor__field small,
+.profile-view .profile-editor__status {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.profile-view .profile-editor__field-error,
+.profile-view .profile-editor [role='alert'] {
+  margin: 0;
+  font-weight: 700;
+}
+
+.profile-view .profile-editor .auth-avatar-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.profile-view .profile-editor .auth-avatar-picker legend {
+  margin-bottom: 0.3rem;
+}
+
+.profile-view .profile-editor .auth-avatar-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.profile-view .profile-editor .auth-avatar-choice {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 116px;
+  justify-items: center;
+  align-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-pixel);
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.profile-view .profile-editor .auth-avatar-choice.is-selected {
+  background: var(--accent-secondary);
+}
+
+.profile-view .profile-editor .auth-avatar-choice__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.profile-view .profile-editor .auth-avatar-choice img {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+}
+
+.profile-view .profile-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.profile-view .profile-refresh-error {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+}
+
+.profile-view .profile-refresh-error p {
+  margin: 0;
+}
+
+@media (max-width: 575.98px) {
+  .profile-view .profile-edit-button {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .profile-view .profile-editor__actions > .btn {
+    flex: 1 1 100%;
+  }
+}

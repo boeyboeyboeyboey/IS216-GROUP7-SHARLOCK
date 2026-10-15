@@ -6,6 +6,7 @@ import { initializeAuthStorage } from './modules/auth/storage.js'
 import { initializeCohortStorage } from './modules/cohorts/storage.js'
 import { initializeAuditStorage } from './modules/audit/storage.js'
 import { initializeRecoveryStorage } from './modules/recovery/storage.js'
+import { initializeAttemptStorage } from './modules/attempts/storage.js'
 import { createApp } from './app.js'
 import { loadEnvironment } from './config/env.js'
 import { connectDatabase } from './config/database.js'
@@ -60,6 +61,13 @@ try {
     await initializeRecoveryStorage(database)
   } catch {
     throw new Error('Activation storage could not initialize. Check database access and restart.')
+  }
+  try {
+    await initializeAttemptStorage(database)
+  } catch {
+    throw new Error(
+      'Saved activity storage could not initialize. Check database access and restart.',
+    )
   }
   const newsStore = createNewsStore(database)
   newsCleanup = setInterval(
