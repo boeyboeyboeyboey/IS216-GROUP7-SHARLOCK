@@ -1,0 +1,363 @@
+.admin-workspace {
+  display: grid;
+  width: min(100%, 1120px);
+  min-width: 0;
+  margin: 0 auto;
+  padding: clamp(0.75rem, 2.5vw, 1.5rem) 0 2.5rem;
+  gap: 1.25rem;
+}
+
+.admin-workspace .admin-workspace__hero,
+.admin-workspace .admin-workspace__panel {
+  min-width: 0;
+  border: 3px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-pixel);
+}
+
+.admin-workspace .admin-workspace__hero {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 3vw, 1.75rem);
+  padding: clamp(1rem, 4vw, 2rem);
+  background: var(--accent-secondary);
+}
+
+.admin-workspace .admin-workspace__hero h1,
+.admin-workspace .admin-workspace__hero p,
+.admin-workspace .admin-workspace__section-heading h2,
+.admin-workspace .admin-workspace__instructor-heading h3,
+.admin-workspace .admin-workspace__panel h2,
+.admin-workspace .admin-workspace__panel h3 {
+  margin-top: 0;
+}
+
+.admin-workspace .admin-workspace__hero p:last-child,
+.admin-workspace .admin-workspace__panel p:last-child {
+  margin-bottom: 0;
+}
+
+.admin-workspace .admin-workspace__hero-icon {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 3px solid var(--border-strong);
+  background: var(--accent-primary);
+  box-shadow: var(--shadow-pixel);
+  font-weight: 700;
+}
+
+.admin-workspace .admin-workspace__eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.admin-workspace .admin-workspace__panel {
+  display: grid;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  gap: 1rem;
+}
+
+.admin-workspace .admin-workspace__section-heading,
+.admin-workspace .admin-workspace__instructor-heading,
+.admin-workspace .admin-workspace__actions,
+.admin-workspace .admin-workspace__pagination {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-workspace .admin-workspace__two-column {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 1rem;
+}
+
+.admin-workspace .admin-workspace__two-column--classes {
+  padding-top: 1.25rem;
+  border-top: 2px dashed var(--border-strong);
+}
+
+.admin-workspace .admin-workspace__form,
+.admin-workspace .admin-workspace__list-panel,
+.admin-workspace .admin-workspace__instructor {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 0.65rem;
+}
+
+.admin-workspace .admin-workspace__form {
+  padding: 1rem;
+  border: 2px solid var(--border-strong);
+  background: var(--bg-primary);
+}
+
+.admin-workspace .admin-workspace__form h3,
+.admin-workspace .admin-workspace__list-panel h3 {
+  margin-bottom: 0.35rem;
+  font-size: 1.15rem;
+}
+
+.admin-workspace .admin-workspace__form label,
+.admin-workspace .admin-workspace__dialog-card label {
+  font-weight: 700;
+}
+
+.admin-workspace .admin-workspace__form input,
+.admin-workspace .admin-workspace__form select,
+.admin-workspace .admin-workspace__activation-url {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0.55rem 0.7rem;
+  border: 2px solid var(--border-strong);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text-main);
+}
+
+.admin-workspace .admin-workspace__form input:focus-visible,
+.admin-workspace .admin-workspace__form select:focus-visible,
+.admin-workspace .admin-workspace__activation-url:focus-visible,
+.admin-workspace .admin-workspace__button:focus-visible,
+.admin-workspace .admin-workspace__text-button:focus-visible,
+.admin-workspace .admin-workspace__assignment input:focus-visible {
+  outline: 3px solid var(--text-main);
+  outline-offset: 3px;
+}
+
+.admin-workspace .admin-workspace__form small,
+.admin-workspace .admin-workspace__intro,
+.admin-workspace .admin-workspace__empty,
+.admin-workspace .admin-workspace__list span,
+.admin-workspace .admin-workspace__assignment small,
+.admin-workspace .admin-workspace__instructor-identity span {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.admin-workspace .admin-workspace__button,
+.admin-workspace .admin-workspace__text-button {
+  min-height: 44px;
+  padding: 0.55rem 0.8rem;
+  border: 2px solid var(--border-strong);
+  border-radius: 0;
+  color: var(--text-main);
+  font-weight: 700;
+  text-align: center;
+}
+
+.admin-workspace .admin-workspace__button {
+  background: var(--accent-primary);
+  box-shadow: 3px 3px 0 var(--border-strong);
+}
+
+.admin-workspace .admin-workspace__text-button {
+  background: var(--accent-secondary);
+}
+
+.admin-workspace .admin-workspace__button:disabled,
+.admin-workspace .admin-workspace__text-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.admin-workspace .admin-workspace__list,
+.admin-workspace .admin-workspace__instructor-list {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  gap: 0.65rem;
+  list-style: none;
+}
+
+.admin-workspace .admin-workspace__list li,
+.admin-workspace .admin-workspace__instructor {
+  min-width: 0;
+  padding: 0.85rem;
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+}
+
+.admin-workspace .admin-workspace__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-workspace .admin-workspace__list li > div,
+.admin-workspace .admin-workspace__instructor-identity > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.admin-workspace .admin-workspace__list li span,
+.admin-workspace .admin-workspace__instructor-identity span {
+  overflow-wrap: anywhere;
+}
+
+.admin-workspace .admin-workspace__pagination {
+  flex-wrap: wrap;
+  padding-top: 0.35rem;
+  font-size: 0.88rem;
+}
+
+.admin-workspace .admin-workspace__instructor-row {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 2px solid var(--border-strong);
+  background: var(--bg-primary);
+}
+
+.admin-workspace .admin-workspace__instructor-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-workspace .admin-workspace__instructor-identity img {
+  flex: 0 0 auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.admin-workspace .admin-workspace__status {
+  width: fit-content;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--border-strong);
+  background: var(--accent-secondary);
+  font-weight: 700;
+}
+
+.admin-workspace .admin-workspace__assignment-list {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  gap: 0.35rem;
+}
+
+.admin-workspace .admin-workspace__assignment-list legend {
+  margin-bottom: 0.35rem;
+  font-weight: 700;
+}
+
+.admin-workspace .admin-workspace__assignment {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.55rem;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+}
+
+.admin-workspace .admin-workspace__assignment input {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  accent-color: var(--border-strong);
+}
+
+.admin-workspace .admin-workspace__assignment span {
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-workspace .admin-workspace__assignment-count {
+  font-size: 0.9rem;
+}
+
+.admin-workspace .admin-workspace__alert {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border: 2px solid var(--border-strong);
+  background: var(--alert-warning);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.admin-workspace .admin-workspace__dialog {
+  width: min(680px, calc(100vw - 2rem));
+  max-width: none;
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  border: 3px solid var(--border-strong);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text-main);
+  box-shadow: var(--shadow-pixel);
+}
+
+.admin-workspace .admin-workspace__dialog::backdrop {
+  background: rgb(19 31 21 / 68%);
+}
+
+.admin-workspace .admin-workspace__dialog-card {
+  display: grid;
+  padding: clamp(1rem, 4vw, 1.75rem);
+  gap: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-workspace .admin-workspace__dialog-card h2,
+.admin-workspace .admin-workspace__dialog-card p {
+  margin: 0;
+}
+
+.admin-workspace .admin-workspace__activation-url {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.admin-workspace .admin-workspace__expiry {
+  font-weight: 700;
+}
+
+@media (max-width: 575.98px) {
+  .admin-workspace .admin-workspace__hero {
+    align-items: flex-start;
+  }
+
+  .admin-workspace .admin-workspace__hero-icon {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .admin-workspace .admin-workspace__two-column {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-workspace .admin-workspace__section-heading,
+  .admin-workspace .admin-workspace__instructor-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-workspace .admin-workspace__list li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-workspace .admin-workspace__actions > * {
+    flex: 1 1 auto;
+  }
+}

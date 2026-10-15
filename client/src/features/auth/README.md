@@ -11,7 +11,9 @@ AUTH-01-B connects the approved backend account foundation to the shared student
 - Expired sessions stop a pending browser activity request before dispatch and return to sign-in. No mutation is automatically replayed. Unavailable session checks block protected navigation/actions and show useful recovery feedback.
 - Town, menu and Profile use the saved username/avatar. Game results, progress and achievements remain unsaved; no sample rewards are attached to the real account.
 
-Class-link/code enrollment and one-time onboarding require the later DATA-01/AUTH-02/COH-01 foundation. No pretend class-code step is displayed in this slice.
+Usernames accept 3–32 ASCII letters, digits, underscores or hyphens. New passwords require 12–128 well-formed Unicode code points, at least one uppercase letter and one punctuation/symbol character. Login preserves older passwords without applying new composition rules.
+
+The class data/access foundation is implemented; class-link/code enrollment and onboarding still require COH-01. No pretend class-code step is displayed. [Admin](../admin/README.md) and [activation](../activation/README.md) add the separately approved staff journey; the router admits only a freshly verified administrator to `/admin` and the menu exposes its entry only to administrators.
 
 ## Components and state
 
@@ -19,7 +21,7 @@ Class-link/code enrollment and one-time onboarding require the later DATA-01/AUT
 
 `store.js` owns the shared Pinia status, safe user DTO, memory-only CSRF token and safe request feedback. It deduplicates restoration/bootstrap and uses operation generations to keep stale responses from undoing a newer login/logout. Passwords and confirmation never enter store state or browser storage. `api.js` reuses the shared Axios cookie client and maps only approved public errors. `validation.js` and `avatars.js` reuse the backend's existing public, data-only policy/preset definitions; session, hashing, models and secrets stay out of the client bundle.
 
-`guards.js` provides the injected router guard and browser activity request check. `main.js` installs them after Pinia and before initial navigation. Protected News/game requests await the current server session before dispatch, while auth and public health requests bypass that check to prevent recursion. The existing game/news wrappers and engines remain unchanged.
+`guards.js` provides the injected router guard and browser activity request check. `main.js` installs them after Pinia and before initial navigation. Protected News/game requests await the current server session before dispatch, while auth and public health requests bypass that check to prevent recursion. Initial activation entry defers account restoration until the page has cleared its token fragment. The existing game/news wrappers and engines remain unchanged.
 
 ## Boundaries and design
 

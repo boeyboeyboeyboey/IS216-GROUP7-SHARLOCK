@@ -7,12 +7,21 @@ import { createCliDefenderRouter } from './modules/games/cli-cyber-defender/rout
 import { createAuthRouter } from './modules/auth/router.js'
 import { createCohortRouter } from './modules/cohorts/router.js'
 import { createAuditRouter } from './modules/audit/router.js'
+import { createAdminRouter } from './modules/admin/router.js'
 import { createHealthRouter } from './routes/health.js'
 import { handleError, notFound } from './middleware/errors.js'
 
 export function createApp(
   database,
-  { auth, audit = {}, news = {}, phishing = {}, socialEngineering = {}, cliDefender = {} } = {},
+  {
+    auth,
+    admin = {},
+    audit = {},
+    news = {},
+    phishing = {},
+    socialEngineering = {},
+    cliDefender = {},
+  } = {},
 ) {
   const app = express()
   app.disable('x-powered-by')
@@ -26,6 +35,14 @@ export function createApp(
   app.use(express.json({ limit: '16kb' }))
   const authRuntime = createAuthRouter(database, auth)
   app.use('/api/auth', authRuntime.router)
+  const adminRouter = createAdminRouter(database, {
+    ...admin,
+    now: admin.now ?? authRuntime.now,
+    clientOrigin: authRuntime.clientOrigin,
+    requireSession: authRuntime.requireSession,
+    requireMutation: authRuntime.requireMutation,
+  })
+  app.use('/api', adminRouter)
   app.use('/api', createCohortRouter(database, { requireSession: authRuntime.requireSession }))
   app.use(
     '/api',
@@ -38,6 +55,9 @@ export function createApp(
   app.use('/api', createCliDefenderRouter(cliDefender))
   app.use(notFound)
   app.use(handleError)
-  app.locals.disposeAuth = authRuntime.dispose
+  app.locals.disposeAuth = () => {
+    adminRouter.dispose()
+    authRuntime.dispose()
+  }
   return app
 }

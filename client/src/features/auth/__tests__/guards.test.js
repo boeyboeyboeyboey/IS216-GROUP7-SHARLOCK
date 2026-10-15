@@ -81,6 +81,19 @@ describe('account navigation', () => {
     expect(auth.restoreSession).not.toHaveBeenCalled()
     await expect(guard({ meta: { authPage: true } })).resolves.toEqual({ name: 'town' })
   })
+
+  it('allows only the current administrator into the workspace and preserves activation access', async () => {
+    const auth = account('authenticated')
+    const guard = createAccountGuard(auth)
+    const adminRoute = { meta: { requiresAccount: true, requiredRole: 'admin' } }
+    auth.restoreSession.mockResolvedValue({ id: 'student', globalRoles: ['student'] })
+    await expect(guard(adminRoute)).resolves.toEqual({ path: '/forbidden' })
+    auth.restoreSession.mockResolvedValue({ id: 'admin', globalRoles: ['admin'] })
+    await expect(guard(adminRoute)).resolves.toBe(true)
+    await expect(guard({ meta: { accountAware: true } })).resolves.toBe(true)
+    auth.restoreSession.mockResolvedValue(null)
+    await expect(guard({ meta: { accountAware: true } })).resolves.toBe(true)
+  })
 })
 
 describe('browser activity request boundary', () => {

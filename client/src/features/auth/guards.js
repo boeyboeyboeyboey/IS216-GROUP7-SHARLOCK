@@ -16,6 +16,9 @@ export function createAccountGuard(auth) {
         query: { reason: previouslySignedIn ? 'expired' : 'required' },
       }
     }
+    if (to.meta.requiredRole && !user?.globalRoles?.includes(to.meta.requiredRole)) {
+      return { path: '/forbidden' }
+    }
     if (to.meta.authPage && user) return { name: 'town' }
     return true
   }

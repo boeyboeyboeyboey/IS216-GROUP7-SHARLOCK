@@ -13,6 +13,15 @@ const validRegistration = {
   avatarId: 'mint',
 }
 
+function registrationPasswordError(password) {
+  try {
+    parseRegistrationInput({ ...validRegistration, password })
+  } catch (error) {
+    return error.fieldErrors?.password
+  }
+  return undefined
+}
+
 describe('auth request policy', () => {
   it('normalizes only the email and username fields', () => {
     const parsed = parseRegistrationInput(validRegistration)
@@ -25,11 +34,14 @@ describe('auth request policy', () => {
   })
 
   it('preserves well-formed password text and counts Unicode code points', () => {
-    const password = ' 1234567890123 '
-    expect([...password]).toHaveLength(15)
-    expect(parseLoginInput({ email: 'learner@example.test', password }).password).toBe(password)
+    const password = 'Alpha Bravo1!'
+    expect([...password]).toHaveLength(13)
+    expect(parseRegistrationInput({ ...validRegistration, password }).password).toBe(password)
+    expect(
+      parseLoginInput({ email: 'learner@example.test', password: 'AlphaBravo1!' }).password,
+    ).toBe('AlphaBravo1!')
     expect(() =>
-      parseLoginInput({ email: 'learner@example.test', password: 'a'.repeat(14) }),
+      parseLoginInput({ email: 'learner@example.test', password: 'a'.repeat(11) }),
     ).toThrow()
     expect(() =>
       parseLoginInput({ email: 'learner@example.test', password: 'a'.repeat(129) }),
@@ -37,6 +49,38 @@ describe('auth request policy', () => {
     expect(() =>
       parseLoginInput({ email: 'learner@example.test', password: `${'a'.repeat(14)}\ud800` }),
     ).toThrow()
+  })
+
+  it('requires a 12-code-point minimum, Unicode uppercase, and punctuation or symbols for registration', () => {
+    expect([...'AlphaBravo1!']).toHaveLength(12)
+    expect(
+      parseRegistrationInput({ ...validRegistration, password: 'AlphaBravo1!' }).password,
+    ).toBe('AlphaBravo1!')
+    expect(
+      parseRegistrationInput({ ...validRegistration, password: 'ABCDEFGHIJ!!' }).password,
+    ).toBe('ABCDEFGHIJ!!')
+    expect(registrationPasswordError('AlphaBravo!')).toMatch(
+      /12 to 128 well-formed Unicode characters/,
+    )
+    expect(registrationPasswordError(`A${'a'.repeat(127)}!`)).toMatch(
+      /12 to 128 well-formed Unicode characters/,
+    )
+    expect(registrationPasswordError('alphabravo1!')).toMatch(/uppercase letter/)
+    expect(registrationPasswordError('AlphaBravo12')).toMatch(/punctuation or symbol/)
+    expect(registrationPasswordError('AlphaBravo1 ')).toMatch(/punctuation or symbol/)
+    expect(registrationPasswordError('AlphaBravo1\u0301')).toMatch(/punctuation or symbol/)
+    expect(
+      parseRegistrationInput({ ...validRegistration, password: 'Äbcdefghij🔒1' }).password,
+    ).toBe('Äbcdefghij🔒1')
+  })
+
+  it('allows legacy composition-free passwords to pass login validation', () => {
+    const legacyPassword = 'lowercaseonly12345'
+    expect([...legacyPassword]).toHaveLength(18)
+    expect(
+      parseLoginInput({ email: 'learner@example.test', password: legacyPassword }).password,
+    ).toBe(legacyPassword)
+    expect(registrationPasswordError(legacyPassword)).toMatch(/uppercase letter/)
   })
 
   it.each([
@@ -82,6 +126,19 @@ describe('auth request policy', () => {
     expect(() => parseEmptyInput({ role: 'student' })).toThrow()
     expect(() => parseEmptyInput({})).not.toThrow()
     expect(() => parseEmptyInput(undefined)).not.toThrow()
+  })
+
+  it('accepts 32-character usernames and rejects 33-character usernames', () => {
+    const maximumUsername = 'a'.repeat(32)
+    expect(
+      parseRegistrationInput({ ...validRegistration, username: maximumUsername }).username.display,
+    ).toBe(maximumUsername)
+    try {
+      parseRegistrationInput({ ...validRegistration, username: `${maximumUsername}a` })
+      throw new Error('Expected the 33-character username to fail.')
+    } catch (error) {
+      expect(error.fieldErrors?.username).toMatch(/3 to 32 letters/)
+    }
   })
 
   it('rejects all query fields and operator-style query keys', () => {

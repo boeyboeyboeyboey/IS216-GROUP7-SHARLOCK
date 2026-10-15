@@ -44,7 +44,7 @@ describe('test database mode', () => {
     })
   })
 
-  it('consumes the opt-in replica-set flag only for integration tests', () => {
+  it('consumes the opt-in replica-set flag for integration and browser tests', () => {
     expect(
       parseTestRunnerArguments(['integration', '--replica-set', 'server/tests/admin.test.js']),
     ).toEqual({
@@ -52,9 +52,13 @@ describe('test database mode', () => {
       extraArgs: ['server/tests/admin.test.js'],
       replicaSet: true,
     })
-    expect(() => parseTestRunnerArguments(['e2e', '--replica-set'])).toThrow(
-      '--replica-set is available only for integration tests.',
-    )
+    expect(
+      parseTestRunnerArguments(['e2e', '--replica-set', 'tests/e2e/admin-workspace.spec.js']),
+    ).toEqual({
+      suite: 'e2e',
+      extraArgs: ['tests/e2e/admin-workspace.spec.js'],
+      replicaSet: true,
+    })
     expect(() =>
       parseTestRunnerArguments(['integration', '--replica-set', '--replica-set']),
     ).toThrow('Use --replica-set at most once.')

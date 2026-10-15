@@ -7,6 +7,11 @@ import { instructorAssignmentModel } from '../models/InstructorAssignment.js'
 import { CohortError, parseObjectId, parsePagination } from '../modules/cohorts/policy.js'
 
 const cohortCapabilities = new Set(['cohort:play', 'cohort:teach', 'cohort:review'])
+const adminCapabilities = new Set([
+  'admin:audit:read',
+  'admin:classes:manage',
+  'admin:instructors:manage',
+])
 
 function inaccessibleCohort() {
   return new CohortError('COHORT_NOT_FOUND', 'This class is unavailable.', 404)
@@ -34,7 +39,7 @@ export function createPermissionService(database) {
   }
 
   async function requireCapability(actor, capability, resource = {}) {
-    if (capability === 'admin:audit:read') {
+    if (adminCapabilities.has(capability)) {
       const currentActor = await resolveActor(actor)
       if (!currentActor.globalRoles.includes('admin')) {
         throw new CohortError('CAPABILITY_FORBIDDEN', 'This action is unavailable.', 403)

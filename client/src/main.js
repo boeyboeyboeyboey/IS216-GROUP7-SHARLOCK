@@ -23,6 +23,8 @@ const removeAccountAccess = installBrowserAccountAccess(api, {
     }
   },
 })
-void auth.restoreSession().catch(() => {})
+if (window.location.pathname !== '/activate-account') {
+  void auth.restoreSession().catch(() => {})
+}
 app.use(router).mount('#app')
 if (import.meta.hot) import.meta.hot.dispose(removeAccountAccess)

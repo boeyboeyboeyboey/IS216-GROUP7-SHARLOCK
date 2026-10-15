@@ -18,7 +18,7 @@ const test = base.extend({
       const clientOrigin = new URL(baseURL).origin
       const workerId = workerInfo.workerIndex.toString(36)
       const email = `e2e-${workerId}@example.test`
-      const password = randomBytes(24).toString('base64url')
+      const password = `${randomBytes(24).toString('base64url')}A!`
       const database = await connectDatabase(testUri)
       let context
 

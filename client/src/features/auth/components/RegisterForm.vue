@@ -129,6 +129,7 @@ defineExpose({ clearSecrets })
         type="text"
         name="username"
         autocomplete="username"
+        maxlength="32"
         required
         :disabled="pending"
         :aria-invalid="Boolean(usernameError)"
@@ -138,7 +139,7 @@ defineExpose({ clearSecrets })
             : 'register-username-hint'
         "
       />
-      <small id="register-username-hint">3–24 letters, numbers, underscores or hyphens.</small>
+      <small id="register-username-hint">3–32 letters, numbers, underscores or hyphens.</small>
       <p v-if="usernameError" id="register-username-error" class="auth-field-error">
         {{ usernameError }}
       </p>
@@ -173,7 +174,10 @@ defineExpose({ clearSecrets })
           {{ showPassword ? 'Hide' : 'Show' }}
         </button>
       </div>
-      <small id="register-password-hint">Use 15–128 characters. Spaces are allowed.</small>
+      <small id="register-password-hint">
+        Use 12–128 characters, including an uppercase letter and a special character. Spaces are
+        allowed.
+      </small>
       <p v-if="passwordError" id="register-password-error" class="auth-field-error">
         {{ passwordError }}
       </p>

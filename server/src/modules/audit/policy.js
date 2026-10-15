@@ -12,6 +12,15 @@ const recordFields = [
   'requestId',
 ]
 const queryFields = ['eventType', 'from', 'to', 'page', 'limit']
+export const auditEventTypes = Object.freeze([
+  'admin.bootstrap',
+  'admin.institution.create',
+  'admin.cohort.create',
+  'admin.instructor.provision',
+  'admin.instructor.activation.issue',
+  'admin.instructor.assignments.update',
+  'account.instructor.activate',
+])
 
 export class AuditError extends Error {
   constructor(code = 'AUDIT_INVALID_REQUEST', status = 400) {
@@ -63,7 +72,7 @@ function parsePositiveInteger(value, maximum) {
 export function parseAuditRecord(input) {
   if (!isRecord(input) || !keysAreAllowed(input, recordFields)) throw invalidRequest()
   if (!recordFields.every((field) => Object.hasOwn(input, field))) throw invalidRequest()
-  if (input.eventType !== 'admin.bootstrap') throw invalidRequest()
+  if (!auditEventTypes.includes(input.eventType)) throw invalidRequest()
   if (!['user', 'operator'].includes(input.actorKind)) throw invalidRequest()
   if (!['success', 'refused', 'failure'].includes(input.outcome)) throw invalidRequest()
   if (typeof input.requestId !== 'string' || !uuidPattern.test(input.requestId))
@@ -101,7 +110,7 @@ export function parseAuditQuery(query, now) {
     throw invalidRequest()
   }
 
-  if (Object.hasOwn(query, 'eventType') && query.eventType !== 'admin.bootstrap') {
+  if (Object.hasOwn(query, 'eventType') && !auditEventTypes.includes(query.eventType)) {
     throw invalidRequest()
   }
 

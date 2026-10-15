@@ -16,7 +16,9 @@ const LOGIN_FIELDS = ['email', 'password']
 const EMAIL_LOCAL = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i
 const EMAIL_DOMAIN =
   /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i
-const USERNAME = /^[a-z0-9_-]{3,24}$/i
+const USERNAME = /^[a-z0-9_-]{3,32}$/i
+const UNICODE_UPPERCASE = /\p{Lu}/u
+const UNICODE_PUNCTUATION_OR_SYMBOL = /[\p{P}\p{S}]/u
 
 function isRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -96,21 +98,38 @@ function normalizeEmail(value, fieldErrors) {
   return normalized
 }
 
-function parsePassword(value, fieldErrors) {
+function parsePassword(value, fieldErrors, registration) {
+  const lengthMessage = 'Use 12 to 128 well-formed Unicode characters.'
   if (typeof value !== 'string') {
-    addFieldError(fieldErrors, 'password', 'Use 15 to 128 well-formed Unicode characters.')
+    const messages = [lengthMessage]
+    if (registration) {
+      messages.push(
+        'Include at least one uppercase letter.',
+        'Include at least one punctuation or symbol character.',
+      )
+    }
+    addFieldError(fieldErrors, 'password', messages.join(' '))
     return undefined
   }
 
   let codePoints = 0
   let wellFormed = true
+  let hasUppercase = false
+  let hasPunctuationOrSymbol = false
   for (const character of value) {
     const point = character.codePointAt(0)
     if (point >= 0xd800 && point <= 0xdfff) wellFormed = false
+    if (UNICODE_UPPERCASE.test(character)) hasUppercase = true
+    if (UNICODE_PUNCTUATION_OR_SYMBOL.test(character)) hasPunctuationOrSymbol = true
     codePoints += 1
   }
-  if (!wellFormed || codePoints < 15 || codePoints > 128) {
-    addFieldError(fieldErrors, 'password', 'Use 15 to 128 well-formed Unicode characters.')
+  const passwordMessages = []
+  if (!wellFormed || codePoints < 12 || codePoints > 128) passwordMessages.push(lengthMessage)
+  if (registration && !hasUppercase) passwordMessages.push('Include at least one uppercase letter.')
+  if (registration && !hasPunctuationOrSymbol)
+    passwordMessages.push('Include at least one punctuation or symbol character.')
+  if (passwordMessages.length) {
+    addFieldError(fieldErrors, 'password', passwordMessages.join(' '))
     return undefined
   }
   return value
@@ -118,6 +137,13 @@ function parsePassword(value, fieldErrors) {
 
 function throwIfInvalid(fieldErrors) {
   if (Object.keys(fieldErrors).length > 0) throw validationError(fieldErrors)
+}
+
+export function parseNewPasswordInput(value) {
+  const fieldErrors = Object.create(null)
+  const password = parsePassword(value, fieldErrors, true)
+  throwIfInvalid(fieldErrors)
+  return password
 }
 
 export function normalizeEmailAddress(value) {
@@ -131,7 +157,7 @@ export function normalizeUsername(value) {
   if (typeof value !== 'string') {
     throw validationError(
       Object.assign(Object.create(null), {
-        username: 'Use 3 to 24 letters, numbers, underscores or hyphens.',
+        username: 'Use 3 to 32 letters, numbers, underscores or hyphens.',
       }),
     )
   }
@@ -140,7 +166,7 @@ export function normalizeUsername(value) {
   if (!USERNAME.test(normalized)) {
     throw validationError(
       Object.assign(Object.create(null), {
-        username: 'Use 3 to 24 letters, numbers, underscores or hyphens.',
+        username: 'Use 3 to 32 letters, numbers, underscores or hyphens.',
       }),
     )
   }
@@ -150,7 +176,7 @@ export function normalizeUsername(value) {
 function parseBody(body, expectedFields, registration) {
   const { fieldErrors, values } = exactInput(body, expectedFields)
   const emailNormalized = normalizeEmail(values.email, fieldErrors)
-  const password = parsePassword(values.password, fieldErrors)
+  const password = parsePassword(values.password, fieldErrors, registration)
   let username
   let avatarId
 
@@ -159,7 +185,7 @@ function parseBody(body, expectedFields, registration) {
       addFieldError(
         fieldErrors,
         'username',
-        'Use 3 to 24 letters, numbers, underscores or hyphens.',
+        'Use 3 to 32 letters, numbers, underscores or hyphens.',
       )
     } else {
       const display = values.username.trim()
@@ -167,7 +193,7 @@ function parseBody(body, expectedFields, registration) {
         addFieldError(
           fieldErrors,
           'username',
-          'Use 3 to 24 letters, numbers, underscores or hyphens.',
+          'Use 3 to 32 letters, numbers, underscores or hyphens.',
         )
       } else {
         username = { display, normalized: display.toLowerCase() }

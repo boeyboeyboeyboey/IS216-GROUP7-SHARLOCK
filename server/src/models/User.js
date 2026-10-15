@@ -4,8 +4,8 @@ import { avatarPresets } from '../modules/auth/avatars.js'
 const userSchema = new Schema(
   {
     emailNormalized: { type: String, required: true, maxlength: 254, unique: true },
-    username: { type: String, required: true, minlength: 3, maxlength: 24 },
-    usernameNormalized: { type: String, required: true, minlength: 3, maxlength: 24, unique: true },
+    username: { type: String, required: true, minlength: 3, maxlength: 32 },
+    usernameNormalized: { type: String, required: true, minlength: 3, maxlength: 32, unique: true },
     avatarId: {
       type: String,
       required: true,
@@ -25,6 +25,14 @@ const userSchema = new Schema(
       default: 'active',
     },
     authVersion: { type: Number, required: true, min: 1, default: 1 },
+    instructorAssignmentRevision: {
+      type: Number,
+      required: true,
+      min: 0,
+      max: Number.MAX_SAFE_INTEGER,
+      default: 0,
+      validate: Number.isSafeInteger,
+    },
     passwordChangedAt: { type: Date, required: true },
   },
   {

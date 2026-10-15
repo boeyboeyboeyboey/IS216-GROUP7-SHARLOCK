@@ -3,6 +3,8 @@ import request from 'supertest'
 import { createApp } from '../../../src/app.js'
 import { connectDatabase } from '../../../src/config/database.js'
 import { loadEnvironment } from '../../../src/config/env.js'
+import { userModel } from '../../../src/models/User.js'
+import { hashPassword } from '../../../src/modules/auth/password.js'
 import { initializeAuthStorage } from '../../../src/modules/auth/storage.js'
 import {
   createTestApp,
@@ -84,6 +86,75 @@ afterAll(async () => {
 })
 
 describe('account and Mongo session HTTP contract', () => {
+  it('applies the new registration policy while keeping legacy passwords login-compatible', async () => {
+    const agent = request.agent(app)
+    const csrf = await agent
+      .get('/api/auth/csrf')
+      .set('Origin', baseAuthOptions.clientOrigin)
+      .expect(200)
+    const invalidRegistrations = [
+      { email: 'no-capital@example.test', username: 'No_Capital', password: 'alphabravo1!' },
+      { email: 'no-symbol@example.test', username: 'No_Symbol', password: 'AlphaBravo12' },
+      { email: 'short@example.test', username: 'Too_Short', password: 'AlphaBravo!' },
+    ]
+
+    for (const registration of invalidRegistrations) {
+      const response = await agent
+        .post('/api/auth/register')
+        .set('Origin', baseAuthOptions.clientOrigin)
+        .set('X-CSRF-Token', csrf.body.csrfToken)
+        .send({ ...registration, avatarId: 'mint' })
+        .expect(400)
+      expect(response.body.error.fieldErrors.password).toBeTruthy()
+      expect(
+        await database.db
+          .collection('users')
+          .countDocuments({ emailNormalized: registration.email }),
+      ).toBe(0)
+    }
+
+    const registration = await agent
+      .post('/api/auth/register')
+      .set('Origin', baseAuthOptions.clientOrigin)
+      .set('X-CSRF-Token', csrf.body.csrfToken)
+      .send({
+        email: 'minimum-password@example.test',
+        username: 'Min_Password',
+        password: 'AlphaBravo1!',
+        avatarId: 'mint',
+      })
+      .expect(201)
+    expect(await agent.get('/api/auth/me').expect(200)).toMatchObject({
+      body: { user: registration.body.user },
+    })
+    await agent
+      .post('/api/auth/logout')
+      .set('Origin', baseAuthOptions.clientOrigin)
+      .set('X-CSRF-Token', registration.body.csrfToken)
+      .send({})
+      .expect(204)
+    const login = await prepareLoginAgent('minimum-password@example.test', 'AlphaBravo1!')
+    expect(login.response.status).toBe(200)
+    expect(await login.agent.get('/api/auth/me').expect(200)).toMatchObject({
+      body: { user: { id: registration.body.user.id } },
+    })
+
+    const legacyPassword = 'legacylowercasepassword'
+    await userModel(database).create({
+      emailNormalized: 'legacy-password@example.test',
+      username: 'Legacy_User',
+      usernameNormalized: 'legacy_user',
+      avatarId: 'mint',
+      passwordHash: await hashPassword(legacyPassword),
+      globalRoles: ['student'],
+      accountStatus: 'active',
+      authVersion: 1,
+      passwordChangedAt: new Date(currentTime),
+    })
+    const legacyLogin = await prepareLoginAgent('legacy-password@example.test', legacyPassword)
+    expect(legacyLogin.response.status).toBe(200)
+  })
+
   it('creates a student account, rotates the anonymous session and restores a safe user DTO', async () => {
     const agent = request.agent(app)
     const bootstrap = await agent

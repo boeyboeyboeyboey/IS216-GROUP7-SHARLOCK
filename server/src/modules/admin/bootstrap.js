@@ -58,7 +58,7 @@ export function createBootstrapService(database, { now = Date.now, recordAuditEv
     } catch {
       throw new BootstrapError(
         'INVALID_ACCOUNT_DETAILS',
-        'Check the account details, avatar and 15–128 character password.',
+        'Check the account details and avatar. Use 12–128 characters with an uppercase letter and a punctuation or symbol character.',
       )
     }
     await assertTransactionSupport(database)

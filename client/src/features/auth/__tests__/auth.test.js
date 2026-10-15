@@ -330,6 +330,73 @@ describe('auth store', () => {
 })
 
 describe('auth forms and account summary', () => {
+  it('accepts a 12-code-point password with required composition and emits only approved fields', async () => {
+    const wrapper = mount(RegisterForm)
+    const password = 'AlphaBravo1!'
+    expect(Array.from(password)).toHaveLength(12)
+    await wrapper.get('#register-email').setValue('policy-check@example.test')
+    await wrapper.get('#register-username').setValue('Policy_Check')
+    await wrapper.get('#register-password').setValue(password)
+    await wrapper.get('#register-confirmation').setValue(password)
+
+    expect(wrapper.get('#register-password-hint').text().replace(/\s+/g, ' ').trim()).toBe(
+      'Use 12–128 characters, including an uppercase letter and a special character. Spaces are allowed.',
+    )
+
+    await wrapper.get('form').trigger('submit')
+
+    const payload = wrapper.emitted('submit')[0][0]
+    expect(Object.keys(payload)).toEqual(['email', 'username', 'password', 'avatarId'])
+    expect(payload).toEqual({
+      email: 'policy-check@example.test',
+      username: 'Policy_Check',
+      password,
+      avatarId: 'mint',
+    })
+    wrapper.unmount()
+  })
+
+  it('accepts a 32-character username and rejects 33 characters', async () => {
+    const wrapper = mount(RegisterForm)
+    const username = wrapper.get('#register-username')
+    const accepted = 'A'.repeat(32)
+    const rejected = 'B'.repeat(33)
+    await wrapper.get('#register-email').setValue('policy-check@example.test')
+    await username.setValue(accepted)
+    await wrapper.get('#register-password').setValue('AlphaBravo1!')
+    await wrapper.get('#register-confirmation').setValue('AlphaBravo1!')
+
+    expect(username.attributes('maxlength')).toBe('32')
+    expect(wrapper.get('#register-username-hint').text()).toContain('3–32')
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.emitted('submit')[0][0].username).toBe(accepted)
+
+    await username.setValue(rejected)
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.get('#register-username').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#register-username-error').text()).toContain('3 to 32')
+    expect(wrapper.emitted('submit')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it.each([
+    ['uppercase letter', 'alphabravo1!'],
+    ['special character', 'AlphaBravo12'],
+  ])('blocks a 12-code-point password without a %s', async (_label, password) => {
+    const wrapper = mount(RegisterForm)
+    expect(Array.from(password)).toHaveLength(12)
+    await wrapper.get('#register-email').setValue('policy-check@example.test')
+    await wrapper.get('#register-username').setValue('Policy_Check')
+    await wrapper.get('#register-password').setValue(password)
+    await wrapper.get('#register-confirmation').setValue(password)
+    await wrapper.get('form').trigger('submit')
+
+    expect(wrapper.get('#register-password').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.get('#register-password-error').text()).not.toBe('')
+    expect(wrapper.emitted('submit')).toBeUndefined()
+    wrapper.unmount()
+  })
+
   it('blocks registration on confirmation mismatch and excludes confirmation after match', async () => {
     const wrapper = mount(RegisterForm)
     await wrapper.get('#register-email').setValue('detective@example.test')

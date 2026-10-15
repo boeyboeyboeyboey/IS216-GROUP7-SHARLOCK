@@ -39,6 +39,21 @@ export const routes = [
     component: () => import('../features/auth/pages/RegisterPage.vue'),
     meta: { title: 'Create account', authPage: true },
   },
+  {
+    path: '/activate-account',
+    component: () => import('../features/activation/pages/ActivationPage.vue'),
+    meta: { title: 'Activate instructor account' },
+  },
+  {
+    path: '/admin',
+    component: () => import('../features/admin/pages/AdminPage.vue'),
+    meta: {
+      title: 'Administrator workspace',
+      theme: 'utility',
+      requiresAccount: true,
+      requiredRole: 'admin',
+    },
+  },
   ...[
     ['integrity-detective', 'cli-cyber-defender'],
     ['mini-ctf', 'sql-injection-arcade'],
@@ -83,11 +98,6 @@ export const routes = [
       'instructor',
       'A view of every little breakthrough',
       'The instructor workspace will show progress within assigned cohorts.',
-    ],
-    [
-      'admin',
-      'Behind the detective desk',
-      'Account and cohort administration will be available to authorized administrators.',
     ],
     ['forbidden', 'This case needs permission', 'Return to town to find an available activity.'],
   ].map(([path, title, description]) => ({

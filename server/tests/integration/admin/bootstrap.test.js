@@ -13,7 +13,7 @@ import { createAuditService } from '../../../src/modules/audit/service.js'
 import { hashPassword, verifyPassword } from '../../../src/modules/auth/password.js'
 import { createTestApp, disposeTestAuthApps, initializeTestAuth } from '../auth/helpers.js'
 
-const password = 'Synthetic-Test-Password-2026'
+const password = 'AlphaBravo1!'
 let database
 let authOptions
 let fixtureHash
@@ -110,6 +110,7 @@ describe.skipIf(process.env.SHARLOCK_TEST_REPLICA_SET !== '1')(
   'transactional first-admin setup',
   () => {
     it('creates only an admin with one durable guard and safe operator audit, then permits ordinary login', async () => {
+      expect([...password]).toHaveLength(12)
       const personalStudent = await existingUser(accountInput('student'))
       const result = await bootstrapService().bootstrap(input)
       ownedIds.add(result.id)
@@ -128,7 +129,8 @@ describe.skipIf(process.env.SHARLOCK_TEST_REPLICA_SET !== '1')(
         outcome: 'success',
       })
       expect(audit.expiresAt.getTime() - audit.occurredAt.getTime()).toBe(90 * 24 * 60 * 60 * 1000)
-      expect(JSON.stringify(audit)).not.toMatch(/Synthetic-Test|passwordHash|emailNormalized/)
+      expect(JSON.stringify(audit)).not.toContain(password)
+      expect(JSON.stringify(audit)).not.toMatch(/passwordHash|emailNormalized/)
       expect((await userModel(database).findById(personalStudent._id)).globalRoles).toEqual([
         'student',
       ])
@@ -155,6 +157,21 @@ describe.skipIf(process.env.SHARLOCK_TEST_REPLICA_SET !== '1')(
       )
       await agent.get('/api/auth/me').expect(200)
     })
+
+    it.each(['alphabravo1!', 'AlphaBravo12'])(
+      'rejects first-admin passwords without required composition',
+      async (invalidPassword) => {
+        const candidate = { ...input, password: invalidPassword }
+        await expect(bootstrapService().bootstrap(candidate)).rejects.toMatchObject({
+          code: 'INVALID_ACCOUNT_DETAILS',
+        })
+        expect(await userModel(database).countDocuments({ emailNormalized: candidate.email })).toBe(
+          0,
+        )
+        expect(await bootstrapStateModel(database).countDocuments()).toBe(0)
+        expect(await database.db.collection('audit_events').countDocuments()).toBe(0)
+      },
+    )
 
     it.each(['email', 'username'])(
       'refuses a matching normalized %s without promoting or rewriting it',

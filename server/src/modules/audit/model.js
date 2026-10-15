@@ -1,8 +1,9 @@
 import { Schema } from 'mongoose'
+import { auditEventTypes } from './policy.js'
 
 const auditEventSchema = new Schema(
   {
-    eventType: { type: String, enum: ['admin.bootstrap'], required: true },
+    eventType: { type: String, enum: auditEventTypes, required: true },
     actorKind: { type: String, enum: ['user', 'operator'], required: true },
     actorId: {
       type: Schema.Types.ObjectId,

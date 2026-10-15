@@ -158,7 +158,7 @@ describe('private terminal input', () => {
 const databaseUri = 'mongodb://operator:private@127.0.0.1:27018/sharlock_school'
 const registration = {
   email: ' Admin.One@example.test ',
-  username: ' Admin_One ',
+  username: 'Admin_Teacher_One_2026SMU',
   password: 'Correct-Horse-🔒-2026',
   avatarId: 'mint',
 }
@@ -202,7 +202,7 @@ function makeBootstrapRun({
 } = {}) {
   const terminal = new FakePromptTerminal({ lines, secrets })
   const calls = []
-  const database = { close: async () => calls.push('close') }
+  const database = { name: 'sharlock_school', close: async () => calls.push('close') }
   const storage = {
     initializeBootstrapStorage: async () => calls.push('storage'),
   }
@@ -263,6 +263,11 @@ describe('first-admin CLI boundary', () => {
       { maxLength: 'sharlock_school'.length },
     ])
     expect(fixture.terminal.linePrompts[1][0]).toContain('CREATE FIRST ADMIN')
+    expect(fixture.terminal.linePrompts).toContainEqual([
+      'Administrator username: ',
+      { maxLength: 32 },
+    ])
+    expect(registration.username).toHaveLength(25)
     expect(fixture.calls).toEqual([
       'connect',
       'transaction-check',
@@ -333,10 +338,6 @@ describe('first-admin CLI boundary', () => {
   it.each([
     ['missing URI', {}],
     [
-      'URI without an explicit database',
-      { databaseUri: 'mongodb://operator:private@127.0.0.1:27018' },
-    ],
-    [
       'URI with a system database',
       { databaseUri: 'mongodb://operator:private@127.0.0.1:27018/admin' },
     ],
@@ -348,8 +349,28 @@ describe('first-admin CLI boundary', () => {
     expect(fixture.calls).toEqual([])
     expect(fixture.terminal.output).not.toContain('operator:private')
     expect(fixture.terminal.output).not.toContain('127.0.0.1')
-    expect(fixture.terminal.output).toContain('explicit, non-system database')
+    expect(fixture.terminal.output).toContain('valid, non-system database')
     expect(fixture.terminal.output).toContain('No account changes were made.')
+  })
+
+  it('uses the app fallback only after its exact name and creation intent are confirmed', async () => {
+    const fixture = makeBootstrapRun({
+      config: { databaseUri: 'mongodb://operator:private@127.0.0.1:27018' },
+      lines: ['sharlock_dev', 'CREATE FIRST ADMIN', registration.email, registration.username, '1'],
+    })
+    fixture.database.name = 'sharlock_dev'
+    await expect(fixture.run()).resolves.toEqual({ status: 'created' })
+    expect(fixture.terminal.output).toContain('Target database: sharlock_dev (local)')
+    expect(fixture.calls).toContain('bootstrap')
+    expect(fixture.terminal.output).not.toContain('operator:private')
+  })
+
+  it('refuses a connected-name mismatch before storage or account writes', async () => {
+    const fixture = makeBootstrapRun()
+    fixture.database.name = 'unconfirmed_target'
+    await expect(fixture.run()).resolves.toEqual({ status: 'refused' })
+    expect(fixture.calls).toEqual(['connect', 'close'])
+    expect(fixture.terminal.output).toContain('No account was created.')
   })
 
   it('refuses an overlong terminal field before opening the database', async () => {

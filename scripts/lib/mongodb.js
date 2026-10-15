@@ -31,9 +31,6 @@ export function parseTestRunnerArguments(argv) {
 
   const replicaSetFlags = args.filter((argument) => argument === '--replica-set').length
   if (replicaSetFlags > 1) throw new Error('Use --replica-set at most once.')
-  if (replicaSetFlags && suite !== 'integration') {
-    throw new Error('--replica-set is available only for integration tests.')
-  }
 
   return {
     suite,

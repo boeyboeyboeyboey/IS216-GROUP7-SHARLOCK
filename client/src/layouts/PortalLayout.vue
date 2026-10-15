@@ -20,12 +20,15 @@ const menuOpen = ref(false)
 let offcanvas
 let media
 let routeChanged = false
-const navigation = [
+const navigation = computed(() => [
   { to: '/', label: 'Town map', icon: 'map' },
   { to: '/profile', label: 'Detective profile', icon: 'trophy' },
   { to: '/progress', label: 'Learning progress', icon: 'chart' },
   { to: '/leaderboard', label: 'Cohort leaderboard', icon: 'people' },
-]
+  ...(auth.user?.globalRoles?.includes('admin')
+    ? [{ to: '/admin', label: 'Administrator workspace', icon: 'shield' }]
+    : []),
+])
 function openMenu() {
   offcanvas?.show()
 }

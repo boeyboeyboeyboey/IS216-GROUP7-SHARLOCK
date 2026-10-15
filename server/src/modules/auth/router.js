@@ -10,6 +10,7 @@ import {
 } from './policy.js'
 import { createAuthService } from './service.js'
 import { createProtectedSessionAccess, loadSessionActor } from './access.js'
+import { createActivationRouter } from '../recovery/router.js'
 import {
   clearSessionCookie,
   createAnonymousSessionValues,
@@ -100,7 +101,7 @@ export function createAuthRouter(database, settings) {
       } else if (
         expired &&
         request.method === 'POST' &&
-        ['/register', '/login', '/logout'].includes(request.path)
+        ['/register', '/login', '/logout', '/activate-account'].includes(request.path)
       ) {
         await destroySession(request)
         clearSessionCookie(response, authSettings.secureCookie)
@@ -225,11 +226,22 @@ export function createAuthRouter(database, settings) {
     }
   })
 
+  router.use(
+    createActivationRouter(database, {
+      now: authSettings.now,
+      clientOrigin: authSettings.clientOrigin,
+      requireMutation: [rateLimits.activation, requireOrigin, csrf.protect],
+    }),
+  )
+
   router.use(requestError)
 
   return Object.freeze({
     router,
     requireSession: createProtectedSessionAccess(sessionRuntime, authService),
+    requireMutation: [requireOrigin, csrf.protect],
+    clientOrigin: authSettings.clientOrigin,
+    now: authSettings.now,
     dispose: rateLimits.dispose,
   })
 }

@@ -53,6 +53,11 @@ export function createRateLimits({ secret, now = Date.now } = {}) {
     limit: 30,
     message: 'Too many sign-in attempts. Please try again later.',
   })
+  const activation = requestLimiter({
+    windowMs: FIFTEEN_MINUTES,
+    limit: 10,
+    message: 'Too many activation attempts. Please try again later.',
+  })
 
   const failedLogins = new Map()
   const cleanup = setInterval(() => {
@@ -110,6 +115,7 @@ export function createRateLimits({ secret, now = Date.now } = {}) {
     csrf: csrf.middleware,
     registration: registration.middleware,
     loginIp: loginIp.middleware,
+    activation: activation.middleware,
     reserveFailedLogin,
     dispose() {
       clearInterval(cleanup)
@@ -117,6 +123,7 @@ export function createRateLimits({ secret, now = Date.now } = {}) {
       csrf.store.shutdown()
       registration.store.shutdown()
       loginIp.store.shutdown()
+      activation.store.shutdown()
     },
   })
 }

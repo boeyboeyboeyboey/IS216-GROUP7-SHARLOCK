@@ -88,10 +88,10 @@ export async function runBootstrapAdmin({
 
     let databaseName
     try {
-      databaseName = databaseNameFromUri(config?.databaseUri, 'MONGO_URI')
+      databaseName = databaseNameFromUri(config?.databaseUri, 'MONGO_URI', 'sharlock_dev')
     } catch {
       terminal.write(
-        'Configured database URI must name an explicit, non-system database. No account changes were made.\n',
+        'Configured database URI must select a valid, non-system database. No account changes were made.\n',
       )
       return { status: 'refused' }
     }
@@ -119,7 +119,7 @@ export async function runBootstrapAdmin({
     }
 
     const email = await terminal.readLine('Administrator email: ', { maxLength: 254 })
-    const username = await terminal.readLine('Administrator username: ', { maxLength: 24 })
+    const username = await terminal.readLine('Administrator username: ', { maxLength: 32 })
     terminal.write('Available preset avatars:\n')
     for (const [index, avatar] of avatars.entries()) {
       terminal.write(`${index + 1}. ${avatar.label} (${avatar.id})\n`)
@@ -149,6 +149,12 @@ export async function runBootstrapAdmin({
     }
 
     database = await connect(config.databaseUri)
+    if (database.name !== databaseName) {
+      terminal.write(
+        'The connected database did not match the confirmed target. No account was created.\n',
+      )
+      return { status: 'refused' }
+    }
     await service.assertTransactionSupport(database)
     await storage.initializeBootstrapStorage(database)
 
