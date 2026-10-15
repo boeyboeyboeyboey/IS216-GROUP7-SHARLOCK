@@ -29,25 +29,25 @@ function onKeydown(event) {
 <template>
   <form class="soc-composer" @submit.prevent="submit">
     <label class="soc-composer-label" for="soc-composer-input">Your reply</label>
-    <textarea
-      id="soc-composer-input"
-      v-model="draft"
-      class="soc-composer-input"
-      :maxlength="maxLength"
-      :disabled="disabled"
-      rows="3"
-      placeholder="Type a reply, or ask a question to verify who this is"
-      @keydown="onKeydown"
-    ></textarea>
-    <div class="soc-composer-row">
-      <span class="soc-composer-count" aria-live="off">{{ remaining }} characters left</span>
+    <div class="soc-composer-field">
+      <textarea
+        id="soc-composer-input"
+        v-model="draft"
+        class="soc-composer-input"
+        :maxlength="maxLength"
+        :disabled="disabled"
+        rows="2"
+        placeholder="Type a reply, or ask a question to verify who this is"
+        @keydown="onKeydown"
+      ></textarea>
       <button
         type="submit"
-        class="soc-button soc-button-primary"
+        class="soc-button soc-button-primary soc-composer-send"
         :disabled="disabled || !draft.trim()"
       >
         Send
       </button>
     </div>
+    <span class="soc-composer-count" aria-live="off">{{ remaining }} characters left</span>
   </form>
 </template>

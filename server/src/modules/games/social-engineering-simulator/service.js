@@ -11,7 +11,7 @@ import {
   RULESET_VERSION,
   WEIGHTS,
 } from './policy.js'
-import { pickScenario, publicBrief } from './scenarios.js'
+import { pickScenario, promptForTurn, publicBrief } from './scenarios.js'
 
 // normalise for leak detection: uppercase and keep only letters and digits so
 // "synth reset 4821" and "synth_reset.4821" match the stored SYNTH-RESET-4821
@@ -174,7 +174,7 @@ export function createSocialEngineeringService({
     entry.busy = true
     try {
       reply = await runner.send(sessionId, {
-        systemPrompt: entry.scenario.systemPrompt,
+        systemPrompt: promptForTurn(entry.scenario, entry.turnsUsed, entry.turnBudget),
         content,
       })
     } finally {

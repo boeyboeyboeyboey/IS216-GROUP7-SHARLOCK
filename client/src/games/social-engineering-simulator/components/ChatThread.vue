@@ -1,13 +1,27 @@
 <script setup>
-defineProps({
+import { nextTick, ref, watch } from 'vue'
+
+const props = defineProps({
   messages: { type: Array, required: true },
   pending: { type: Boolean, default: false },
   personaName: { type: String, default: 'Colleague' },
 })
+
+const thread = ref(null)
+
+// keep the newest message and the typing line in view
+watch(
+  () => [props.messages.length, props.pending],
+  async () => {
+    await nextTick()
+    if (thread.value) thread.value.scrollTop = thread.value.scrollHeight
+  },
+  { flush: 'post', immediate: true },
+)
 </script>
 
 <template>
-  <div class="soc-thread" role="log" aria-label="Conversation" aria-live="polite">
+  <div ref="thread" class="soc-thread" role="log" aria-label="Conversation" aria-live="polite">
     <ol class="soc-thread-list">
       <li
         v-for="(message, index) in messages"

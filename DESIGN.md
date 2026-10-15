@@ -74,6 +74,19 @@ Use dark text on light fills and 2–3px borders. Shared buttons, panels, avatar
 - Decorative scenery and repeated NPCs are hidden from assistive technology; named building buttons provide actionable map content. No gameplay meaning may depend solely on colour, animation or scenery.
 - Respect reduced motion. Artwork is static. Keep keyboard/touch alternatives to any pointer-based interaction and clean up listeners or animation work on departure.
 
+## Proportion and the golden ratio
+
+New pages, panels and game screens should size their major regions with the golden ratio, φ ≈ 1.618, so layouts feel balanced without a new visual style. This is a **proportion guideline**, not a new palette, font or component. It does not authorize redesigning an existing shared page; apply it to new work and to surfaces already being changed in an approved task. Accessibility always wins: the 18px shared body size, the 44px touch targets, contrast and reflow rules in this document are never reduced to hit a ratio.
+
+- **Two-region layouts.** Split the width 1 : 1.618 (about 38.2% to 61.8%), with the secondary region (controls, navigation, inspector, list) as the narrow side and the primary content (chat, board, reading area) as the wide side. In CSS use `grid-template-columns: minmax(0, 1fr) minmax(0, 1.618fr)`, or the reverse. Collapse to a single stacked column below 768px instead of squeezing both regions.
+- **Content width.** For a screen with two regions, a 1100px maximum is a good fit. Text-only reading areas keep their existing line-length limit of about 62–66ch.
+- **Spacing scale.** Use steps that grow by about φ: 0.5rem, 0.8rem, 1.3rem, 2.1rem, 3.4rem (the Fibonacci series in tenths of a rem). Use the smaller steps for gaps inside a control or card, the middle steps for padding, and the larger steps between sections. The existing 3px and 4px hard borders and shadows are not part of this scale.
+- **Type scale.** Where a page needs several heading sizes, step them by √φ ≈ 1.272 from the 1rem base (1rem, 1.272rem, 1.618rem, 2.058rem) rather than choosing sizes ad hoc. Pixelify Sans weights stay 700 for headings and 400 for body.
+- **Vertical rhythm.** Where a region is split top-to-bottom, give the primary region about 1.618 times the height of the secondary one (for example the chat thread against its composer).
+- **Prefer shared tokens.** Keep ratios in the owning module's local variables (`--game-*` for a game). Do not add φ tokens to `main.css` or `town.css` without a separately approved scope, because those files are shared.
+
+**Current use.** The Social Engineering Simulator conversation (changed on 15 October 2026 at Eric's request) splits the decision rail and the chat 1 : 1.618 from 768px upward and widens its chat view to 1100px (`.is-wide` in `client/src/games/social-engineering-simulator/sim.css`); below 768px it stacks. Other screens have not been realigned to the guideline.
+
 ## Town interaction and responsiveness
 
 **Every game is available from the start.** There are no linear locks, unlock messages, grayscale unavailable nodes, or completion requirements. Difficulty and background knowledge help learners choose; neither gates access. Future server authentication and cohort permissions still apply independently of this learning sequence.

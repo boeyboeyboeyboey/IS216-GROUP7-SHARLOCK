@@ -38,7 +38,7 @@ onMounted(start)
 </script>
 
 <template>
-  <div class="soc-game" :class="{ 'is-fitted': fitsViewport }">
+  <div class="soc-game" :class="{ 'is-fitted': fitsViewport, 'is-wide': inConversation }">
     <div class="soc-intro">
       <RouterLink to="/" class="soc-back">Back to town</RouterLink>
       <h1 tabindex="-1">LLM Social Engineering Simulator</h1>
@@ -78,26 +78,30 @@ onMounted(start)
           <p class="soc-convo-turns" aria-live="polite">Turn {{ turnsUsed }} of {{ turnBudget }}</p>
         </header>
 
-        <ChatThread :messages="messages" :pending="pending" :persona-name="personaName" />
+        <div class="soc-convo-body">
+          <DecisionBar :disabled="pending || Boolean(result)" @decide="complete" />
 
-        <p v-if="leaked" class="soc-alert soc-alert-bad" role="alert">
-          You revealed the reset code. In a real incident this would compromise the account. Choose
-          how to end below.
-        </p>
-        <p v-else-if="closed" class="soc-alert" role="status">
-          The conversation has reached its limit. Make your final decision below.
-        </p>
+          <div class="soc-convo-main">
+            <ChatThread :messages="messages" :pending="pending" :persona-name="personaName" />
 
-        <MessageComposer
-          v-if="!closed"
-          :disabled="!canSend"
-          :max-length="MAX_MESSAGE_LENGTH"
-          @send="send"
-        />
+            <p v-if="leaked" class="soc-alert soc-alert-bad" role="alert">
+              You revealed the reset code. In a real incident this would compromise the account.
+              Choose how to end on the left.
+            </p>
+            <p v-else-if="closed" class="soc-alert" role="status">
+              The conversation has reached its limit. Make your final decision on the left.
+            </p>
 
-        <p v-if="error" class="soc-alert soc-alert-bad" role="alert">{{ error }}</p>
+            <MessageComposer
+              v-if="!closed"
+              :disabled="!canSend"
+              :max-length="MAX_MESSAGE_LENGTH"
+              @send="send"
+            />
 
-        <DecisionBar :disabled="pending || Boolean(result)" @decide="complete" />
+            <p v-if="error" class="soc-alert soc-alert-bad" role="alert">{{ error }}</p>
+          </div>
+        </div>
       </template>
     </div>
   </div>
