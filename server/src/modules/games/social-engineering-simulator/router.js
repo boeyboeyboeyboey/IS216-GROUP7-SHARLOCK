@@ -4,6 +4,7 @@ import {
   SocialEngError,
   parseComplete,
   parseMessage,
+  parseNudge,
   parseStart,
   rateLimited,
   unavailable,
@@ -66,6 +67,28 @@ export function createSocialEngineeringRouter({ service, now = Date.now } = {}) 
       if (!allow(request.ip || 'unknown')) throw rateLimited()
       const { sessionId, content } = parseMessage(request.body)
       response.json(await game.sendMessage(sessionId, content))
+    } catch (error) {
+      fail(response, error)
+    }
+  })
+
+  router.post(`${base}/verifier-message`, async (request, response) => {
+    response.set('Cache-Control', 'no-store')
+    try {
+      if (!allow(request.ip || 'unknown')) throw rateLimited()
+      const { sessionId, content } = parseMessage(request.body)
+      response.json(await game.sendVerifierMessage(sessionId, content))
+    } catch (error) {
+      fail(response, error)
+    }
+  })
+
+  router.post(`${base}/nudge`, (request, response) => {
+    response.set('Cache-Control', 'no-store')
+    try {
+      if (!allow(request.ip || 'unknown')) throw rateLimited()
+      const { sessionId } = parseNudge(request.body)
+      response.json(game.nudge(sessionId))
     } catch (error) {
       fail(response, error)
     }

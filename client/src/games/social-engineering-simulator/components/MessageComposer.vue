@@ -1,14 +1,24 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
   disabled: { type: Boolean, default: false },
   maxLength: { type: Number, default: 1000 },
+  restoreText: { type: String, default: '' },
 })
 const emit = defineEmits(['send'])
 
 const draft = ref('')
 const remaining = computed(() => props.maxLength - draft.value.length)
+
+// put a failed message back, but never over something the player has since typed
+watch(
+  () => props.restoreText,
+  (text) => {
+    if (text && !draft.value) draft.value = text
+  },
+  { immediate: true },
+)
 
 function submit() {
   const text = draft.value.trim()

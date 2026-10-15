@@ -24,6 +24,14 @@ function stubService(overrides = {}) {
       leaked: false,
       ended: false,
     }),
+    sendVerifierMessage: async () => ({
+      reply: 'Yes, that was me.',
+      verifierTurnsUsed: 1,
+      verifierTurnBudget: 5,
+      leaked: false,
+      ended: false,
+    }),
+    nudge: () => ({ message: 'Hurry up please.', nudgesLeft: 2 }),
     complete: () => ({
       score: 100,
       maxScore: 100,
@@ -121,6 +129,86 @@ describe('social-engineering router', () => {
       if (response.status === 429) limited = response
     }
     expect(limited).not.toBeNull()
+    expect(limited.body.error.code).toBe('SOC_RATE_LIMITED')
+  })
+
+  it('relays a verifier message with no-store caching', async () => {
+    const response = await request(makeApp(stubService()))
+      .post(`${base}/verifier-message`)
+      .send({ sessionId: SESSION, content: 'did you message me?' })
+      .expect(200)
+    expect(response.headers['cache-control']).toBe('no-store')
+    expect(response.body.reply).toBe('Yes, that was me.')
+    expect(response.body.verifierTurnBudget).toBe(5)
+  })
+
+  it('rejects empty and oversized verifier messages', async () => {
+    const app = makeApp(stubService())
+    for (const content of ['', 'x'.repeat(1001)]) {
+      const response = await request(app)
+        .post(`${base}/verifier-message`)
+        .send({ sessionId: SESSION, content })
+        .expect(400)
+      expect(response.body.error.code).toBe('SOC_INVALID_BODY')
+    }
+  })
+
+  it.each([
+    ['SOC_VERIFIER_BUSY', 429],
+    ['SOC_VERIFIER_LIMIT', 409],
+    ['LLM_SESSION_BUSY', 409],
+    ['LLM_UPSTREAM_UNAVAILABLE', 503],
+    ['LLM_NOT_CONFIGURED', 503],
+    ['LLM_SESSION_NOT_FOUND', 404],
+  ])('maps verifier error %s to %i', async (code, status) => {
+    const service = stubService({
+      sendVerifierMessage: async () => {
+        throw new LlmError(code, 'nope', status)
+      },
+    })
+    const response = await request(makeApp(service))
+      .post(`${base}/verifier-message`)
+      .send({ sessionId: SESSION, content: 'hi' })
+      .expect(status)
+    expect(response.body.error.code).toBe(code)
+    expect(response.body.requestId).toBeTruthy()
+  })
+
+  it('serves a nudge with no-store caching', async () => {
+    const response = await request(makeApp(stubService()))
+      .post(`${base}/nudge`)
+      .send({ sessionId: SESSION })
+      .expect(200)
+    expect(response.headers['cache-control']).toBe('no-store')
+    expect(response.body).toEqual({ message: 'Hurry up please.', nudgesLeft: 2 })
+  })
+
+  it('rejects an invalid nudge body and maps nudge errors', async () => {
+    const bad = await request(makeApp(stubService()))
+      .post(`${base}/nudge`)
+      .send({ sessionId: SESSION, extra: 1 })
+      .expect(400)
+    expect(bad.body.error.code).toBe('SOC_INVALID_BODY')
+    const service = stubService({
+      nudge: () => {
+        throw new LlmError('LLM_SESSION_NOT_FOUND', 'gone', 404)
+      },
+    })
+    await request(makeApp(service)).post(`${base}/nudge`).send({ sessionId: SESSION }).expect(404)
+  })
+
+  it('counts the verifier and nudge routes in the shared pacing window', async () => {
+    const app = makeApp(stubService(), () => 1000)
+    for (let n = 0; n < 10; n += 1) {
+      await request(app).post(`${base}/session`).send({}).expect(200)
+      await request(app)
+        .post(`${base}/verifier-message`)
+        .send({ sessionId: SESSION, content: 'hi' })
+        .expect(200)
+      await request(app).post(`${base}/nudge`).send({ sessionId: SESSION }).expect(200)
+    }
+    const limited = await request(app).post(`${base}/nudge`).send({ sessionId: SESSION })
+    expect(limited.status).toBe(429)
     expect(limited.body.error.code).toBe('SOC_RATE_LIMITED')
   })
 })

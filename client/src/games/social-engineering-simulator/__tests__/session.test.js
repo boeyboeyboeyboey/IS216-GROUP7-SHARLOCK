@@ -10,7 +10,10 @@ vi.mock('../simulator.js', async (original) => ({
   completeSession: vi.fn(),
 }))
 
-afterEach(() => vi.clearAllMocks())
+afterEach(() => {
+  vi.useRealTimers()
+  vi.clearAllMocks()
+})
 
 const SESSION = '11111111-1111-1111-1111-111111111111'
 const session = {
@@ -181,5 +184,18 @@ describe('social-engineering session composable', () => {
     await pending
     await flushPromises()
     expect(abort).toHaveBeenCalled()
+  })
+})
+
+describe('social-engineering session without a colleague', () => {
+  it('has no verifier and no nudge timer', async () => {
+    vi.useFakeTimers()
+    startSession.mockResolvedValue(session)
+    const { game } = harness()
+    await game.start()
+    await flushPromises()
+    game.begin()
+    expect(game.verifier.value).toBeNull()
+    expect(vi.getTimerCount()).toBe(0)
   })
 })

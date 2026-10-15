@@ -113,7 +113,11 @@ describe('social engineering pixel theme', () => {
     }
   })
 
-  it('has square corners', () => {
-    expect(socCss).not.toMatch(/border-radius:\s*[1-9]/)
+  it('has square corners, except the round unread badge on the conversation tabs', () => {
+    const withoutBadge = socCss.replace(/\.soc-tab-badge\s*\{[^}]*\}/, '')
+    expect(withoutBadge).not.toMatch(/border-radius:\s*[1-9]/)
+    const badge = socCss.match(/\.soc-tab-badge\s*\{[^}]*\}/)?.[0] ?? ''
+    expect(badge).toContain('border-radius: 50%')
+    expect(badge).toContain('background: var(--game-bad)')
   })
 })

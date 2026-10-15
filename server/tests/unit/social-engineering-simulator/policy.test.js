@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   parseComplete,
+  parseNudge,
   parseMessage,
   parseStart,
 } from '../../../src/modules/games/social-engineering-simulator/policy.js'
@@ -32,5 +33,21 @@ describe('social-engineering policy validators', () => {
     })
     expect(() => parseComplete({ sessionId: SESSION, decision: 'maybe' })).toThrow()
     expect(() => parseComplete({ sessionId: SESSION })).toThrow()
+  })
+
+  it('validates a nudge body', () => {
+    expect(parseNudge({ sessionId: SESSION })).toEqual({ sessionId: SESSION })
+    expect(() => parseNudge({ sessionId: SESSION, extra: 1 })).toThrow(/request/)
+    expect(() => parseNudge({ sessionId: 'nope' })).toThrow()
+    expect(() => parseNudge({})).toThrow()
+    expect(() => parseNudge(null)).toThrow()
+    expect(() => parseNudge('x')).toThrow()
+    expect(() => parseNudge([])).toThrow()
+    try {
+      parseNudge({ sessionId: 'nope' })
+    } catch (error) {
+      expect(error.code).toBe('SOC_INVALID_BODY')
+      expect(error.status).toBe(400)
+    }
   })
 })

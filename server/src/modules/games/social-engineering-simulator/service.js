@@ -7,11 +7,15 @@ import {
   DEFAULT_TURN_BUDGET,
   GAME_ID,
   MAX_COMPLETED,
+  MAX_NUDGES,
   MAX_SCORE,
   RULESET_VERSION,
+  VERIFIER_CONCURRENCY,
+  VERIFIER_TURN_BUDGET,
   WEIGHTS,
 } from './policy.js'
 import { pickScenario, promptForTurn, publicBrief } from './scenarios.js'
+import { nudgeFor, publicVerifier, verifierFor } from './verifiers.js'
 
 // normalise for leak detection: uppercase and keep only letters and digits so
 // "synth reset 4821" and "synth_reset.4821" match the stored SYNTH-RESET-4821
@@ -19,23 +23,51 @@ function normalise(value) {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, '')
 }
 
+// deterministic backstop on the colleague reply: at most three sentences and no
+// urls. never throws and never returns an empty string
+export function tidyColleagueReply(value) {
+  const original = typeof value === 'string' ? value.trim() : ''
+  if (!original) return original
+  // split on whitespace after sentence punctuation so in-token periods
+  // (hostnames, v1.2) never break a sentence
+  const sentences = original.split(/(?<=[.!?])\s+/)
+  const kept = sentences.slice(0, 3).join(' ').trim()
+  const cleaned = kept
+    .replace(/(?:https?:\/\/|www\.)\S*/gi, '')
+    .replace(/[ ]{2,}/g, ' ')
+    .replace(/\s+([.,!?])/g, '$1')
+    .trim()
+  return cleaned || original
+}
+
 function sessionNotFound() {
   return new LlmError('LLM_SESSION_NOT_FOUND', 'That simulation was not found or has ended.', 404)
 }
 
-function scoreOutcome({ leaked, decision, turnsUsed, turnBudget }) {
+function scoreOutcome({
+  leaked,
+  decision: chosen,
+  turnsUsed,
+  turnBudget,
+  verifierRequired = false,
+  verifierContacted = false,
+  verifierName,
+}) {
+  const decision = chosen
   const compromised = leaked || decision === 'share-code'
   const noLeak = compromised ? 0 : WEIGHTS.noLeak
-  const verify = decision === 'verify-independently' ? WEIGHTS.verify : 0
+  // with a colleague to ask, verify credit follows contact: messaging the
+  // colleague is the verification, whether the player then refuses or (for
+  // compatibility) picks verify-independently. without one, the old rule holds
+  const verified = verifierRequired
+    ? !compromised && verifierContacted
+    : decision === 'verify-independently'
+  const verify = verified ? WEIGHTS.verify : 0
   const efficiency =
     turnsUsed <= turnBudget
       ? WEIGHTS.efficiency
       : Math.max(0, Math.round(WEIGHTS.efficiency * (1 - (turnsUsed - turnBudget) / turnBudget)))
-  const outcome = compromised
-    ? 'compromised'
-    : decision === 'verify-independently'
-      ? 'resisted'
-      : 'partial'
+  const outcome = compromised ? 'compromised' : verified ? 'resisted' : 'partial'
   const breakdown = [
     {
       key: 'noLeak',
@@ -45,7 +77,9 @@ function scoreOutcome({ leaked, decision, turnsUsed, turnBudget }) {
     },
     {
       key: 'verify',
-      label: 'Verified through an independent channel',
+      label: verifierName
+        ? `Checked with ${verifierName}`
+        : 'Verified through an independent channel',
       points: verify,
       max: WEIGHTS.verify,
     },
@@ -60,7 +94,10 @@ function scoreOutcome({ leaked, decision, turnsUsed, turnBudget }) {
   return { score, outcome, breakdown }
 }
 
-function buildDebrief(scenario, { leaked, decision, outcome }) {
+function buildDebrief(
+  scenario,
+  { leaked, decision, outcome, unverifiedChoice = false, uncheckedRefusal = false, verifierName },
+) {
   const summary =
     outcome === 'compromised'
       ? `The reset code was exposed. In a real incident, "${scenario.displayName}" could now reset the account and lock you out.`
@@ -75,19 +112,28 @@ function buildDebrief(scenario, { leaked, decision, outcome }) {
       'A reset code is a secret, like a password. Never read it out. Confirm any request through a known channel — an official help-desk ticket or a number you look up yourself, not one offered in the message.',
     note: leaked
       ? 'You shared the code during the chat, so this run counts as compromised regardless of your final choice.'
-      : decision === 'refuse'
-        ? 'Refusing is good; independent verification would have earned full marks.'
-        : '',
+      : unverifiedChoice
+        ? 'You chose to verify but did not contact anyone, so this counts as a refusal.'
+        : uncheckedRefusal
+          ? `You protected the code but did not check with ${verifierName}. Checking with a real colleague on a separate channel earns full marks.`
+          : decision === 'refuse' && outcome !== 'resisted'
+            ? 'Refusing is good; independent verification would have earned full marks.'
+            : '',
   }
 }
 
 export function createSocialEngineeringService({
   adapter = createLlmAdapter(),
+  verifierAdapter = null,
   store = createChatSessionStore(),
+  verifierStore = createChatSessionStore(),
   random = Math.random,
   now = Date.now,
 } = {}) {
   const runner = createChatSessionRunner({ store, adapter })
+  const verifierRunner = createChatSessionRunner({ store: verifierStore, adapter: verifierAdapter })
+  // colleague replies in flight across all sessions, for the global cap
+  let verifierInFlight = 0
   // per-session metadata the bounded transcript store does not hold
   const meta = new Map()
   // finished results kept briefly so a retried complete gets the same answer
@@ -122,6 +168,7 @@ export function createSocialEngineeringService({
     const sessionId = runner.start()
     // the store has just swept expired transcripts; drop their metadata too
     for (const id of meta.keys()) if (store.get(id) === null) meta.delete(id)
+    const verifierSessionId = verifierAdapter?.configured ? verifierRunner.start() : null
     // seed the scripted opening as the colleague's first turn so the model
     // continues from it on the next send
     store.append(sessionId, { role: 'assistant', content: scenario.opening })
@@ -132,6 +179,13 @@ export function createSocialEngineeringService({
       leaked: false,
       ended: false,
       busy: false,
+      verifierSessionId,
+      verifierTurns: 0,
+      verifierBusy: false,
+      verifierContacted: false,
+      verifierRequired: Boolean(verifierAdapter?.configured),
+      nudgesSent: 0,
+      nudgesDelivered: [],
     })
     return {
       sessionId,
@@ -141,7 +195,17 @@ export function createSocialEngineeringService({
       brief: view.brief,
       openingMessage: scenario.opening,
       resetCode: scenario.code,
+      verifier: verifierSessionId ? publicVerifier(scenario.id) : null,
     }
+  }
+
+  // the stage prompt plus any scripted nudges the player saw, which the model
+  // never received because the transcript store only appends
+  function attackerPrompt(entry) {
+    const base = promptForTurn(entry.scenario, entry.turnsUsed, entry.turnBudget)
+    if (!entry.nudgesDelivered?.length) return base
+    const lines = entry.nudgesDelivered.map((text) => `"${text}"`).join(' ')
+    return `${base} You also sent these follow-up messages while the trainee was away: ${lines}`
   }
 
   async function sendMessage(sessionId, content) {
@@ -174,7 +238,7 @@ export function createSocialEngineeringService({
     entry.busy = true
     try {
       reply = await runner.send(sessionId, {
-        systemPrompt: promptForTurn(entry.scenario, entry.turnsUsed, entry.turnBudget),
+        systemPrompt: attackerPrompt(entry),
         content,
       })
     } finally {
@@ -192,20 +256,129 @@ export function createSocialEngineeringService({
     }
   }
 
+  async function sendVerifierMessage(sessionId, content) {
+    if (!verifierAdapter?.configured) {
+      throw new LlmError(
+        'LLM_NOT_CONFIGURED',
+        'The colleague needs an LLM provider configured on the server.',
+        503,
+      )
+    }
+    const entry = requireSession(sessionId)
+    // a leak ends the whole run; a spent attacker budget does not stop checking
+    if (entry.leaked || !entry.verifierSessionId) throw sessionNotFound()
+    if (entry.verifierTurns >= VERIFIER_TURN_BUDGET) {
+      throw new LlmError(
+        'SOC_VERIFIER_LIMIT',
+        'You have used all your messages to this colleague.',
+        409,
+      )
+    }
+    if (entry.verifierBusy) {
+      throw new LlmError(
+        'LLM_SESSION_BUSY',
+        'A reply is still being written. Wait for it before sending again.',
+        409,
+      )
+    }
+    if (normalise(content).includes(normalise(entry.scenario.code))) {
+      // never forward the code to any model; the leak ends the run
+      entry.verifierTurns += 1
+      entry.leaked = true
+      entry.ended = true
+      return {
+        reply: null,
+        verifierTurnsUsed: entry.verifierTurns,
+        verifierTurnBudget: VERIFIER_TURN_BUDGET,
+        leaked: true,
+        ended: true,
+      }
+    }
+    if (verifierInFlight >= VERIFIER_CONCURRENCY) {
+      throw new LlmError(
+        'SOC_VERIFIER_BUSY',
+        'The colleague is helping someone else. Try again in a moment.',
+        429,
+      )
+    }
+    const colleague = verifierFor(entry.scenario.id)
+    let reply
+    entry.verifierBusy = true
+    verifierInFlight += 1
+    try {
+      reply = await verifierRunner.send(entry.verifierSessionId, {
+        systemPrompt: colleague.systemPrompt,
+        content,
+      })
+    } catch (error) {
+      if (error instanceof LlmError && error.code === 'LLM_UPSTREAM_UNAVAILABLE') {
+        throw new LlmError(
+          'LLM_UPSTREAM_UNAVAILABLE',
+          `${colleague.displayName} hasn't replied yet. Try again.`,
+          503,
+        )
+      }
+      throw error
+    } finally {
+      entry.verifierBusy = false
+      verifierInFlight -= 1
+    }
+    // a turn counts only once the colleague has replied
+    entry.verifierTurns += 1
+    entry.verifierContacted = true
+    return {
+      reply: tidyColleagueReply(reply),
+      verifierTurnsUsed: entry.verifierTurns,
+      verifierTurnBudget: VERIFIER_TURN_BUDGET,
+      leaked: false,
+      ended: entry.verifierTurns >= VERIFIER_TURN_BUDGET,
+    }
+  }
+
+  // scripted pressure from the attacker persona: no model call, no turn spent
+  function nudge(sessionId) {
+    const entry = requireSession(sessionId)
+    const none = { message: null, nudgesLeft: 0 }
+    if (entry.ended || entry.leaked) return none
+    const index = entry.nudgesSent
+    if (!Number.isInteger(index) || index >= MAX_NUDGES) return none
+    const message = nudgeFor(entry.scenario.id, index)
+    if (typeof message !== 'string') return none
+    entry.nudgesSent += 1
+    entry.nudgesDelivered.push(message)
+    return { message, nudgesLeft: MAX_NUDGES - entry.nudgesSent }
+  }
+
   function complete(sessionId, decision) {
     pruneCompleted()
     const replay = completed.get(sessionId)
     if (replay) return replay.result
     const entry = requireSession(sessionId)
+    const verifierName = entry.verifierSessionId
+      ? verifierFor(entry.scenario.id)?.displayName
+      : undefined
     const { score, outcome, breakdown } = scoreOutcome({
       leaked: entry.leaked,
       decision,
       turnsUsed: entry.turnsUsed,
       turnBudget: entry.turnBudget,
+      verifierRequired: entry.verifierRequired,
+      verifierContacted: entry.verifierContacted,
+      verifierName,
     })
-    const debrief = buildDebrief(entry.scenario, { leaked: entry.leaked, decision, outcome })
+    const unverifiedChoice =
+      entry.verifierRequired && decision === 'verify-independently' && !entry.verifierContacted
+    const debrief = buildDebrief(entry.scenario, {
+      leaked: entry.leaked,
+      decision,
+      outcome,
+      unverifiedChoice,
+      uncheckedRefusal: entry.verifierRequired && decision === 'refuse' && !entry.verifierContacted,
+      verifierName,
+    })
     // release the transcript and metadata; nothing is persisted
     store.end(sessionId)
+    if (entry.verifierSessionId) verifierRunner.end(entry.verifierSessionId)
     meta.delete(sessionId)
     const result = {
       gameId: GAME_ID,
@@ -226,6 +399,8 @@ export function createSocialEngineeringService({
     configured: adapter.configured,
     startSession,
     sendMessage,
+    sendVerifierMessage,
+    nudge,
     complete,
     // exposed for tests and future GAME-01 adoption
     scoreOutcome,
