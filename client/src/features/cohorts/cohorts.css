@@ -1,0 +1,172 @@
+.cohort-page {
+  width: min(100%, 920px);
+  margin: 0 auto;
+  padding: clamp(1rem, 4vw, 2.5rem);
+}
+
+.cohort-page h1,
+.cohort-panel h2 {
+  font-weight: 700;
+}
+
+.cohort-eyebrow {
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+}
+
+.cohort-intro {
+  max-width: 68ch;
+  margin: 0.75rem 0 1.5rem;
+}
+
+.cohort-panel,
+.cohort-form {
+  display: grid;
+  gap: 0.9rem;
+  margin: 1.25rem 0;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-pixel);
+}
+
+.cohort-form label,
+.cohort-label {
+  font-weight: 700;
+}
+
+.cohort-form input,
+.cohort-page select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.55rem 0.7rem;
+  border: 2px solid var(--border-strong);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text-main);
+  font: inherit;
+}
+
+.cohort-page button {
+  min-height: 44px;
+}
+
+.cohort-page .cohort-action {
+  justify-self: start;
+}
+
+.cohort-page :focus-visible {
+  outline: 3px solid var(--text-main);
+  outline-offset: 3px;
+}
+
+.cohort-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cohort-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 2px solid var(--border-strong);
+  background: var(--bg-primary);
+}
+
+.cohort-list li > div:first-child {
+  min-width: 0;
+}
+
+.cohort-list small {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+}
+
+.cohort-status,
+.cohort-code {
+  padding: 0.3rem 0.55rem;
+  border: 2px solid var(--border-strong);
+  background: var(--accent-secondary);
+  font-weight: 700;
+}
+
+.cohort-status-details {
+  display: grid;
+  justify-items: end;
+  gap: 0.25rem;
+}
+
+.cohort-row-actions,
+.cohort-actions,
+.cohort-tabs,
+.cohort-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cohort-row-actions .btn,
+.cohort-pagination .btn {
+  padding-inline: 0.65rem;
+}
+
+.cohort-pagination {
+  justify-content: space-between;
+}
+
+.cohort-notice,
+.cohort-alert,
+.cohort-empty {
+  padding: 0.8rem;
+  border: 2px solid var(--border-strong);
+  background: var(--alert-warning);
+}
+
+.cohort-alert {
+  font-weight: 700;
+}
+
+.cohort-muted {
+  font-size: 0.95rem;
+}
+
+.cohort-code {
+  width: fit-content;
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  letter-spacing: 0.08em;
+}
+
+.cohort-skip {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--border-strong);
+}
+
+@media (max-width: 575.98px) {
+  .cohort-page {
+    padding-inline: 1rem;
+  }
+
+  .cohort-list li {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .cohort-row-actions .btn {
+    flex: 1 1 7rem;
+  }
+
+  .cohort-pagination > span {
+    flex: 1 1 100%;
+    text-align: center;
+    order: -1;
+  }
+}

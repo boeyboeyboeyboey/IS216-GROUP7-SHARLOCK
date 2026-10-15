@@ -11,6 +11,12 @@ import {
 import { createAuthService } from './service.js'
 import { createProtectedSessionAccess, loadSessionActor } from './access.js'
 import { createActivationRouter } from '../recovery/router.js'
+import { CohortError, hashEnrollmentCode } from '../cohorts/policy.js'
+import {
+  capturePendingInvitation,
+  clearPendingInvitation,
+  pendingInvitationValues,
+} from '../cohorts/invitation-session.js'
 import {
   clearSessionCookie,
   createAnonymousSessionValues,
@@ -35,7 +41,7 @@ function sendUser(response, user, csrfToken) {
 }
 
 function requestError(error, _request, response, next) {
-  if (!(error instanceof AuthError)) {
+  if (!(error instanceof AuthError) && !(error instanceof CohortError)) {
     next(error)
     return
   }
@@ -101,7 +107,14 @@ export function createAuthRouter(database, settings) {
       } else if (
         expired &&
         request.method === 'POST' &&
-        ['/register', '/login', '/logout', '/activate-account'].includes(request.path)
+        [
+          '/register',
+          '/login',
+          '/logout',
+          '/activate-account',
+          '/class-invitation',
+          '/class-invitation/clear',
+        ].includes(request.path)
       ) {
         await destroySession(request)
         clearSessionCookie(response, authSettings.secureCookie)
@@ -144,10 +157,15 @@ export function createAuthRouter(database, settings) {
         parseEmptyQuery(request.query)
         const input = parseRegistrationInput(request.body)
         const account = await authService.register(input)
-        await rotateSession(
-          request,
-          createAuthenticatedSessionValues(account.userId, account.authVersion, authSettings.now),
-        )
+        const invitation = pendingInvitationValues(request, authSettings.now)
+        await rotateSession(request, {
+          ...createAuthenticatedSessionValues(
+            account.userId,
+            account.authVersion,
+            authSettings.now,
+          ),
+          ...invitation,
+        })
         const csrfToken = csrf.generateToken(request, true)
         setSessionCookieLifetime(request, authSettings.now)
         await saveSession(request)
@@ -171,10 +189,15 @@ export function createAuthRouter(database, settings) {
         failureSlot = rateLimits.reserveFailedLogin(input.emailNormalized, request.ip)
         const account = await authService.login(input)
         failureSlot.succeed()
-        await rotateSession(
-          request,
-          createAuthenticatedSessionValues(account.userId, account.authVersion, authSettings.now),
-        )
+        const invitation = pendingInvitationValues(request, authSettings.now)
+        await rotateSession(request, {
+          ...createAuthenticatedSessionValues(
+            account.userId,
+            account.authVersion,
+            authSettings.now,
+          ),
+          ...invitation,
+        })
         const csrfToken = csrf.generateToken(request, true)
         setSessionCookieLifetime(request, authSettings.now)
         await saveSession(request)
@@ -193,7 +216,15 @@ export function createAuthRouter(database, settings) {
     try {
       parseEmptyQuery(request.query)
       const sessionData = request.session
-      if (!sessionData?.userId || sessionIsExpired(sessionData, authSettings.now)) {
+      if (!sessionData?.userId) {
+        if (sessionIsExpired(sessionData, authSettings.now)) {
+          await destroySession(request)
+          clearSessionCookie(response, authSettings.secureCookie)
+        }
+        sendUnauthorized(request, response)
+        return
+      }
+      if (sessionIsExpired(sessionData, authSettings.now)) {
         await destroySession(request)
         clearSessionCookie(response, authSettings.secureCookie)
         sendUnauthorized(request, response)
@@ -225,6 +256,47 @@ export function createAuthRouter(database, settings) {
       next(error)
     }
   })
+
+  router.post(
+    '/class-invitation',
+    rateLimits.classInvitation,
+    requireOrigin,
+    csrf.protect,
+    async (request, response) => {
+      parseEmptyQuery(request.query)
+      const input = request.body
+      if (
+        !input ||
+        typeof input !== 'object' ||
+        Array.isArray(input) ||
+        Object.keys(input).length !== 1 ||
+        !Object.hasOwn(input, 'code')
+      ) {
+        throw new CohortError(
+          'ENROLLMENT_INVALID_REQUEST',
+          'Check the invitation and try again.',
+          400,
+        )
+      }
+      capturePendingInvitation(request, hashEnrollmentCode(input.code), authSettings.now)
+      await saveSession(request)
+      response.status(204).end()
+    },
+  )
+
+  router.post(
+    '/class-invitation/clear',
+    rateLimits.classInvitation,
+    requireOrigin,
+    csrf.protect,
+    async (request, response) => {
+      parseEmptyQuery(request.query)
+      parseEmptyInput(request.body)
+      clearPendingInvitation(request)
+      await saveSession(request)
+      response.status(204).end()
+    },
+  )
 
   router.use(
     createActivationRouter(database, {

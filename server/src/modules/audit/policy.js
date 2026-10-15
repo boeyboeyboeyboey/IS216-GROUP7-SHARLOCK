@@ -20,6 +20,13 @@ export const auditEventTypes = Object.freeze([
   'admin.instructor.activation.issue',
   'admin.instructor.assignments.update',
   'account.instructor.activate',
+  'cohort.code.issue',
+  'cohort.code.revoke',
+  'cohort.membership.request',
+  'cohort.membership.approve',
+  'cohort.membership.decline',
+  'cohort.membership.remove',
+  'cohort.onboarding.complete',
 ])
 
 export class AuditError extends Error {

@@ -428,6 +428,7 @@ describe('backend class foundation integration', () => {
             'cohortId',
             'cohortName',
             'cohortStatus',
+            'decision',
             'id',
             'institutionName',
             'institutionStatus',
@@ -437,6 +438,7 @@ describe('backend class foundation integration', () => {
             .join(','),
       ),
     ).toBe(true)
+    expect(memberships.body.memberships.every(({ decision }) => decision === null)).toBe(true)
     expect(memberships.body.memberships).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

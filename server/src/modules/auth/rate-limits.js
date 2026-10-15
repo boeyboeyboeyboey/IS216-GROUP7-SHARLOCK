@@ -58,6 +58,11 @@ export function createRateLimits({ secret, now = Date.now } = {}) {
     limit: 10,
     message: 'Too many activation attempts. Please try again later.',
   })
+  const classInvitation = requestLimiter({
+    windowMs: FIFTEEN_MINUTES,
+    limit: 30,
+    message: 'Too many class invitations. Please try again later.',
+  })
 
   const failedLogins = new Map()
   const cleanup = setInterval(() => {
@@ -116,6 +121,7 @@ export function createRateLimits({ secret, now = Date.now } = {}) {
     registration: registration.middleware,
     loginIp: loginIp.middleware,
     activation: activation.middleware,
+    classInvitation: classInvitation.middleware,
     reserveFailedLogin,
     dispose() {
       clearInterval(cleanup)
@@ -124,6 +130,7 @@ export function createRateLimits({ secret, now = Date.now } = {}) {
       registration.store.shutdown()
       loginIp.store.shutdown()
       activation.store.shutdown()
+      classInvitation.store.shutdown()
     },
   })
 }

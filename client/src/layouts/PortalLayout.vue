@@ -24,7 +24,13 @@ const navigation = computed(() => [
   { to: '/', label: 'Town map', icon: 'map' },
   { to: '/profile', label: 'Detective profile', icon: 'trophy' },
   { to: '/progress', label: 'Learning progress', icon: 'chart' },
+  ...(auth.user?.globalRoles?.includes('student')
+    ? [{ to: '/classes', label: 'Your classes', icon: 'people' }]
+    : []),
   { to: '/leaderboard', label: 'Cohort leaderboard', icon: 'people' },
+  ...(auth.user?.globalRoles?.some((role) => ['instructor', 'admin'].includes(role))
+    ? [{ to: '/instructor', label: 'Class enrollment', icon: 'people' }]
+    : []),
   ...(auth.user?.globalRoles?.includes('admin')
     ? [{ to: '/admin', label: 'Administrator workspace', icon: 'shield' }]
     : []),

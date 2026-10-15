@@ -1,18 +1,43 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PixelIcon from '../../../components/town/PixelIcon.vue'
 import { useAuthStore } from '../store.js'
 import RegisterForm from '../components/RegisterForm.vue'
+import { resolveEnrollmentDestination } from '../../cohorts/journey.js'
 import '../auth.css'
 
 const router = useRouter()
 const auth = useAuthStore()
 const form = ref(null)
 const pending = ref(false)
+const signedIn = ref(false)
+const continuing = ref(false)
+const continuationError = ref('')
+const controller = new AbortController()
+onBeforeUnmount(() => controller.abort())
 const introAvatar = '/images/town/capybara-mint.svg'
 const fieldErrors = computed(() => auth.requestError?.fieldErrors || {})
 const errorMessage = computed(() => auth.requestError?.message || '')
+
+async function continueAfterSignIn() {
+  if (continuing.value) return
+  continuing.value = true
+  continuationError.value = ''
+  try {
+    const destination = await resolveEnrollmentDestination(auth.user, {
+      signal: controller.signal,
+      afterAccountAccess: true,
+    })
+    if (!controller.signal.aborted) await router.replace(destination)
+  } catch {
+    if (!controller.signal.aborted) {
+      continuationError.value = 'Your account is ready. Class setup is unavailable. Try Continue again.'
+    }
+  } finally {
+    continuing.value = false
+  }
+}
 
 async function createAccount(payload) {
   if (pending.value) return
@@ -21,7 +46,8 @@ async function createAccount(payload) {
     const user = await auth.register(payload)
     if (user) {
       form.value?.clearSecrets()
-      await router.replace('/')
+      signedIn.value = true
+      await continueAfterSignIn()
     }
   } catch {
     // the store keeps only the safe message for the form
@@ -43,6 +69,7 @@ async function createAccount(payload) {
       <p class="auth-intro">Choose a name and capybara portrait for your detective desk.</p>
 
       <RegisterForm
+        v-if="!signedIn"
         ref="form"
         :pending="pending"
         :error="errorMessage"
@@ -50,7 +77,15 @@ async function createAccount(payload) {
         @submit="createAccount"
       />
 
-      <p class="auth-switch">
+      <div v-else aria-live="polite">
+        <p>Your account is ready and you are signed in.</p>
+        <p v-if="continuationError" role="alert">{{ continuationError }}</p>
+        <button class="btn btn-primary" type="button" :disabled="pending || continuing" @click="continueAfterSignIn">
+          Continue
+        </button>
+      </div>
+
+      <p v-if="!signedIn" class="auth-switch">
         Already have an account?
         <RouterLink to="/login">Sign in</RouterLink>
       </p>
@@ -58,7 +93,7 @@ async function createAccount(payload) {
     <aside class="auth-aside">
       <PixelIcon name="shield" :size="30" aria-hidden="true" />
       <h2>Start with your own detective</h2>
-      <p>Registration signs you in automatically. Class and saved-results features come later.</p>
+      <p>Registration signs you in automatically. Join a class or skip ahead to personal play. Game results are not saved yet.</p>
       <RouterLink to="/about" class="auth-aside__link">
         About Sharlock <PixelIcon name="arrow" :size="16" aria-hidden="true" />
       </RouterLink>

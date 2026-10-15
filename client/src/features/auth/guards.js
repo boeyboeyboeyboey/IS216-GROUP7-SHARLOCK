@@ -1,6 +1,6 @@
 import { AxiosError, CanceledError } from 'axios'
 
-export function createAccountGuard(auth) {
+export function createAccountGuard(auth, { resolveDestination } = {}) {
   return async (to) => {
     if (!to.meta.requiresAccount && !to.meta.accountAware && !to.meta.authPage) return true
     const previouslySignedIn = auth.status === 'authenticated'
@@ -19,7 +19,20 @@ export function createAccountGuard(auth) {
     if (to.meta.requiredRole && !user?.globalRoles?.includes(to.meta.requiredRole)) {
       return { path: '/forbidden' }
     }
-    if (to.meta.authPage && user) return { name: 'town' }
+    if (
+      to.meta.allowedRoles &&
+      !to.meta.allowedRoles.some((role) => user?.globalRoles?.includes(role))
+    ) {
+      return { path: '/forbidden' }
+    }
+    if (to.meta.authPage && user) {
+      if (!resolveDestination) return { name: 'town' }
+      try {
+        return await resolveDestination(user)
+      } catch {
+        return { path: '/join-class', query: { onboarding: '1' } }
+      }
+    }
     return true
   }
 }

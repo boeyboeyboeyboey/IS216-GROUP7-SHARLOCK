@@ -17,6 +17,7 @@ export function createApp(
     auth,
     admin = {},
     audit = {},
+    cohorts = {},
     news = {},
     phishing = {},
     socialEngineering = {},
@@ -43,7 +44,14 @@ export function createApp(
     requireMutation: authRuntime.requireMutation,
   })
   app.use('/api', adminRouter)
-  app.use('/api', createCohortRouter(database, { requireSession: authRuntime.requireSession }))
+  const cohortRouter = createCohortRouter(database, {
+    ...cohorts,
+    now: cohorts.now ?? authRuntime.now,
+    clientOrigin: authRuntime.clientOrigin,
+    requireSession: authRuntime.requireSession,
+    requireMutation: authRuntime.requireMutation,
+  })
+  app.use('/api', cohortRouter)
   app.use(
     '/api',
     createAuditRouter(database, { ...audit, requireSession: authRuntime.requireSession }),
@@ -57,6 +65,7 @@ export function createApp(
   app.use(handleError)
   app.locals.disposeAuth = () => {
     adminRouter.dispose()
+    cohortRouter.dispose()
     authRuntime.dispose()
   }
   return app

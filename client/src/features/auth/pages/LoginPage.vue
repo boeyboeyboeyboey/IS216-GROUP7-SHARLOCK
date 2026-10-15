@@ -1,10 +1,11 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PixelIcon from '../../../components/town/PixelIcon.vue'
 import { useAuthStore } from '../store.js'
 import LoginForm from '../components/LoginForm.vue'
 import SessionNotice from '../components/SessionNotice.vue'
+import { resolveEnrollmentDestination } from '../../cohorts/journey.js'
 import '../auth.css'
 
 const route = useRoute()
@@ -12,10 +13,34 @@ const router = useRouter()
 const auth = useAuthStore()
 const form = ref(null)
 const pending = ref(false)
+const signedIn = ref(false)
+const continuing = ref(false)
+const continuationError = ref('')
+const controller = new AbortController()
+onBeforeUnmount(() => controller.abort())
 const introAvatar = '/images/town/capybara-mint.svg'
 const expiredNotice = computed(() => route.query.reason === 'expired')
 const fieldErrors = computed(() => auth.requestError?.fieldErrors || {})
 const errorMessage = computed(() => auth.requestError?.message || '')
+
+async function continueAfterSignIn() {
+  if (continuing.value) return
+  continuing.value = true
+  continuationError.value = ''
+  try {
+    const destination = await resolveEnrollmentDestination(auth.user, {
+      signal: controller.signal,
+      afterAccountAccess: true,
+    })
+    if (!controller.signal.aborted) await router.replace(destination)
+  } catch {
+    if (!controller.signal.aborted) {
+      continuationError.value = 'You are signed in. Class setup is unavailable. Try Continue again.'
+    }
+  } finally {
+    continuing.value = false
+  }
+}
 
 async function signIn(payload) {
   if (pending.value) return
@@ -24,7 +49,8 @@ async function signIn(payload) {
     const user = await auth.login(payload)
     if (user) {
       form.value?.clearSecrets()
-      await router.replace('/')
+      signedIn.value = true
+      await continueAfterSignIn()
     }
   } catch {
     // the store keeps only the safe message for the form
@@ -61,6 +87,7 @@ async function checkSession() {
       />
 
       <LoginForm
+        v-if="!signedIn"
         ref="form"
         :pending="pending"
         :error="errorMessage"
@@ -68,7 +95,15 @@ async function checkSession() {
         @submit="signIn"
       />
 
-      <p class="auth-switch">
+      <div v-else aria-live="polite">
+        <p>You are signed in.</p>
+        <p v-if="continuationError" role="alert">{{ continuationError }}</p>
+        <button class="btn btn-primary" type="button" :disabled="pending || continuing" @click="continueAfterSignIn">
+          Continue
+        </button>
+      </div>
+
+      <p v-if="!signedIn" class="auth-switch">
         New to Sharlock?
         <RouterLink to="/register">Create a student account</RouterLink>
       </p>

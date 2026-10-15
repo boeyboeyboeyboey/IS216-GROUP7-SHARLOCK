@@ -45,6 +45,25 @@ export const routes = [
     meta: { title: 'Activate instructor account' },
   },
   {
+    path: '/join-class',
+    component: () => import('../features/cohorts/pages/JoinClassPage.vue'),
+    meta: { title: 'Join a class' },
+  },
+  {
+    path: '/classes',
+    component: () => import('../features/cohorts/pages/MembershipsPage.vue'),
+    meta: { title: 'Your classes', requiresAccount: true },
+  },
+  {
+    path: '/instructor',
+    component: () => import('../features/cohorts/pages/ClassManagementPage.vue'),
+    meta: {
+      title: 'Class enrollment',
+      requiresAccount: true,
+      allowedRoles: ['instructor', 'admin'],
+    },
+  },
+  {
     path: '/admin',
     component: () => import('../features/admin/pages/AdminPage.vue'),
     meta: {
@@ -93,11 +112,6 @@ export const routes = [
       'leaderboard',
       'A little friendly competition',
       'Cohort rankings will celebrate your learning alongside your classmates.',
-    ],
-    [
-      'instructor',
-      'A view of every little breakthrough',
-      'The instructor workspace will show progress within assigned cohorts.',
     ],
     ['forbidden', 'This case needs permission', 'Return to town to find an available activity.'],
   ].map(([path, title, description]) => ({

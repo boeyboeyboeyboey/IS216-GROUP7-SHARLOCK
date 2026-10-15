@@ -25,6 +25,7 @@ const userSchema = new Schema(
       default: 'active',
     },
     authVersion: { type: Number, required: true, min: 1, default: 1 },
+    classOnboardingCompletedAt: { type: Date, default: null },
     instructorAssignmentRevision: {
       type: Number,
       required: true,

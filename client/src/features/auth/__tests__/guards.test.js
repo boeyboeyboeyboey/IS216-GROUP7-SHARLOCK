@@ -94,6 +94,24 @@ describe('account navigation', () => {
     auth.restoreSession.mockResolvedValue(null)
     await expect(guard({ meta: { accountAware: true } })).resolves.toBe(true)
   })
+
+  it('checks the fresh staff role and delegates only successful account-page navigation', async () => {
+    const auth = account('authenticated')
+    const resolveDestination = vi.fn().mockResolvedValue('/join-class?carry=1')
+    const guard = createAccountGuard(auth, { resolveDestination })
+    const staffRoute = { meta: { requiresAccount: true, allowedRoles: ['instructor', 'admin'] } }
+    auth.restoreSession.mockResolvedValue({ id: 'student', globalRoles: ['student'] })
+    await expect(guard(staffRoute)).resolves.toEqual({ path: '/forbidden' })
+    expect(resolveDestination).not.toHaveBeenCalled()
+    auth.restoreSession.mockResolvedValue({ id: 'teacher', globalRoles: ['instructor'] })
+    await expect(guard(staffRoute)).resolves.toBe(true)
+    await expect(guard({ meta: { authPage: true } })).resolves.toBe('/join-class?carry=1')
+    resolveDestination.mockRejectedValue(new Error('Unavailable'))
+    await expect(guard({ meta: { authPage: true } })).resolves.toEqual({
+      path: '/join-class', query: { onboarding: '1' },
+    })
+    expect(auth.restoreSession).toHaveBeenCalledTimes(4)
+  })
 })
 
 describe('browser activity request boundary', () => {

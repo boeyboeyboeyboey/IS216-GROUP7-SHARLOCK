@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test'
 
 const PASSWORD = 'Correct-Horse-🔒-2026'
 
+test.skip(!process.env.SHARLOCK_TEST_REPLICA_SET, 'The account journey includes transactional onboarding; run with --replica-set.')
+
 test.beforeEach(async ({ page }) => {
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
     route.fulfill({ contentType: 'text/css', body: '' }),
@@ -64,6 +66,8 @@ test('registers, restores, signs out, signs in, and stops a protected action aft
 
   await page.getByLabel('Confirm password').fill(PASSWORD)
   await page.getByRole('button', { name: 'Create account' }).click()
+  await expect(page).toHaveURL('/join-class?onboarding=1')
+  await page.getByRole('button', { name: 'Skip and explore Sharlock' }).click()
   await expect(page).toHaveURL('/')
   const townPlayer = page.locator('.town-player')
   await expect(townPlayer.getByText(username, { exact: true })).toBeVisible()

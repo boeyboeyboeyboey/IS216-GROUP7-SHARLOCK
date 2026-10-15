@@ -51,6 +51,13 @@ function closeNewspaper() {
         >
       </RouterLink>
     </section>
+    <p v-if="route.query.classRequest === 'pending'" class="alert alert-success" role="status">
+      Your class request is pending staff approval. You can explore on your own while you wait.
+      <RouterLink to="/classes">View your classes</RouterLink>
+    </p>
+    <p v-else-if="route.query.classRequest === 'active'" class="alert alert-success" role="status">
+      You already belong to this class. <RouterLink to="/classes">View your classes</RouterLink>
+    </p>
     <TownMap
       ref="townMap"
       class="town-canvas"

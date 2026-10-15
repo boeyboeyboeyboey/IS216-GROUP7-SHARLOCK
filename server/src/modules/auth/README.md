@@ -10,13 +10,15 @@ This backend module provides student registration, account sign-in, session rest
 
 All auth responses use `Cache-Control: no-store`. The browser sends the session cookie automatically; no auth token belongs in browser local storage. Each mutation requires `X-CSRF-Token` plus the configured client origin through `Origin`, or a same-origin `Referer` when `Origin` is absent. A missing or `null` origin does not authorize a mutation. Unknown body or query fields are rejected.
 
-| Endpoint                  | Exact JSON body                           | Success                                            |
-| ------------------------- | ----------------------------------------- | -------------------------------------------------- |
-| `GET /api/auth/csrf`      | none                                      | 200 `{ csrfToken }`                                |
-| `POST /api/auth/register` | `{ email, username, password, avatarId }` | 201 `{ user, csrfToken }`, automatically signed in |
-| `POST /api/auth/login`    | `{ email, password }`                     | 200 `{ user, csrfToken }`                          |
-| `GET /api/auth/me`        | none                                      | 200 `{ user }`, or 401 when unauthenticated        |
-| `POST /api/auth/logout`   | empty or `{}`                             | 204, current session invalidated                   |
+| Endpoint                                | Exact JSON body                           | Success                                                   |
+| --------------------------------------- | ----------------------------------------- | --------------------------------------------------------- |
+| `GET /api/auth/csrf`                    | none                                      | 200 `{ csrfToken }`                                       |
+| `POST /api/auth/register`               | `{ email, username, password, avatarId }` | 201 `{ user, csrfToken }`, automatically signed in        |
+| `POST /api/auth/login`                  | `{ email, password }`                     | 200 `{ user, csrfToken }`                                 |
+| `GET /api/auth/me`                      | none                                      | 200 `{ user }`, or 401 when unauthenticated               |
+| `POST /api/auth/logout`                 | empty or `{}`                             | 204, current session invalidated                          |
+| `POST /api/auth/class-invitation`       | `{ code }`                                | 204, hash retained in the current session for ten minutes |
+| `POST /api/auth/class-invitation/clear` | `{}`                                      | 204, invitation draft cleared                             |
 
 Email is trimmed, lowercased ASCII, syntactically validated and at most 254 characters. Username is trimmed, 3–32 ASCII letters, digits, underscores or hyphens; uniqueness is case-insensitive. New passwords are unchanged, well-formed Unicode strings of 12–128 code points with at least one Unicode uppercase letter and one punctuation/symbol character. Whitespace does not satisfy the special-character requirement. Login checks only encoding/length, preserving older composition-free passwords. These are Boey's approved policy changes of 15 October 2026. Registration accepts only the six IDs in [avatars.js](avatars.js); submitted roles, IDs, memberships, scores and other account fields are rejected.
 
@@ -28,13 +30,15 @@ Safe failures use `{ error: { code, message, fieldErrors? }, requestId }`. Inval
 
 The only user DTO contains `id`, `email`, `username`, `avatarId` and `globalRoles`. Password hashes, auth versions, account status, timestamps and session fields stay server-side. Six preset IDs map to `/images/avatars/<id>.png`; their image files are generated and tracked separately.
 
-Sessions use `express-session` with the maintained `connect-mongo` store over the existing Mongo client. Only the actual session object created by a successful rotation may use connect-mongo's new-session upsert; later saves and idle touches conditionally update an existing, unexpired document without upsert. A touch after concurrent logout is a no-op, so it cannot restore the deleted ID. The server checks expiry and account status/version on every authenticated auth request; MongoDB TTL cleanup is housekeeping rather than an authorization check. Cookies are HttpOnly, SameSite=Lax, scoped to `/api`, and Secure except for validated loopback development/test origins. The session adapter never closes the shared Mongo client.
+Sessions use `express-session` with the maintained `connect-mongo` store over the existing Mongo client. Only the actual session object created by a successful rotation may use connect-mongo's new-session upsert; later saves and idle touches conditionally update an existing, unexpired document without upsert. A touch after concurrent logout is a no-op, so it cannot restore the deleted ID. `GET /api/auth/me` returns 401 without destroying a valid anonymous session, allowing an invitation draft to survive the browser's session check before login. Expired anonymous sessions and invalid signed-in sessions are destroyed and cleared. The server checks expiry and account status/version on every authenticated auth request; MongoDB TTL cleanup is housekeeping rather than an authorization check. Cookies are HttpOnly, SameSite=Lax, scoped to `/api`, and Secure except for validated loopback development/test origins. The session adapter never closes the shared Mongo client.
 
 ## Limits
 
 Password operations are Argon2id at 19 MiB, two iterations and one lane, with two process-wide operations allowed at once and no waiting queue. IP limits cover CSRF bootstrap, registration, login and activation (10 activation requests per 15 minutes). A separate HMAC-keyed email/IP counter records only failed credential checks and expires after fifteen minutes; raw addresses and credentials are not used as limiter keys or logged.
 
-Instructor activation is mounted at `POST /api/auth/activate-account` through the same origin/CSRF/session runtime; [recovery](../recovery/README.md) owns its transaction. [Admin](../admin/README.md) owns institution/class/instructor management. General password recovery, email verification, cohort enrollment, account profile changes and persistent learning records remain pending. The current game APIs remain available under their existing contracts until separately approved integration.
+Instructor activation is mounted at `POST /api/auth/activate-account` through the same origin/CSRF/session runtime; [recovery](../recovery/README.md) owns its transaction. [Admin](../admin/README.md) owns institution/class/instructor management. [Cohorts](../cohorts/README.md) owns enrollment and onboarding. General password recovery, email verification, account profile changes and persistent learning records remain pending. The current game APIs remain available under their existing contracts until separately approved integration.
+
+Invitation capture requires the existing session, origin and CSRF protections, with a combined 30 capture/clear requests per fifteen minutes per IP. It validates code shape without revealing class existence to anonymous callers. Only a SHA-256 hash and ten-minute expiry enter session storage. Successful registration/login carries that allowlisted draft through session rotation without extending its lifetime; the public user DTO and credential payloads are unchanged. Logout destroys it with the session. Enrollment checks the current invitation record after authentication; a draft grants no membership authority.
 
 ## Reusable protected-request boundary
 
