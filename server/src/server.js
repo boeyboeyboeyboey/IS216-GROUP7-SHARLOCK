@@ -1,6 +1,6 @@
 import { initializeNewsStorage } from './modules/news/models.js'
 import { createNewsStore } from './modules/news/store.js'
-import { createLlmAdapter } from './modules/games/social-engineering-simulator/llm/adapter.js'
+import { createGameAdapters } from './modules/games/social-engineering-simulator/llmConfig.js'
 import { createSocialEngineeringService } from './modules/games/social-engineering-simulator/service.js'
 import { createApp } from './app.js'
 import { loadEnvironment } from './config/env.js'
@@ -43,20 +43,22 @@ try {
       }),
     60000,
   ).unref()
-  // the adapter reports configured:false when no llm env is set, so the
-  // simulator endpoints fail gracefully instead of the server refusing to start
-  const llmAdapter = createLlmAdapter({
-    baseUrl: config.llmBaseUrl,
-    model: config.llmModel,
-    apiKey: config.llmApiKey,
-    authToken: config.llmAuthToken,
-  })
+  // two adapters with fixed roles. the attacker is Gemini only: it needs
+  // LLM_API_KEY, and LLM_MODEL without LLM_API_KEY leaves it unconfigured.
+  // legacy LLM_BASE_URL / LLM_AUTH_TOKEN are ignored by the game. the colleague
+  // is Ollama only and is configured only when LLM_COLLEAGUE_BASE_URL is set,
+  // otherwise the game keeps the one-click verify. an unconfigured adapter
+  // reports configured:false, so the simulator endpoints fail gracefully
+  // instead of the server refusing to start
+  const { attacker, colleague } = createGameAdapters(config)
   server = createApp(database, {
     news: {
       apiKey: config.nodeEnv === 'test' ? undefined : config.guardianApiKey,
       store: newsStore,
     },
-    socialEngineering: { service: createSocialEngineeringService({ adapter: llmAdapter }) },
+    socialEngineering: {
+      service: createSocialEngineeringService({ adapter: attacker, verifierAdapter: colleague }),
+    },
   }).listen(config.port, '127.0.0.1')
   server.on('listening', () =>
     console.log(`SHARLOCK API ready at http://localhost:${config.port}/api/health`),

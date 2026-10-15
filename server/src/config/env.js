@@ -59,6 +59,31 @@ export function validateEnvironment(env) {
     nodeEnv === 'development' ? 'sharlock_dev' : undefined,
   )
 
+  // the real-colleague chat runs on its own ollama server, separate from the attacker
+  const llmColleagueBaseUrl = env.LLM_COLLEAGUE_BASE_URL?.trim() || undefined
+  const llmColleagueModel = env.LLM_COLLEAGUE_MODEL?.trim() || undefined
+  if (Boolean(llmColleagueBaseUrl) !== Boolean(llmColleagueModel)) {
+    throw new Error(
+      'LLM_COLLEAGUE_BASE_URL and LLM_COLLEAGUE_MODEL must both be set or both left empty.',
+    )
+  }
+  if (llmColleagueBaseUrl) {
+    try {
+      if (!['http:', 'https:'].includes(new URL(llmColleagueBaseUrl).protocol)) throw new Error()
+    } catch {
+      throw new Error('LLM_COLLEAGUE_BASE_URL must be an http or https URL.')
+    }
+  }
+  // capped at 60000 because the browser stops waiting for the colleague at 65000
+  const llmColleagueTimeoutMs = Number(env.LLM_COLLEAGUE_TIMEOUT_MS?.trim() || 60000)
+  if (
+    !Number.isInteger(llmColleagueTimeoutMs) ||
+    llmColleagueTimeoutMs < 1000 ||
+    llmColleagueTimeoutMs > 60000
+  ) {
+    throw new Error('LLM_COLLEAGUE_TIMEOUT_MS must be an integer between 1000 and 60000.')
+  }
+
   return Object.freeze({
     nodeEnv,
     port,
@@ -70,6 +95,10 @@ export function validateEnvironment(env) {
     llmModel: env.LLM_MODEL?.trim() || undefined,
     llmApiKey: env.LLM_API_KEY?.trim() || undefined,
     llmAuthToken: env.LLM_AUTH_TOKEN?.trim() || undefined,
+    llmColleagueBaseUrl,
+    llmColleagueModel,
+    llmColleagueAuthToken: env.LLM_COLLEAGUE_AUTH_TOKEN?.trim() || undefined,
+    llmColleagueTimeoutMs,
   })
 }
 

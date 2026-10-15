@@ -119,9 +119,31 @@
   color: var(--game-ink);
 }
 
-.soc-convo-code {
+/* the reset code is the secret the player protects: a ticket-style card at the top of the rail */
+.soc-code-card {
+  padding: 0.6rem 0.75rem;
+  text-align: center;
+  background: var(--game-warn-soft);
+  border: 2px dashed var(--game-warn);
+}
+
+.soc-code-card .soc-code-card-label {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--game-warn);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.soc-code-card .soc-code {
+  display: block;
+  padding: 0;
+  margin-top: 0.25rem;
+  font-size: 1.3rem;
+  color: var(--game-ink);
+  background: transparent;
+  border: 0;
 }
 
 .soc-brief-rules {
@@ -294,6 +316,129 @@
   font-size: 0.8rem;
   color: var(--game-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* conversation tabs (only rendered when a real colleague is available) */
+.soc-tabs {
+  display: flex;
+  flex: none;
+  border-bottom: 2px solid var(--game-edge);
+  background: var(--game-surface);
+}
+
+.soc-tab {
+  display: inline-flex;
+  flex: 1 1 0;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--game-ink);
+  background: var(--game-surface);
+  border: 0;
+  border-right: 2px solid var(--game-edge);
+  cursor: pointer;
+}
+
+.soc-tab:last-child {
+  border-right: 0;
+}
+
+.soc-tab.is-active {
+  color: var(--game-bar-ink);
+  background: var(--game-bar);
+}
+
+.soc-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.3rem;
+  font-family: var(--game-number-font);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  background: var(--game-bad);
+  border: 2px solid var(--game-edge);
+  border-radius: 50%;
+  animation: soc-badge-pulse 1.2s ease-in-out infinite;
+}
+
+/* the number is the visible cue; screen readers also hear "new" */
+.soc-tab-badge-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@keyframes soc-badge-pulse {
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.soc-check-list {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+/* the real colleague the player can check with (colleague mode only) */
+/* a person, not a button: soft green panel with an accent bar and an initials avatar, no raised box */
+.soc-colleague-card {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  background: var(--game-accent-soft);
+  border-left: 4px solid var(--game-accent);
+}
+
+.soc-colleague-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  font-weight: 700;
+  color: var(--game-bar-ink);
+  background: var(--game-bar);
+  border: 2px solid var(--game-edge);
+}
+
+.soc-colleague-text {
+  min-width: 0;
+}
+
+.soc-colleague-card p {
+  margin: 0;
+}
+
+.soc-colleague-label {
+  font-size: 0.75rem;
+  color: var(--game-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.soc-colleague-card .soc-colleague-name {
+  margin-top: 0.15rem;
+  font-weight: 700;
+  color: var(--game-ink);
+}
+
+.soc-colleague-role {
+  font-size: 0.85rem;
+  color: var(--game-muted);
 }
 
 /* decisions */
@@ -540,10 +685,42 @@
     min-height: 0;
   }
 
+  /* on tall windows the chat card stops growing, so the decision rail never ends up with spare
+     height that turns into gaps; the page background shows below the card instead */
+  .soc-game.is-fitted .soc-conversation.is-chat {
+    max-height: 32rem;
+  }
+
   .soc-game.is-fitted .soc-thread {
     flex: 1 1 auto;
     min-height: 120px;
     max-height: none;
+    padding: 0.75rem 0.9rem;
+  }
+
+  /* the screen is bigger now, so the messages can be a little smaller and more of them fit; the
+     rail : chat split stays 1 : 1.618 */
+  .soc-game.is-fitted .soc-thread-list {
+    gap: 0.5rem;
+  }
+
+  .soc-game.is-fitted .soc-message {
+    max-width: 88%;
+    padding: 0.4rem 0.65rem;
+  }
+
+  .soc-game.is-fitted .soc-message-author {
+    margin-bottom: 0.1rem;
+    font-size: 0.64rem;
+  }
+
+  .soc-game.is-fitted .soc-message-body {
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .soc-game.is-fitted .soc-typing {
+    font-size: 0.78rem;
   }
 
   .soc-game.is-fitted .soc-convo-head,
@@ -686,6 +863,20 @@
     gap: 0.75rem;
   }
 
+  /* two choices (colleague mode) keep their natural height instead of stretching to fill the
+     rail; the spare height is split into even gaps above the colleague card and the buttons */
+  /* colleague mode: the cards keep their natural height, and the spare rail height becomes two
+     even gaps above the colleague card and above the choices */
+  .soc-game .soc-convo-body .soc-decisions.is-compact .soc-decisions-row {
+    flex: 0 0 auto;
+    grid-auto-rows: auto;
+    margin-top: auto;
+  }
+
+  .soc-game .soc-convo-body .soc-decisions.is-compact .soc-colleague-card {
+    margin-top: auto;
+  }
+
   .soc-game .soc-convo-body .soc-button {
     justify-content: center;
     padding: 0.75rem 1rem;
@@ -721,5 +912,26 @@
     transition: none !important;
     animation: none !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* bigger windows: scale the whole conversation screen up in proportion, like dragging an image
+   corner, so the text, cards and spacing grow together and the layout keeps its shape. The factor is
+   the largest that still fits the window, never below 1 and never above 1.8. The unscaled screen is
+   1100px wide and 556px tall (title row plus card); 300px is the sidebar and page margins, and
+   --shell-chrome is the header and footer. A browser without zoom or these math functions skips the
+   whole block and keeps the fixed size. */
+@supports (zoom: tan(atan2(1px, 1px))) {
+  @media (min-width: 768px) and (min-height: 600px) {
+    .soc-game.is-fitted.is-wide {
+      --soc-scale: clamp(
+        1,
+        min(tan(atan2(100dvh - var(--shell-chrome), 556px)), tan(atan2(100vw - 300px, 1100px))),
+        1.8
+      );
+
+      height: calc((100dvh - var(--shell-chrome)) / var(--soc-scale));
+      zoom: var(--soc-scale);
+    }
   }
 }

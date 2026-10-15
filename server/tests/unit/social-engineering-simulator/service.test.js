@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createSocialEngineeringService } from '../../../src/modules/games/social-engineering-simulator/service.js'
-import { SCENARIOS } from '../../../src/modules/games/social-engineering-simulator/scenarios.js'
+import {
+  createSocialEngineeringService,
+  tidyColleagueReply,
+} from '../../../src/modules/games/social-engineering-simulator/service.js'
+import {
+  SCENARIOS,
+  promptForTurn,
+} from '../../../src/modules/games/social-engineering-simulator/scenarios.js'
+import { LlmError } from '../../../src/modules/games/social-engineering-simulator/llm/llmError.js'
 import { createChatSessionStore } from '../../../src/modules/games/social-engineering-simulator/llm/chatSessionStore.js'
 import {
   COMPLETED_TTL_MS,
@@ -272,5 +279,389 @@ describe('social-engineering service', () => {
     expect(() => service.complete('00000000-0000-0000-0000-000000000000', 'refuse')).toThrow(
       /not found/i,
     )
+  })
+
+  describe('colleague chat', () => {
+    function makeBoth(verifierReply = 'I have no record of that.') {
+      const adapter = fakeAdapter()
+      const verifierAdapter = fakeAdapter(verifierReply)
+      const service = createSocialEngineeringService({ adapter, verifierAdapter })
+      return { service, adapter, verifierAdapter }
+    }
+
+    // an adapter whose reply stays pending until release() is called
+    function pendingAdapter() {
+      const control = {}
+      const adapter = {
+        configured: true,
+        mode: 'local',
+        chat: vi.fn(
+          () =>
+            new Promise((resolve) => {
+              control.release = () => resolve({ content: 'later' })
+            }),
+        ),
+      }
+      return { adapter, control }
+    }
+
+    it('returns the scenario colleague on start, or null without a verifier adapter', () => {
+      const { service } = makeBoth()
+      const start = service.startSession()
+      expect(start.verifier.turnBudget).toBe(5)
+      expect(start.verifier.displayName).toBeTruthy()
+      expect(start.verifier.role).toBeTruthy()
+      expect(JSON.stringify(start.verifier)).not.toContain(codeFor(start))
+      expect(makeService().service.startSession().verifier).toBeNull()
+    })
+
+    it('calls the colleague adapter only, without the reset code, and counts its own turns', async () => {
+      const { service, adapter, verifierAdapter } = makeBoth()
+      const start = service.startSession()
+      const result = await service.sendVerifierMessage(start.sessionId, 'Do you know Jordan?')
+      expect(verifierAdapter.chat).toHaveBeenCalledTimes(1)
+      expect(adapter.chat).not.toHaveBeenCalled()
+      const { systemPrompt, messages } = verifierAdapter.chat.mock.calls[0][0]
+      expect(systemPrompt).not.toContain(start.resetCode)
+      expect(JSON.stringify(messages)).not.toContain(start.resetCode)
+      expect(result).toEqual({
+        reply: 'I have no record of that.',
+        verifierTurnsUsed: 1,
+        verifierTurnBudget: 5,
+        leaked: false,
+        ended: false,
+      })
+      const attacker = await service.sendMessage(start.sessionId, 'Who is this?')
+      expect(attacker.turnsUsed).toBe(1)
+    })
+
+    it('ends the run on a leak to the colleague without calling the model', async () => {
+      const shapes = [
+        (code) => code,
+        (code) => code.toLowerCase(),
+        (code) => code.replace(/-/g, ' '),
+        (code) => `the code is ${code.replace(/-/g, '_')}.`,
+      ]
+      for (const shape of shapes) {
+        const { service, verifierAdapter } = makeBoth()
+        const start = service.startSession()
+        const result = await service.sendVerifierMessage(start.sessionId, shape(codeFor(start)))
+        expect(result).toEqual({
+          reply: null,
+          verifierTurnsUsed: 1,
+          verifierTurnBudget: 5,
+          leaked: true,
+          ended: true,
+        })
+        expect(verifierAdapter.chat).not.toHaveBeenCalled()
+      }
+    })
+
+    it('ends after the fifth message and rejects a sixth with SOC_VERIFIER_LIMIT', async () => {
+      const { service } = makeBoth()
+      const start = service.startSession()
+      let last
+      for (let i = 0; i < 5; i += 1) {
+        last = await service.sendVerifierMessage(start.sessionId, `question ${i}`)
+      }
+      expect(last.verifierTurnsUsed).toBe(5)
+      expect(last.ended).toBe(true)
+      await expect(service.sendVerifierMessage(start.sessionId, 'more')).rejects.toMatchObject({
+        code: 'SOC_VERIFIER_LIMIT',
+        status: 409,
+      })
+      // the attacker chat is still open
+      expect((await service.sendMessage(start.sessionId, 'hi')).turnsUsed).toBe(1)
+    })
+
+    it('names the colleague when the upstream fails and does not spend the turn', async () => {
+      const { service, verifierAdapter } = makeBoth()
+      verifierAdapter.chat
+        .mockRejectedValueOnce(new LlmError('LLM_UPSTREAM_UNAVAILABLE', 'x'))
+        .mockResolvedValueOnce({ content: 'ok now' })
+      const start = service.startSession()
+      await expect(service.sendVerifierMessage(start.sessionId, 'hello')).rejects.toMatchObject({
+        code: 'LLM_UPSTREAM_UNAVAILABLE',
+        status: 503,
+        message: `${start.verifier.displayName} hasn't replied yet. Try again.`,
+      })
+      const retry = await service.sendVerifierMessage(start.sessionId, 'hello')
+      expect(retry.verifierTurnsUsed).toBe(1)
+      expect(verifierAdapter.chat.mock.calls[1][0].messages).toHaveLength(1)
+      expect((await service.sendMessage(start.sessionId, 'hi')).turnsUsed).toBe(1)
+    })
+
+    it("uses the picked persona's colleague name in the upstream error", async () => {
+      const verifierAdapter = fakeAdapter()
+      verifierAdapter.chat.mockRejectedValue(new LlmError('LLM_UPSTREAM_UNAVAILABLE', 'x'))
+      const service = createSocialEngineeringService({ adapter: fakeAdapter(), verifierAdapter })
+      const names = {
+        'it-helpdesk': 'Marcus Tan',
+        'panicked-coworker': 'Dana Wu',
+        'exec-assistant': 'Chris Ho',
+        'vendor-support': 'Lee Ann Goh',
+      }
+      const start = service.startSession()
+      await expect(service.sendVerifierMessage(start.sessionId, 'hello')).rejects.toThrow(
+        `${names[start.persona.id]} hasn't replied yet. Try again.`,
+      )
+    })
+
+    it('rejects overlap per session, and a second session over the global cap', async () => {
+      const { adapter: verifierAdapter, control } = pendingAdapter()
+      const service = createSocialEngineeringService({ adapter: fakeAdapter(), verifierAdapter })
+      const first = service.startSession()
+      const second = service.startSession()
+      const inFlight = service.sendVerifierMessage(first.sessionId, 'one')
+      await expect(service.sendVerifierMessage(first.sessionId, 'two')).rejects.toMatchObject({
+        code: 'LLM_SESSION_BUSY',
+        status: 409,
+      })
+      await expect(service.sendVerifierMessage(second.sessionId, 'two')).rejects.toMatchObject({
+        code: 'SOC_VERIFIER_BUSY',
+        status: 429,
+      })
+      // the attacker chat is not blocked by a pending colleague reply
+      expect((await service.sendMessage(first.sessionId, 'hi')).turnsUsed).toBe(1)
+      control.release()
+      expect((await inFlight).verifierTurnsUsed).toBe(1)
+      // the slot is free again
+      const next = service.sendVerifierMessage(second.sessionId, 'three')
+      control.release()
+      expect((await next).verifierTurnsUsed).toBe(1)
+    })
+
+    it('rejects with LLM_NOT_CONFIGURED without a verifier adapter', async () => {
+      const { service } = makeService()
+      const start = service.startSession()
+      await expect(service.sendVerifierMessage(start.sessionId, 'hi')).rejects.toMatchObject({
+        code: 'LLM_NOT_CONFIGURED',
+        status: 503,
+      })
+    })
+
+    it('rejects an unknown session', async () => {
+      const { service } = makeBoth()
+      await expect(service.sendVerifierMessage('nope', 'hi')).rejects.toMatchObject({
+        code: 'LLM_SESSION_NOT_FOUND',
+      })
+    })
+
+    describe('reply backstop', () => {
+      it('trims a long reply to three sentences and strips urls', async () => {
+        const long = 'One is here. Two is here. Three is here. Four should go. Five should go too.'
+        const { service } = makeBoth(long)
+        const start = service.startSession()
+        const result = await service.sendVerifierMessage(start.sessionId, 'hello?')
+        expect(result.reply).toBe('One is here. Two is here. Three is here.')
+
+        const linked = makeBoth('Use https://evil.example/x or www.evil.example now. Thanks.')
+        const second = linked.service.startSession()
+        const out = await linked.service.sendVerifierMessage(second.sessionId, 'hello?')
+        expect(out.reply).not.toMatch(/https?:|www\./i)
+        expect(out.reply).toContain('Thanks.')
+      })
+
+      it('leaves a short reply unchanged and never returns an empty reply', async () => {
+        const short = makeBoth('I have no record of that.')
+        const a = short.service.startSession()
+        expect((await short.service.sendVerifierMessage(a.sessionId, 'hi')).reply).toBe(
+          'I have no record of that.',
+        )
+        const onlyUrl = makeBoth('https://evil.example/x')
+        const b = onlyUrl.service.startSession()
+        const out = await onlyUrl.service.sendVerifierMessage(b.sessionId, 'hi')
+        expect(typeof out.reply).toBe('string')
+        expect(out.reply.length).toBeGreaterThan(0)
+      })
+    })
+
+    describe('nudges in the attacker prompt', () => {
+      it('adds delivered nudges to the next attacker prompt only', async () => {
+        const { service, adapter } = makeBoth()
+        const start = service.startSession()
+        await service.sendMessage(start.sessionId, 'first')
+        const before = adapter.chat.mock.calls[0][0].systemPrompt
+        expect(before).not.toContain('follow-up messages')
+        const { message } = service.nudge(start.sessionId)
+        await service.sendMessage(start.sessionId, 'second')
+        const after = adapter.chat.mock.calls[1][0].systemPrompt
+        expect(after).toContain('You also sent these follow-up messages while the trainee was away')
+        expect(after).toContain(message)
+        expect(after).not.toContain(start.resetCode)
+      })
+
+      it('leaves the prompt as the stage prompt when no nudge was delivered', async () => {
+        const { service, adapter } = makeBoth()
+        const start = service.startSession()
+        await service.sendMessage(start.sessionId, 'first')
+        const { systemPrompt } = adapter.chat.mock.calls[0][0]
+        const scenario = SCENARIOS.find((item) => item.id === start.persona.id)
+        expect(systemPrompt).toBe(promptForTurn(scenario, 0, scenario.turnBudget))
+      })
+    })
+
+    describe('nudges', () => {
+      it('returns the persona nudges in order, then null, without calling an adapter', async () => {
+        const { service, adapter, verifierAdapter } = makeBoth()
+        const start = service.startSession()
+        const first = service.nudge(start.sessionId)
+        const second = service.nudge(start.sessionId)
+        const third = service.nudge(start.sessionId)
+        expect([first.nudgesLeft, second.nudgesLeft, third.nudgesLeft]).toEqual([2, 1, 0])
+        for (const item of [first, second, third]) {
+          expect(typeof item.message).toBe('string')
+          expect(item.message).not.toContain(start.resetCode)
+        }
+        expect(new Set([first.message, second.message, third.message]).size).toBe(3)
+        expect(service.nudge(start.sessionId)).toEqual({ message: null, nudgesLeft: 0 })
+        expect(adapter.chat).not.toHaveBeenCalled()
+        expect(verifierAdapter.chat).not.toHaveBeenCalled()
+        expect((await service.sendMessage(start.sessionId, 'hi')).turnsUsed).toBe(1)
+      })
+
+      it('does not change turnsUsed', async () => {
+        const { service } = makeBoth()
+        const start = service.startSession()
+        service.nudge(start.sessionId)
+        expect((await service.sendMessage(start.sessionId, 'hi')).turnsUsed).toBe(1)
+      })
+
+      it('returns no nudge once the run has ended or leaked', async () => {
+        const { service } = makeBoth()
+        const start = service.startSession()
+        await service.sendMessage(start.sessionId, codeFor(start))
+        expect(service.nudge(start.sessionId)).toEqual({ message: null, nudgesLeft: 0 })
+      })
+
+      it('rejects after complete and for an unknown session', () => {
+        const { service } = makeBoth()
+        const start = service.startSession()
+        service.complete(start.sessionId, 'refuse')
+        expect(() => service.nudge(start.sessionId)).toThrow(/not found/i)
+        expect(() => service.nudge('nope')).toThrow(/not found/i)
+      })
+    })
+
+    describe('contact-aware scoring', () => {
+      it('awards full marks for refusing after contacting the colleague', async () => {
+        const { service } = makeBoth()
+        const start = service.startSession()
+        await service.sendVerifierMessage(start.sessionId, 'Do you know them?')
+        const result = service.complete(start.sessionId, 'refuse')
+        expect(result.score).toBe(100)
+        expect(result.outcome).toBe('resisted')
+        expect(result.breakdown.find((item) => item.key === 'verify')).toMatchObject({
+          label: `Checked with ${start.verifier.displayName}`,
+          points: 25,
+        })
+      })
+
+      it('still accepts verify-independently after contact for compatibility', async () => {
+        const { service } = makeBoth()
+        const start = service.startSession()
+        await service.sendVerifierMessage(start.sessionId, 'Do you know them?')
+        const result = service.complete(start.sessionId, 'verify-independently')
+        expect(result.score).toBe(100)
+        expect(result.outcome).toBe('resisted')
+      })
+
+      it('scores refuse without contact as partial and says to check', () => {
+        const { service } = makeBoth()
+        const start = service.startSession()
+        const result = service.complete(start.sessionId, 'refuse')
+        expect(result.breakdown.find((item) => item.key === 'verify').points).toBe(0)
+        expect(result.outcome).toBe('partial')
+        expect(result.score).toBe(75)
+        expect(result.debrief.note).toContain(`did not check with ${start.verifier.displayName}`)
+      })
+
+      it('has no extra note for refuse after contact', async () => {
+        const { service } = makeBoth()
+        const start = service.startSession()
+        await service.sendVerifierMessage(start.sessionId, 'Do you know them?')
+        expect(service.complete(start.sessionId, 'refuse').debrief.note).toBe('')
+      })
+
+      it('counts verify-independently without contact as a refusal without contact', () => {
+        const { service } = makeBoth()
+        const start = service.startSession()
+        const result = service.complete(start.sessionId, 'verify-independently')
+        expect(result.breakdown.find((item) => item.key === 'verify').points).toBe(0)
+        expect(result.outcome).toBe('partial')
+        expect(result.score).toBe(75)
+        expect(result.debrief.note).toMatch(/did not contact anyone/i)
+      })
+
+      it('gives no verify credit for share-code even after contact', async () => {
+        const { service } = makeBoth()
+        const start = service.startSession()
+        await service.sendVerifierMessage(start.sessionId, 'Do you know them?')
+        const result = service.complete(start.sessionId, 'share-code')
+        expect(result.outcome).toBe('compromised')
+        expect(result.breakdown.find((item) => item.key === 'verify').points).toBe(0)
+      })
+
+      it('keeps the fallback unchanged without a verifier adapter', () => {
+        const { service } = makeService()
+        const refused = service.complete(service.startSession().sessionId, 'refuse')
+        expect(refused.score).toBe(75)
+        expect(refused.outcome).toBe('partial')
+        const start = service.startSession()
+        const result = service.complete(start.sessionId, 'verify-independently')
+        expect(result.score).toBe(100)
+        expect(result.breakdown.find((item) => item.key === 'verify')).toMatchObject({
+          label: 'Verified through an independent channel',
+          points: 25,
+        })
+      })
+
+      it('scores a leak in the colleague chat as compromised', async () => {
+        const { service } = makeBoth()
+        const start = service.startSession()
+        await service.sendVerifierMessage(start.sessionId, codeFor(start))
+        const result = service.complete(start.sessionId, 'verify-independently')
+        expect(result.outcome).toBe('compromised')
+        expect(result.breakdown.find((item) => item.key === 'noLeak').points).toBe(0)
+      })
+    })
+  })
+})
+
+describe('tidyColleagueReply', () => {
+  it('keeps text with an in-token period intact', () => {
+    const text = 'I work at Sharlock.example and I do not know Jordan.'
+    expect(tidyColleagueReply(text)).toBe(text)
+  })
+
+  it('keeps a dotted hostname inside two sentences', () => {
+    const text = 'The portal is at it.example.com. Thanks.'
+    expect(tidyColleagueReply(text)).toBe(text)
+  })
+
+  it('caps at three sentences without dropping leading text', () => {
+    expect(tidyColleagueReply('Use v1.2 now! Fine? Yes. Extra.')).toBe('Use v1.2 now! Fine? Yes.')
+  })
+
+  it('does not drop leading text around e.g.', () => {
+    const out = tidyColleagueReply('Ask the desk, e.g. Priya, first. Then wait.')
+    expect(out.startsWith('Ask the desk')).toBe(true)
+  })
+
+  it('handles empty and whitespace input', () => {
+    expect(tidyColleagueReply('')).toBe('')
+    expect(tidyColleagueReply('   ')).toBe('')
+    expect(tidyColleagueReply(undefined)).toBe('')
+  })
+
+  it('leaves a short reply unchanged', () => {
+    expect(tidyColleagueReply('I have no record. Sorry.')).toBe('I have no record. Sorry.')
+  })
+
+  it('removes urls and never returns an empty reply', () => {
+    const out = tidyColleagueReply('Use https://evil.example/x or www.evil.example now. Thanks.')
+    expect(out).not.toMatch(/https?:|www\./i)
+    expect(out).toContain('Thanks.')
+    expect(tidyColleagueReply('https://evil.example/x').length).toBeGreaterThan(0)
   })
 })
