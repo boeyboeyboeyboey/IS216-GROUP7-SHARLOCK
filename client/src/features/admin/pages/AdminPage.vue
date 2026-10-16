@@ -1,10 +1,13 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { avatarFor } from '../../auth/avatars.js'
 import ActivationLinkDialog from '../components/ActivationLinkDialog.vue'
 import AssignmentEditor from '../components/AssignmentEditor.vue'
 import InstitutionCohortForm from '../components/InstitutionCohortForm.vue'
 import InstructorProvisionForm from '../components/InstructorProvisionForm.vue'
+import RecoveryIssueForm from '../../recovery/components/RecoveryIssueForm.vue'
+import RecoveryLinkDialog from '../../recovery/components/RecoveryLinkDialog.vue'
+import RecoveryStudentLookup from '../../recovery/components/RecoveryStudentLookup.vue'
 import {
   AdminApiError,
   createCohort,
@@ -16,8 +19,10 @@ import {
   reissueInstructorActivation,
   updateInstructorAssignments,
 } from '../api.js'
+import { issueAdminRecovery, lookupStudent, safeRecoveryError } from '../../recovery/api.js'
 import '../admin.css'
 import '../../auth/auth.css'
+import '../../recovery/recovery.css'
 
 const PAGE_SIZE = 20
 const ASSIGNMENT_PAGE_SIZE = 50
@@ -48,6 +53,14 @@ const instructorError = ref('')
 const assignmentErrors = ref(Object.create(null))
 const notice = ref('')
 const activationLink = ref(null)
+const recoveryMatch = ref(undefined)
+const recoveryStudent = ref(null)
+const recoveryLink = ref(null)
+const recoveryLookupPending = ref(false)
+const recoveryIssuePending = ref(false)
+const recoveryLookupError = ref('')
+const recoveryIssueError = ref('')
+const recoveryIssueForm = ref(null)
 const institutionForm = ref(null)
 const instructorForm = ref(null)
 const controllers = new Map()
@@ -242,6 +255,64 @@ async function provisionInstructor(input) {
   }
 }
 
+async function lookupRecoveryStudent({ email }) {
+  controllers.get('recovery-issue')?.abort()
+  recoveryLink.value = null
+  recoveryStudent.value = null
+  recoveryIssueError.value = ''
+  recoveryLookupError.value = ''
+  recoveryMatch.value = undefined
+  const controller = startRequest('recovery-lookup')
+  recoveryLookupPending.value = true
+  try {
+    const result = await lookupStudent(email, controller.signal)
+    if (!isCurrentRequest('recovery-lookup', controller)) return
+    recoveryMatch.value = result.student
+  } catch (error) {
+    if (isCurrentRequest('recovery-lookup', controller)) {
+      recoveryLookupError.value = safeRecoveryError(error).message
+    }
+  } finally {
+    if (controllers.get('recovery-lookup') === controller) recoveryLookupPending.value = false
+  }
+}
+
+function selectRecoveryStudent(student) {
+  controllers.get('recovery-issue')?.abort()
+  recoveryLink.value = null
+  recoveryStudent.value = student
+  recoveryIssueError.value = ''
+}
+
+async function issueRecoveryLink({ identityVerified }) {
+  if (!identityVerified || !recoveryStudent.value || recoveryIssuePending.value) return
+  const selectedId = recoveryStudent.value.id
+  recoveryIssueError.value = ''
+  const controller = startRequest('recovery-issue')
+  recoveryIssuePending.value = true
+  try {
+    const link = await issueAdminRecovery(selectedId, controller.signal)
+    if (!isCurrentRequest('recovery-issue', controller) || recoveryStudent.value?.id !== selectedId)
+      return
+    recoveryIssuePending.value = false
+    await nextTick()
+    if (!isCurrentRequest('recovery-issue', controller) || recoveryStudent.value?.id !== selectedId)
+      return
+    recoveryIssueForm.value?.focusSubmitButton()
+    recoveryLink.value = link
+  } catch (error) {
+    if (isCurrentRequest('recovery-issue', controller)) {
+      recoveryIssueError.value = safeRecoveryError(error).message
+    }
+  } finally {
+    if (controllers.get('recovery-issue') === controller) recoveryIssuePending.value = false
+  }
+}
+
+function closeRecoveryLink() {
+  recoveryLink.value = null
+}
+
 async function reissueActivation(instructorId) {
   if (reissuing.value[instructorId]) return
   instructorError.value = ''
@@ -310,6 +381,8 @@ onBeforeUnmount(() => {
   for (const controller of controllers.values()) controller.abort()
   controllers.clear()
   activationLink.value = null
+  recoveryLink.value = null
+  recoveryStudent.value = null
 })
 </script>
 
@@ -353,6 +426,26 @@ onBeforeUnmount(() => {
       :error="instructorError"
       @provision="provisionInstructor"
     />
+
+    <section class="recovery-panel" aria-labelledby="admin-recovery-title">
+      <p class="recovery-eyebrow">STUDENT ACCOUNT SUPPORT</p>
+      <h2 id="admin-recovery-title">Student password recovery</h2>
+      <RecoveryStudentLookup
+        :pending="recoveryLookupPending"
+        :match="recoveryMatch"
+        :error="recoveryLookupError"
+        @lookup="lookupRecoveryStudent"
+        @select="selectRecoveryStudent"
+      />
+      <RecoveryIssueForm
+        v-if="recoveryStudent"
+        ref="recoveryIssueForm"
+        :eligible-student="recoveryStudent"
+        :pending="recoveryIssuePending"
+        :error="recoveryIssueError"
+        @issue="issueRecoveryLink"
+      />
+    </section>
 
     <section class="admin-workspace__panel" aria-labelledby="instructors-title">
       <div class="admin-workspace__section-heading">
@@ -447,5 +540,6 @@ onBeforeUnmount(() => {
       :link="activationLink"
       @close="activationLink = null"
     />
+    <RecoveryLinkDialog v-if="recoveryLink" :link="recoveryLink" @close="closeRecoveryLink" />
   </div>
 </template>

@@ -15,6 +15,15 @@ const instructorAssignmentSchema = new Schema(
       immutable: true,
     },
     status: { type: String, enum: ['active', 'removed'], default: 'active', required: true },
+    recoveryRevision: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+      max: Number.MAX_SAFE_INTEGER,
+      validate: Number.isSafeInteger,
+      select: false,
+    },
   },
   {
     timestamps: true,

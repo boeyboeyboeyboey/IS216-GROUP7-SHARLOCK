@@ -85,8 +85,10 @@ async function submit() {
   try {
     validatedPassword = parseNewPasswordInput(password.value)
   } catch {
-    passwordError.value =
-      'Use 12–128 characters, including an uppercase letter and a special character.'
+    passwordError.value = [
+      'That password could not be accepted.',
+      'Use at least 12 characters, including an uppercase letter and a special character.',
+    ].join(' ')
     focusSummary()
     return
   }
@@ -256,8 +258,8 @@ onBeforeUnmount(() => {
             </button>
           </div>
           <small id="activation-password-hint">
-            Use 12–128 characters, including an uppercase letter and a special character. Spaces are
-            allowed.
+            Use at least 12 characters, including an uppercase letter and a special character.
+            Spaces are allowed.
           </small>
           <p
             v-if="passwordError"

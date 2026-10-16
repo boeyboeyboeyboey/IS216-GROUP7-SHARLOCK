@@ -6,8 +6,9 @@ defineProps({
   page: { type: Number, default: 1 },
   total: { type: Number, default: 0 },
   busy: { type: Boolean, default: false },
+  recoveryAllowed: { type: Boolean, default: false },
 })
-defineEmits(['approve', 'reject', 'remove', 'page'])
+defineEmits(['approve', 'reject', 'remove', 'page', 'recover'])
 </script>
 
 <template>
@@ -48,6 +49,16 @@ defineEmits(['approve', 'reject', 'remove', 'page'])
             @click="$emit('remove', member)"
           >
             Remove
+          </button>
+          <button
+            v-if="status === 'active' && recoveryAllowed"
+            class="btn btn-secondary"
+            type="button"
+            :disabled="pendingIds[member.id] || busy"
+            :aria-label="`Prepare password reset link for ${member.username}`"
+            @click="$emit('recover', member)"
+          >
+            Prepare password reset link
           </button>
         </div>
       </li>

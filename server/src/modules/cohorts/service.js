@@ -423,6 +423,7 @@ export function createCohortService(
             {
               $project: {
                 _id: 1,
+                'user._id': 1,
                 status: 1,
                 decision: 1,
                 revision: 1,
@@ -440,6 +441,7 @@ export function createCohortService(
     return {
       memberships: result.rows.map((row) => ({
         id: idString(row._id),
+        studentId: idString(row.user._id),
         username: row.user.username,
         email: row.user.emailNormalized,
         avatarId: row.user.avatarId,

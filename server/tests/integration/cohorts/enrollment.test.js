@@ -277,6 +277,8 @@ describe.skipIf(process.env.SHARLOCK_TEST_REPLICA_SET !== '1')('cohort enrollmen
       .expect(200)
     expect(listed.body).toMatchObject({ page: 1, total: 1 })
     expect(listed.body.memberships[0]).toMatchObject({
+      id: first.body.membership.id,
+      studentId: student.user.id,
       username: student.user.username,
       status: 'pending',
       decision: null,

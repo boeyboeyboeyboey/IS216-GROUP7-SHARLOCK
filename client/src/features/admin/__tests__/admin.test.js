@@ -27,6 +27,13 @@ const mocks = vi.hoisted(() => {
 
 vi.mock('../api.js', () => mocks)
 
+const recoveryMocks = vi.hoisted(() => ({
+  issueAdminRecovery: vi.fn(),
+  lookupStudent: vi.fn(),
+  safeRecoveryError: (error) => error,
+}))
+vi.mock('../../recovery/api.js', () => recoveryMocks)
+
 const institution = {
   id: '111111111111111111111111',
   name: 'Synthetic Academy',
@@ -76,6 +83,11 @@ describe('admin workspace', () => {
     mocks.createInstitution.mockResolvedValue({ id: institution.id })
     mocks.createCohort.mockResolvedValue({ id: cohort.id })
     mocks.createInstructor.mockResolvedValue({ instructor })
+    recoveryMocks.lookupStudent.mockResolvedValue({ student: null })
+    recoveryMocks.issueAdminRecovery.mockResolvedValue({
+      resetUrl: `http://localhost:5174/reset-password#token=${'R'.repeat(43)}`,
+      expiresAt: '2099-01-01T00:00:00.000Z',
+    })
   })
 
   it('emits only the approved institution and class fields', async () => {
@@ -193,6 +205,47 @@ describe('admin workspace', () => {
 
     expect(checkbox.element.checked).toBe(false)
     expect(mocks.listInstructors).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
+  })
+
+  it('looks up the exact student, requires attestation, and clears the issued link on close', async () => {
+    const target = {
+      id: '444444444444444444444444',
+      username: 'Casey_Student',
+      email: 'casey@example.test',
+      avatarId: 'mint',
+    }
+    recoveryMocks.lookupStudent.mockResolvedValueOnce({ student: target })
+    const wrapper = mount(AdminPage)
+    await flushPromises()
+
+    await wrapper.get('#recovery-student-email').setValue(target.email)
+    await wrapper.get('.recovery-lookup').trigger('submit')
+    await flushPromises()
+    expect(recoveryMocks.lookupStudent).toHaveBeenCalledWith(target.email, expect.any(AbortSignal))
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Select student')
+      .trigger('click')
+    const checkbox = wrapper.get('input[type="checkbox"]')
+    expect(wrapper.get('.recovery-issue-form button[type="submit"]').element.disabled).toBe(true)
+    await checkbox.setValue(true)
+    await wrapper.get('.recovery-issue-form').trigger('submit')
+    await flushPromises()
+
+    expect(recoveryMocks.issueAdminRecovery).toHaveBeenCalledWith(
+      target.id,
+      expect.any(AbortSignal),
+    )
+    expect(wrapper.get('dialog').text()).toContain('Deliver this reset link privately')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Close and clear link')
+      .trigger('click')
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('input#recovery-link-value').exists()).toBe(false)
+    expect(wrapper.find('.recovery-issue-form').exists()).toBe(true)
+    expect(wrapper.find('.recovery-issue-form input[type="checkbox"]').element.checked).toBe(true)
     wrapper.unmount()
   })
 })

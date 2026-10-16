@@ -1,11 +1,16 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import request from 'supertest'
+import { Types } from 'mongoose'
 import { createApp } from '../../../src/app.js'
 import { connectDatabase } from '../../../src/config/database.js'
 import { loadEnvironment } from '../../../src/config/env.js'
 import { userModel } from '../../../src/models/User.js'
 import { hashPassword } from '../../../src/modules/auth/password.js'
 import { initializeAuthStorage } from '../../../src/modules/auth/storage.js'
+import { AuthMongoStore } from '../../../src/modules/auth/session.js'
+import { initializeAuditStorage } from '../../../src/modules/audit/storage.js'
+import { initializeRecoveryStorage } from '../../../src/modules/recovery/storage.js'
+import { createRecoveryService } from '../../../src/modules/recovery/service.js'
 import {
   createTestApp,
   disposeTestAuthApps,
@@ -18,6 +23,7 @@ let baseAuthOptions
 let authOptions
 let app
 let currentTime
+const recoveryUserIds = new Set()
 
 const validRegistration = {
   email: 'student@example.test',
@@ -65,6 +71,8 @@ beforeAll(async () => {
   if (config.nodeEnv !== 'test') throw new Error('Auth integration tests require NODE_ENV=test.')
   database = await connectDatabase(config.databaseUri)
   baseAuthOptions = await initializeTestAuth(database, config)
+  await initializeAuditStorage(database)
+  await initializeRecoveryStorage(database)
 })
 
 beforeEach(async () => {
@@ -78,6 +86,21 @@ beforeEach(async () => {
   currentTime = Date.now()
   authOptions = { ...baseAuthOptions, now: () => currentTime }
   app = createTestApp(database, authOptions)
+})
+
+afterEach(async () => {
+  if (!database || recoveryUserIds.size === 0) return
+  const ids = [...recoveryUserIds]
+  const objectIds = ids.map((id) => new Types.ObjectId(id))
+  await Promise.all([
+    database.db.collection('password_resets').deleteMany({ userId: { $in: objectIds } }),
+    database.db.collection('auth_sessions').deleteMany({ 'session.userId': { $in: ids } }),
+    database.db
+      .collection('audit_events')
+      .deleteMany({ $or: [{ actorId: { $in: objectIds } }, { targetId: { $in: objectIds } }] }),
+    database.db.collection('users').deleteMany({ _id: { $in: objectIds } }),
+  ])
+  recoveryUserIds.clear()
 })
 
 afterAll(async () => {
@@ -457,3 +480,139 @@ describe('account and Mongo session HTTP contract', () => {
     )
   })
 })
+
+describe.skipIf(process.env.SHARLOCK_TEST_REPLICA_SET !== '1')(
+  'password reset session races',
+  () => {
+    it('rejects a login session that saves after recovery changes the password version', async () => {
+      const target = await registerTestStudent(app, {
+        email: 'recovery-login-race@example.test',
+        username: 'Recovery_Login_Race',
+      })
+      const administrator = await registerTestStudent(app, {
+        email: 'recovery-login-admin@example.test',
+        username: 'Recovery_Login_Admin',
+      })
+      recoveryUserIds.add(target.user.id)
+      recoveryUserIds.add(administrator.user.id)
+      await userModel(database).updateOne(
+        { _id: administrator.user.id },
+        { $set: { globalRoles: ['admin'] } },
+      )
+      const issued = await createRecoveryService(database, {
+        now: () => currentTime,
+        clientOrigin: authOptions.clientOrigin,
+      }).issueAdminStudentReset(
+        { id: administrator.user.id, globalRoles: ['admin'] },
+        target.user.id,
+        { identityVerified: true },
+      )
+      const resetToken = new URLSearchParams(new URL(issued.resetUrl).hash.slice(1)).get('token')
+      const loginAgent = request.agent(app)
+      const csrf = await loginAgent
+        .get('/api/auth/csrf')
+        .set('Origin', baseAuthOptions.clientOrigin)
+        .expect(200)
+      const reachedVersionCheck = deferred()
+      const releaseVersionCheck = deferred()
+      const User = userModel(database)
+      const originalFindById = User.findById.bind(User)
+      let intercepted = false
+      const findByIdSpy = vi.spyOn(User, 'findById').mockImplementation((...args) => {
+        const query = originalFindById(...args)
+        if (intercepted || args[0]?.toString() !== target.user.id) return query
+        intercepted = true
+        const execute = query.exec.bind(query)
+        query.exec = async (...executeArgs) => {
+          const currentUser = await execute(...executeArgs)
+          reachedVersionCheck.resolve()
+          await releaseVersionCheck.promise
+          return currentUser
+        }
+        return query
+      })
+      const pendingLogin = loginAgent
+        .post('/api/auth/login')
+        .set('Origin', baseAuthOptions.clientOrigin)
+        .set('X-CSRF-Token', csrf.body.csrfToken)
+        .send({ email: target.email, password: target.password })
+        .then((response) => response)
+
+      try {
+        await reachedVersionCheck.promise
+        await createRecoveryService(database, {
+          now: () => currentTime,
+          clientOrigin: authOptions.clientOrigin,
+        }).resetStudentPassword({ token: resetToken, password: 'Recovery-Race-New-Password-2026!' })
+      } finally {
+        findByIdSpy.mockRestore()
+        releaseVersionCheck.resolve()
+      }
+
+      const loginResponse = await pendingLogin
+      expect(loginResponse.status).toBe(200)
+      await loginAgent.get('/api/auth/me').expect(401)
+    })
+
+    it('does not recreate a deleted session when its delayed Mongo touch runs after redemption', async () => {
+      const target = await registerTestStudent(app, {
+        email: 'recovery-touch-race@example.test',
+        username: 'Recovery_Touch_Race',
+      })
+      const administrator = await registerTestStudent(app, {
+        email: 'recovery-touch-admin@example.test',
+        username: 'Recovery_Touch_Admin',
+      })
+      recoveryUserIds.add(target.user.id)
+      recoveryUserIds.add(administrator.user.id)
+      await userModel(database).updateOne(
+        { _id: administrator.user.id },
+        { $set: { globalRoles: ['admin'] } },
+      )
+      const recovery = createRecoveryService(database, {
+        now: () => currentTime,
+        clientOrigin: authOptions.clientOrigin,
+      })
+      const issued = await recovery.issueAdminStudentReset(
+        { id: administrator.user.id, globalRoles: ['admin'] },
+        target.user.id,
+        { identityVerified: true },
+      )
+      const token = new URLSearchParams(new URL(issued.resetUrl).hash.slice(1)).get('token')
+      const syntheticSessionId = `recovery-touch-${target.user.id}`
+      const sessionData = {
+        userId: target.user.id,
+        authVersion: 1,
+        absoluteExpiresAt: new Date(currentTime + 60000),
+      }
+      await database.db.collection('auth_sessions').insertOne({
+        _id: syntheticSessionId,
+        session: sessionData,
+        expires: new Date(currentTime + 60000),
+      })
+      const store = new AuthMongoStore(
+        {},
+        database.db.collection('auth_sessions'),
+        () => currentTime,
+      )
+      await recovery.resetStudentPassword({ token, password: 'Recovery-Touch-New-Password-2026!' })
+      expect(
+        await database.db.collection('auth_sessions').countDocuments({ _id: syntheticSessionId }),
+      ).toBe(0)
+      await new Promise((resolve, reject) => {
+        store.touch(syntheticSessionId, sessionData, (error) => (error ? reject(error) : resolve()))
+      })
+      expect(
+        await database.db.collection('auth_sessions').countDocuments({ _id: syntheticSessionId }),
+      ).toBe(0)
+    })
+  },
+)
+
+function deferred() {
+  let resolve
+  const promise = new Promise((done) => {
+    resolve = done
+  })
+  return { promise, resolve }
+}

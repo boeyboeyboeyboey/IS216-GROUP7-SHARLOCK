@@ -23,8 +23,7 @@ const SAFE_MESSAGES = Object.freeze({
 const FIELD_MESSAGES = Object.freeze({
   email: 'Enter a valid email address.',
   username: 'Use 3 to 32 letters, numbers, underscores or hyphens.',
-  password:
-    'Use 12–128 characters. New passwords need an uppercase letter and a punctuation or symbol character.',
+  password: 'That password could not be accepted. Please choose a different password.',
   passwordConfirmation: 'Passwords must match.',
   avatarId: 'Choose one of the available avatars.',
   _: 'Check the highlighted fields and try again.',
