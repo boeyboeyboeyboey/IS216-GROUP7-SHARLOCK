@@ -7,6 +7,7 @@ const readCss = (relativePath) =>
   readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), 'utf8')
 const phishCss = readCss('../phishing-post-mortem/phish.css')
 const socCss = readCss('../social-engineering-simulator/sim.css')
+const clearanceCss = readCss('../clearance-tower/clearance.css')
 
 // reads the --game-* declarations from the first rule block of a game's root class
 function readTokens(css, rootClass) {
@@ -43,6 +44,16 @@ const GAMES = [
     name: 'social engineering',
     css: socCss,
     rootClass: '.soc-game',
+    extra: [['warn', 'warn-soft']],
+    ui: [
+      ['edge', 'surface'],
+      ['edge', 'bg'],
+    ],
+  },
+  {
+    name: 'clearance tower',
+    css: clearanceCss,
+    rootClass: '.clearance-game',
     extra: [['warn', 'warn-soft']],
     ui: [
       ['edge', 'surface'],

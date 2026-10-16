@@ -25,7 +25,8 @@ export const routes = [
     ['integrity-detective', 'cli-cyber-defender'],
     ['mini-ctf', 'sql-injection-arcade'],
     ['access-control', 'social-engineering-simulator'],
-    ['red-blue', 'regex-defender'],
+    ['red-blue', 'clearance-tower'],
+    ['regex-defender', 'clearance-tower'],
   ].map(([previous, current]) => ({
     path: `/games/${previous}`,
     redirect: `/games/${current}`,
@@ -44,6 +45,11 @@ export const routes = [
     path: '/games/cli-cyber-defender',
     component: () => import('../games/cli-cyber-defender/CliDefenderGame.vue'),
     meta: { title: 'CLI Cyber Defender' },
+  },
+  {
+    path: '/games/clearance-tower',
+    component: () => import('../games/clearance-tower/ClearanceTowerGame.vue'),
+    meta: { title: 'Clearance Tower' },
   },
   {
     path: '/games/:gameId',

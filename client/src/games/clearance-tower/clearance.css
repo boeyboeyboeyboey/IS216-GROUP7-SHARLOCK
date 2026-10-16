@@ -1,0 +1,745 @@
+/* every rule is scoped to .clearance-game; it follows the hub's pixel look (Pixelify Sans,
+   square controls, dark borders, hard shadows) using the shared town tokens */
+.clearance-game {
+  --game-bg: #dfead6;
+  --game-surface: #fff8df;
+  --game-line: #b9c7b0;
+  --game-edge: #50634d;
+  --game-shadow: 4px 4px 0 var(--game-edge);
+  --game-shadow-small: 2px 2px 0 var(--game-edge);
+  --game-ink: #1b2430;
+  --game-muted: #566173;
+  --game-accent: #50634d;
+  --game-accent-soft: #e3eacb;
+  --game-bar: #a8c98a;
+  --game-bar-ink: #25331f;
+  --game-good: #1c6b47;
+  --game-good-soft: #e7f3ec;
+  --game-warn: #8a5a00;
+  --game-warn-soft: #fbf1dc;
+  --game-bad: #9a3324;
+  --game-bad-soft: #fbecea;
+  --game-font: var(--font-pixel);
+  --game-number-font: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+  max-width: 1240px;
+  margin: 0 auto;
+  font-family: var(--game-font);
+  color: var(--game-ink);
+  line-height: 1.4;
+}
+
+.clearance-game *,
+.clearance-game *::before,
+.clearance-game *::after {
+  box-sizing: border-box;
+}
+
+.clearance-game h1 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.1rem);
+  font-weight: 700;
+}
+
+.clearance-game h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.clearance-game h3 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.clearance-game [data-phase-heading]:focus {
+  outline: 3px solid var(--game-accent);
+  outline-offset: 3px;
+}
+
+.clearance-game .clear-header {
+  margin-bottom: 1rem;
+}
+
+.clearance-game .clear-back {
+  display: inline-block;
+  min-height: 44px;
+  padding: 0.6rem 0;
+  font-weight: 700;
+  color: var(--game-accent);
+}
+
+.clearance-game .clear-strap,
+.clearance-game .clear-hint,
+.clearance-game .clear-source {
+  margin: 0 0 0.75rem;
+  color: var(--game-muted);
+}
+
+.clearance-game .clear-eyebrow {
+  display: block;
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  color: var(--game-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.clearance-game .clear-number {
+  font-family: var(--game-number-font);
+}
+
+.clearance-game .clear-card {
+  padding: 1.25rem;
+  background: var(--game-surface);
+  border: 3px solid var(--game-edge);
+  box-shadow: var(--game-shadow);
+}
+
+.clearance-game .clear-alert,
+.clearance-game .clear-warning {
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--game-bad);
+  background: var(--game-bad-soft);
+  color: var(--game-bad);
+  font-weight: 700;
+}
+
+.clearance-game .clear-warning {
+  border-color: var(--game-warn);
+  background: var(--game-warn-soft);
+  color: var(--game-warn);
+}
+
+/* buttons */
+.clearance-game .clear-button {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--game-ink);
+  background: var(--game-surface);
+  border: 2px solid var(--game-edge);
+  border-radius: 0;
+  box-shadow: var(--game-shadow-small);
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.clearance-game .clear-button:hover:not(:disabled) {
+  background: var(--game-accent-soft);
+}
+
+.clearance-game .clear-button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.clearance-game .clear-button:focus-visible,
+.clearance-game .clear-right:focus-visible,
+.clearance-game select:focus-visible,
+.clearance-game input:focus-visible {
+  outline: 3px solid var(--game-ink);
+  outline-offset: 2px;
+}
+
+.clearance-game .clear-button.is-primary {
+  background: var(--game-bar);
+  color: var(--game-bar-ink);
+}
+
+.clearance-game .clear-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.clearance-game .clear-button[aria-pressed='true'] {
+  background: var(--game-bar);
+  color: var(--game-bar-ink);
+}
+
+.clearance-game .clear-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+/* case list */
+.clearance-game .clear-level-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.clearance-game .clear-level-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  width: 100%;
+  text-align: left;
+}
+
+.clearance-game .clear-level-number,
+.clearance-game .clear-level-best {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--game-muted);
+}
+
+/* dossier */
+.clearance-game .clear-brief {
+  max-width: 70ch;
+  font-size: 1.05rem;
+}
+
+.clearance-game .clear-dossier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0 1.5rem;
+}
+
+.clearance-game .clear-dossier-grid ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.clearance-game .clear-tag {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--game-edge);
+  background: var(--game-accent-soft);
+}
+
+/* workspace: tower beside the desk on wide screens, stacked on narrow ones */
+.clearance-game .clear-workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 992px) {
+  .clearance-game .clear-workspace {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: start;
+  }
+}
+
+/* tower */
+.clearance-game .clear-tower {
+  padding: 0.75rem;
+  background: var(--game-bg);
+  border: 3px solid var(--game-edge);
+  box-shadow: var(--game-shadow);
+}
+
+.clearance-game .clear-floors {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.clearance-game .clear-floor,
+.clearance-game .clear-lobby {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: stretch;
+  padding: 0.5rem 0;
+  border-bottom: 3px solid var(--game-edge);
+}
+
+.clearance-game .clear-floor-name {
+  align-self: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--game-muted);
+}
+
+.clearance-game .clear-rooms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+
+.clearance-game .clear-room {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-height: 4.5rem;
+  padding: 0.5rem;
+  background: var(--game-surface);
+  border: 2px solid var(--game-edge);
+  animation: clear-room-arrive 0.3s ease-out;
+}
+
+.clearance-game .clear-room.is-empty {
+  justify-content: center;
+  color: var(--game-muted);
+  background: transparent;
+  border-style: dashed;
+  animation: none;
+}
+
+.clearance-game .clear-room.is-visited {
+  background: var(--game-accent-soft);
+}
+
+.clearance-game .clear-room.is-flagged {
+  border-color: var(--game-bad);
+  box-shadow: 0 0 0 2px var(--game-bad);
+}
+
+.clearance-game .clear-room-name {
+  font-weight: 700;
+}
+
+.clearance-game .clear-flag {
+  align-self: flex-start;
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--game-bad);
+}
+
+.clearance-game .clear-visitor {
+  padding: 0.25rem 0.4rem;
+  font-size: 0.85rem;
+  border: 2px solid var(--game-edge);
+  background: var(--game-surface);
+  animation: clear-visitor-walk 0.45s ease-out;
+}
+
+.clearance-game .clear-visitor.is-allowed {
+  border-color: var(--game-good);
+}
+
+.clearance-game .clear-visitor.is-denied {
+  border-color: var(--game-bad);
+}
+
+.clearance-game .clear-stamp {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0 0.3rem;
+  animation: clear-stamp 0.35s ease-out 0.3s both;
+}
+
+.clearance-game .is-allowed .clear-stamp {
+  color: var(--game-good);
+  background: var(--game-good-soft);
+}
+
+.clearance-game .is-denied .clear-stamp {
+  color: var(--game-bad);
+  background: var(--game-bad-soft);
+}
+
+.clearance-game .clear-lobby {
+  border-bottom: 0;
+}
+
+.clearance-game .clear-agents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.clearance-game .clear-agent {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  border: 2px solid transparent;
+  transition: transform 0.2s ease;
+}
+
+.clearance-game .clear-agent.is-active {
+  border-color: var(--game-edge);
+  background: var(--game-surface);
+  transform: translateY(-4px);
+}
+
+/* a square pixel figure: head and body drawn with two blocks */
+.clearance-game .clear-agent-figure {
+  width: 12px;
+  height: 18px;
+  background:
+    linear-gradient(var(--game-edge), var(--game-edge)) 3px 0 / 6px 6px no-repeat,
+    linear-gradient(var(--game-accent), var(--game-accent)) 0 8px / 12px 10px no-repeat;
+}
+
+/* matrix and tables */
+.clearance-game .clear-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.clearance-game .clear-table-wrap {
+  overflow-x: auto;
+}
+
+.clearance-game .clear-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.clearance-game .clear-table caption {
+  caption-side: top;
+  padding-bottom: 0.5rem;
+  color: var(--game-muted);
+}
+
+.clearance-game .clear-table th,
+.clearance-game .clear-table td {
+  padding: 0.4rem;
+  border: 2px solid var(--game-line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.clearance-game .clear-table td input[type='checkbox'] {
+  width: 24px;
+  height: 24px;
+}
+
+.clearance-game .clear-row-note {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--game-muted);
+}
+
+.clearance-game .clear-right {
+  min-width: 44px;
+  min-height: 44px;
+  margin: 2px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--game-muted);
+  background: var(--game-surface);
+  border: 2px dashed var(--game-line);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.clearance-game .clear-right[aria-pressed='true'] {
+  color: var(--game-bar-ink);
+  background: var(--game-bar);
+  border: 2px solid var(--game-edge);
+}
+
+.clearance-game .clear-list-view dt {
+  margin-top: 0.5rem;
+  font-weight: 700;
+}
+
+.clearance-game .clear-list-view dd {
+  margin: 0;
+}
+
+/* labels, roles and predictions */
+.clearance-game .clear-labels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.clearance-game .clear-label-card,
+.clearance-game .clear-role-card,
+.clearance-game .clear-prediction {
+  margin: 0 0 0.75rem;
+  padding: 0.75rem;
+  border: 2px solid var(--game-edge);
+  background: var(--game-bg);
+}
+
+.clearance-game legend {
+  float: none;
+  width: auto;
+  margin: 0;
+  padding: 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.clearance-game .clear-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.clearance-game .clear-field select,
+.clearance-game .clear-field input {
+  min-height: 44px;
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+  color: var(--game-ink);
+  background: var(--game-surface);
+  border: 2px solid var(--game-edge);
+  border-radius: 0;
+}
+
+.clearance-game .clear-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+.clearance-game .clear-checks-title {
+  width: 100%;
+  font-size: 0.9rem;
+  color: var(--game-muted);
+}
+
+.clearance-game .clear-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+}
+
+.clearance-game .clear-check input,
+.clearance-game .clear-verdict input {
+  width: 20px;
+  height: 20px;
+}
+
+.clearance-game .clear-role-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.clearance-game .clear-context {
+  margin: 0.25rem 0 0.5rem;
+  color: var(--game-muted);
+}
+
+.clearance-game .clear-verdicts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.clearance-game .clear-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.25rem 0.75rem;
+  border: 2px solid var(--game-edge);
+  background: var(--game-surface);
+  cursor: pointer;
+}
+
+.clearance-game .clear-verdict.is-chosen {
+  background: var(--game-bar);
+  color: var(--game-bar-ink);
+}
+
+.clearance-game .clear-tasks {
+  margin-top: 1rem;
+}
+
+.clearance-game .clear-tasks summary {
+  min-height: 44px;
+  padding: 0.6rem 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* day */
+.clearance-game .clear-day-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.clearance-game .clear-speed {
+  margin: 0;
+}
+
+.clearance-game .clear-progress {
+  margin: 0 0 0.6rem auto;
+}
+
+.clearance-game .clear-log-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.clearance-game .clear-log-entry {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--game-line);
+  border-left-width: 6px;
+  background: var(--game-bg);
+  animation: clear-log-in 0.3s ease-out;
+}
+
+.clearance-game .clear-log-entry.is-done,
+.clearance-game .clear-log-entry.is-stopped {
+  border-left-color: var(--game-good);
+}
+
+.clearance-game .clear-log-entry.is-blocked,
+.clearance-game .clear-log-entry.is-tampered {
+  border-left-color: var(--game-warn);
+}
+
+.clearance-game .clear-log-entry.is-leaked {
+  border-left-color: var(--game-bad);
+  background: var(--game-bad-soft);
+}
+
+.clearance-game .clear-outcome {
+  display: inline-block;
+  margin-right: 0.5rem;
+  padding: 0 0.35rem;
+  font-weight: 700;
+  border: 2px solid var(--game-edge);
+  background: var(--game-surface);
+}
+
+.clearance-game .clear-steps {
+  margin: 0.35rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+  color: var(--game-muted);
+}
+
+/* debrief */
+.clearance-game .clear-score {
+  margin: 0 0 0.25rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.clearance-game .clear-stars {
+  margin-left: 0.5rem;
+  color: #996b24;
+}
+
+.clearance-game .clear-meters {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.clearance-game .clear-meter {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.clearance-game .clear-meter progress {
+  width: 100%;
+  height: 16px;
+  accent-color: var(--game-accent);
+}
+
+.clearance-game .clear-review {
+  padding-left: 1.2rem;
+}
+
+.clearance-game .clear-review li {
+  margin-bottom: 0.5rem;
+}
+
+.clearance-game .clear-review .is-correct strong {
+  color: var(--game-good);
+}
+
+.clearance-game .clear-review .is-wrong strong {
+  color: var(--game-bad);
+}
+
+.clearance-game .clear-explanation {
+  display: block;
+  color: var(--game-muted);
+}
+
+/* fit the window on laptop-height screens; the desk and tower scroll inside themselves */
+@media (min-width: 992px) and (min-height: 600px) {
+  .clearance-game.is-fitted {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - var(--shell-chrome));
+    min-height: 480px;
+  }
+
+  .clearance-game.is-fitted > .clear-card,
+  .clearance-game.is-fitted .clear-workspace {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .clearance-game.is-fitted > .clear-card,
+  .clearance-game.is-fitted .clear-tower,
+  .clearance-game.is-fitted .clear-desk {
+    max-height: 100%;
+    overflow-y: auto;
+  }
+
+  .clearance-game.is-fitted .clear-workspace {
+    align-items: stretch;
+  }
+}
+
+@keyframes clear-room-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes clear-visitor-walk {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+@keyframes clear-stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.6) rotate(-8deg);
+  }
+}
+
+@keyframes clear-log-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clearance-game *,
+  .clearance-game *::before,
+  .clearance-game *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
