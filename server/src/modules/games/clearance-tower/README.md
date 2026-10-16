@@ -13,7 +13,7 @@ Learning content follows CS440 `07-access-control.pptx`: discretionary control a
 | `simulate.js` | `simulateDay()` replays the scripted day against a policy. Same input, same day.                                                                                          |
 | `scoring.js`  | Four score rows, stars, prediction review and the role-versus-matrix edit comparison.                                                                                     |
 | `policy.js`   | Constants, strict request validation (unknown fields rejected) and `ClearanceError`.                                                                                      |
-| `service.js`  | In-memory attempt store (max 500 attempts, 30-minute idle expiry) with one submission per attempt.                                                                        |
+| `service.js`  | In-memory run store (max 500 runs, 30-minute idle expiry) with one submission per run.                                                                                    |
 | `router.js`   | Three routes, courtesy request pacing, `Cache-Control: no-store` and the shared error shape.                                                                              |
 
 ## Flow
@@ -21,8 +21,8 @@ Learning content follows CS440 `07-access-control.pptx`: discretionary control a
 ```
 browser                         router.js            service.js              levels / simulate / scoring
 GET  /levels         ───────▶  listLevels()  ──▶  six level summaries
-POST /attempts       ───────▶  parseStart()  ──▶  startAttempt()  ──▶  publicLevel(level)
-POST /attempts/:id/submit ──▶  parseAttemptId() ──▶ submitAttempt() ──▶ parseSubmission → simulateDay → scoreLevel
+POST /runs           ───────▶  parseStart()  ──▶  startRun()      ──▶  publicLevel(level)
+POST /runs/:id/submit ─────▶  parseRunId()  ──▶  submitRun()     ──▶  parseSubmission → simulateDay → scoreLevel
 ```
 
 ## Rules (`rulesetVersion: 'clear-1'`)
@@ -40,25 +40,27 @@ POST /attempts/:id/submit ──▶  parseAttemptId() ──▶ submitAttempt() 
 
 All responses send `Cache-Control: no-store` and `saved: false`; nothing is written to MongoDB.
 
-| Method and path                                       | Body                                | Response                                                                                                       |
-| ----------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `GET /api/games/clearance-tower/levels`               | —                                   | `{ gameId, rulesetVersion, levels: [{ id, act, actTitle, model, title }], saved }`                             |
-| `POST /api/games/clearance-tower/attempts`            | `{ levelId }`                       | `{ gameId, rulesetVersion, attemptId, level, expiresAt, saved }`, where `level` is the public level            |
-| `POST /api/games/clearance-tower/attempts/:id/submit` | `{ actionId, policy, predictions }` | `{ score, maxScore, stars, breakdown, meters, predictionReview, events, takeaways, slides, edits?, saved, … }` |
+| Method and path                                   | Body                                | Response                                                                                                       |
+| ------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `GET /api/games/clearance-tower/levels`           | —                                   | `{ gameId, rulesetVersion, levels: [{ id, act, actTitle, model, title }], saved }`                             |
+| `POST /api/games/clearance-tower/runs`            | `{ levelId }`                       | `{ gameId, rulesetVersion, runId, level, expiresAt, saved }`, where `level` is the public level                |
+| `POST /api/games/clearance-tower/runs/:id/submit` | `{ actionId, policy, predictions }` | `{ score, maxScore, stars, breakdown, meters, predictionReview, events, takeaways, slides, edits?, saved, … }` |
 
 Policy shapes: discretionary `{ grants: [{ subject, object, rights: ['r','w'] }] }` (up to 64); Bell–LaPadula `{ objectLabels: { [fileId]: { level, categories } } }` (one per file); role-based `{ roles: [{ id, name, permissions }], assignments: [{ agent, roleIds }] }` (up to 8 roles). Predictions are `[{ id, verdict: 'allow' | 'deny' }]`, one per prompt.
 
-Error codes: `CLEAR_INVALID_BODY` (400), `CLEAR_ATTEMPT_NOT_FOUND` (404), `CLEAR_ATTEMPT_SUBMITTED`, `CLEAR_ACTION_CONFLICT` (409), `CLEAR_RATE_LIMITED` (429), `CLEAR_UNAVAILABLE` (503).
+Error codes: `CLEAR_INVALID_BODY` (400), `CLEAR_RUN_NOT_FOUND` (404), `CLEAR_RUN_SUBMITTED`, `CLEAR_ACTION_CONFLICT` (409), `CLEAR_RATE_LIMITED` (429), `CLEAR_UNAVAILABLE` (503).
 
-Repeating a submission with the same `actionId` and choices returns the recorded result. A different `actionId` on a finished attempt is refused; retrying a level starts a new attempt.
+Repeating a submission with the same `actionId` and choices returns the recorded result. A different `actionId` on a finished run is refused; retrying a level starts a new run.
 
 ## Known limits
 
-- Attempts live in process memory and vanish after 30 idle minutes or a restart.
-- Until results are saved against an account, a player could open a throwaway attempt to see a day's script before submitting a "real" one. That is acceptable for unsaved practice.
+- Runs live in process memory and vanish after 30 idle minutes or a restart.
+- Until results are saved against an account, a player could open a throwaway run to see a day's script before submitting a "real" one. That is acceptable for unsaved practice.
 
-## Moving to GAME-01
+## Moving to saved attempts (GAME-01)
 
-1. Replace the attempt routes with `POST /api/games/:gameId/attempts` (state `{ levelId, policy, predictions, submittedAt }`) and a `submit-policy` action.
+1. Replace the interim run routes with an owner-approved adapter for `POST /api/games/:gameId/attempts` (state `{ levelId, policy, predictions, submittedAt }`) and a `submit-policy` action.
 2. Reuse `parseSubmission()` for action validation and `simulateDay()` plus `scoreLevel()` unchanged for scoring.
 3. Keep `levels.js` server-side; only `publicLevel()` output belongs in a public snapshot.
+
+The interim routes are deliberately named `runs`: the shared saved-attempt router already owns `POST /api/games/:gameId/attempts`, so an interim `/attempts` path would be shadowed by it.

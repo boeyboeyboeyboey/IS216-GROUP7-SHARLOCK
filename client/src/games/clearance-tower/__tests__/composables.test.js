@@ -3,7 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
 import { useClearanceTower } from '../composables/useClearanceTower.js'
 import { STEP_MS, useDayPlayback } from '../composables/useDayPlayback.js'
-import { fetchLevels, startAttempt, submitAttempt } from '../clearanceTower.js'
+import { fetchLevels, startRun, submitRun } from '../clearanceTower.js'
 import {
   findLevel,
   publicLevel,
@@ -12,11 +12,11 @@ import {
 vi.mock('../clearanceTower.js', async (original) => ({
   ...(await original()),
   fetchLevels: vi.fn(),
-  startAttempt: vi.fn(),
-  submitAttempt: vi.fn(),
+  startRun: vi.fn(),
+  submitRun: vi.fn(),
 }))
 
-const ATTEMPT = '11111111-1111-4111-8111-111111111111'
+const RUN = '11111111-1111-4111-8111-111111111111'
 const level = publicLevel(findLevel('the-matrix'))
 
 // composables that register lifecycle hooks must run inside a component
@@ -41,7 +41,7 @@ afterEach(() => {
 describe('useClearanceTower', () => {
   beforeEach(() => {
     fetchLevels.mockResolvedValue({ levels: [{ id: 'the-matrix' }, { id: 'the-gift' }] })
-    startAttempt.mockResolvedValue({ attemptId: ATTEMPT, level })
+    startRun.mockResolvedValue({ runId: RUN, level })
   })
 
   it('opens a level with its starting policy and moves through the phases', async () => {
@@ -55,10 +55,10 @@ describe('useClearanceTower', () => {
 
     game.predictions.value = { p1: 'deny', p2: 'deny', p3: 'allow' }
     expect(game.allPredicted.value).toBe(true)
-    submitAttempt.mockResolvedValue({ levelId: 'the-matrix', score: 85, events: [] })
+    submitRun.mockResolvedValue({ levelId: 'the-matrix', score: 85, events: [] })
     await game.runDay()
-    expect(submitAttempt).toHaveBeenCalledWith(
-      ATTEMPT,
+    expect(submitRun).toHaveBeenCalledWith(
+      RUN,
       expect.objectContaining({
         policy: { grants: [] },
         predictions: [
@@ -78,7 +78,7 @@ describe('useClearanceTower', () => {
     await game.openLevel('the-matrix')
     game.policy.value = { grants: [{ subject: 'director', object: 'ops', rights: ['r'] }] }
     game.predictions.value = { p1: 'deny', p2: 'deny', p3: 'allow' }
-    submitAttempt.mockRejectedValueOnce({
+    submitRun.mockRejectedValueOnce({
       response: { data: { error: { message: 'Too many requests. Wait a moment and try again.' } } },
     })
     await game.runDay()
@@ -87,16 +87,16 @@ describe('useClearanceTower', () => {
     expect(game.policy.value.grants).toHaveLength(1)
     expect(game.pending.value).toBe(false)
 
-    submitAttempt.mockResolvedValueOnce({ levelId: 'the-matrix', score: 60, events: [] })
+    submitRun.mockResolvedValueOnce({ levelId: 'the-matrix', score: 60, events: [] })
     await game.runDay()
-    const [first, second] = submitAttempt.mock.calls.map((call) => call[1].actionId)
+    const [first, second] = submitRun.mock.calls.map((call) => call[1].actionId)
     expect(second).toBe(first)
     expect(game.error.value).toBe('')
   })
 
   it('cancels a pending request when the game unmounts', async () => {
     let signal
-    startAttempt.mockImplementation((_levelId, received) => {
+    startRun.mockImplementation((_levelId, received) => {
       signal = received
       return new Promise(() => {})
     })

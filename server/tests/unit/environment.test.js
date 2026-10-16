@@ -105,4 +105,54 @@ describe('LLM configuration', () => {
     expect(result.llmApiKey).toBe('sk-example-key')
     expect(result.llmAuthToken).toBe('gateway-token')
   })
+
+  it('defaults the colleague settings and reads them when set', () => {
+    const unset = validateEnvironment(base)
+    expect(unset.llmColleagueBaseUrl).toBeUndefined()
+    expect(unset.llmColleagueModel).toBeUndefined()
+    expect(unset.llmColleagueAuthToken).toBeUndefined()
+    expect(unset.llmColleagueTimeoutMs).toBe(60000)
+
+    const result = validateEnvironment({
+      ...base,
+      LLM_COLLEAGUE_BASE_URL: '  http://h:8080  ',
+      LLM_COLLEAGUE_MODEL: ' llama3.2:3b-fast ',
+      LLM_COLLEAGUE_AUTH_TOKEN: ' tok ',
+      LLM_COLLEAGUE_TIMEOUT_MS: '45000',
+    })
+    expect(result.llmColleagueBaseUrl).toBe('http://h:8080')
+    expect(result.llmColleagueModel).toBe('llama3.2:3b-fast')
+    expect(result.llmColleagueAuthToken).toBe('tok')
+    expect(result.llmColleagueTimeoutMs).toBe(45000)
+  })
+
+  it('requires the colleague base url and model together', () => {
+    expect(() => validateEnvironment({ ...base, LLM_COLLEAGUE_BASE_URL: 'http://h:8080' })).toThrow(
+      /must both be set or both left empty/,
+    )
+    expect(() => validateEnvironment({ ...base, LLM_COLLEAGUE_MODEL: 'm' })).toThrow(
+      /must both be set or both left empty/,
+    )
+  })
+
+  it('accepts the colleague timeout upper bound of 60000', () => {
+    const result = validateEnvironment({ ...base, LLM_COLLEAGUE_TIMEOUT_MS: '60000' })
+    expect(result.llmColleagueTimeoutMs).toBe(60000)
+  })
+
+  it.each(['500', 'abc', '60001', '90000', '400000'])('rejects colleague timeout %s', (value) => {
+    expect(() => validateEnvironment({ ...base, LLM_COLLEAGUE_TIMEOUT_MS: value })).toThrow(
+      /LLM_COLLEAGUE_TIMEOUT_MS/,
+    )
+  })
+
+  it('rejects a non-http colleague base url', () => {
+    expect(() =>
+      validateEnvironment({
+        ...base,
+        LLM_COLLEAGUE_BASE_URL: 'ftp://h:8080',
+        LLM_COLLEAGUE_MODEL: 'm',
+      }),
+    ).toThrow(/LLM_COLLEAGUE_BASE_URL/)
+  })
 })

@@ -5,15 +5,33 @@ import { createPhishingRouter } from './modules/games/phishing-post-mortem/route
 import { createSocialEngineeringRouter } from './modules/games/social-engineering-simulator/router.js'
 import { createCliDefenderRouter } from './modules/games/cli-cyber-defender/router.js'
 import { createClearanceRouter } from './modules/games/clearance-tower/router.js'
+import { createAuthRouter } from './modules/auth/router.js'
+import { createCohortRouter } from './modules/cohorts/router.js'
+import { createAuditRouter } from './modules/audit/router.js'
+import { createAdminRouter } from './modules/admin/router.js'
+import { createAttemptRouter } from './modules/attempts/router.js'
+import { createProfileRouter } from './modules/profile/router.js'
 import { createHealthRouter } from './routes/health.js'
 import { handleError, notFound } from './middleware/errors.js'
 
 export function createApp(
   database,
-  { news = {}, phishing = {}, socialEngineering = {}, cliDefender = {}, clearanceTower = {} } = {},
+  {
+    auth,
+    admin = {},
+    audit = {},
+    cohorts = {},
+    attempts = {},
+    news = {},
+    phishing = {},
+    socialEngineering = {},
+    cliDefender = {},
+    clearanceTower = {},
+  } = {},
 ) {
   const app = express()
   app.disable('x-powered-by')
+  app.set('trust proxy', false)
   app.use((_request, response, next) => {
     response.locals.requestId = randomUUID()
     response.set('X-Request-ID', response.locals.requestId)
@@ -21,6 +39,42 @@ export function createApp(
     next()
   })
   app.use(express.json({ limit: '16kb' }))
+  const authRuntime = createAuthRouter(database, auth)
+  app.use('/api/auth', authRuntime.router)
+  const adminRouter = createAdminRouter(database, {
+    ...admin,
+    now: admin.now ?? authRuntime.now,
+    clientOrigin: authRuntime.clientOrigin,
+    requireSession: authRuntime.requireSession,
+    requireMutation: authRuntime.requireMutation,
+  })
+  app.use('/api', adminRouter)
+  const cohortRouter = createCohortRouter(database, {
+    ...cohorts,
+    now: cohorts.now ?? authRuntime.now,
+    clientOrigin: authRuntime.clientOrigin,
+    requireSession: authRuntime.requireSession,
+    requireMutation: authRuntime.requireMutation,
+  })
+  app.use('/api', cohortRouter)
+  const attemptRouter = createAttemptRouter(database, {
+    ...attempts,
+    now: attempts.now ?? authRuntime.now,
+    requireSession: authRuntime.requireSession,
+    requireMutation: authRuntime.requireMutation,
+  })
+  app.use('/api', attemptRouter)
+  app.use(
+    '/api',
+    createProfileRouter(database, {
+      requireSession: authRuntime.requireSession,
+      requireMutation: authRuntime.requireMutation,
+    }),
+  )
+  app.use(
+    '/api',
+    createAuditRouter(database, { ...audit, requireSession: authRuntime.requireSession }),
+  )
   app.use('/api', createHealthRouter(database))
   app.use('/api', createNewsRouter(database, news))
   app.use('/api', createPhishingRouter(phishing))
@@ -29,5 +83,11 @@ export function createApp(
   app.use('/api', createClearanceRouter(clearanceTower))
   app.use(notFound)
   app.use(handleError)
+  app.locals.disposeAuth = () => {
+    adminRouter.dispose()
+    cohortRouter.dispose()
+    attemptRouter.dispose()
+    authRuntime.dispose()
+  }
   return app
 }

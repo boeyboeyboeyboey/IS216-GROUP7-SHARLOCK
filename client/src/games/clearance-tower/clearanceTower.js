@@ -6,12 +6,12 @@ export function fetchLevels(signal) {
   return api.get(`${BASE}/levels`, { signal }).then(({ data }) => data)
 }
 
-export function startAttempt(levelId, signal) {
-  return api.post(`${BASE}/attempts`, { levelId }, { signal }).then(({ data }) => data)
+export function startRun(levelId, signal) {
+  return api.post(`${BASE}/runs`, { levelId }, { signal }).then(({ data }) => data)
 }
 
-export function submitAttempt(attemptId, body, signal) {
-  return api.post(`${BASE}/attempts/${attemptId}/submit`, body, { signal }).then(({ data }) => data)
+export function submitRun(runId, body, signal) {
+  return api.post(`${BASE}/runs/${runId}/submit`, body, { signal }).then(({ data }) => data)
 }
 
 export function createActionId() {

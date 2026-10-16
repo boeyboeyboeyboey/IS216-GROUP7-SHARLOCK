@@ -3,8 +3,8 @@ import {
   createActionId,
   errorMessage,
   fetchLevels,
-  startAttempt,
-  submitAttempt,
+  startRun,
+  submitRun,
 } from '../clearanceTower.js'
 
 // phases: levels → brief → design → predict → day → debrief
@@ -18,7 +18,7 @@ export function useClearanceTower() {
   const bestScores = ref({})
   const pending = ref(false)
   const error = ref('')
-  let attemptId = null
+  let runId = null
   let actionId = null
   let controller = null
 
@@ -46,11 +46,11 @@ export function useClearanceTower() {
 
   async function openLevel(levelId) {
     const data = await send(
-      (signal) => startAttempt(levelId, signal),
+      (signal) => startRun(levelId, signal),
       'That case could not be opened. Try again.',
     )
     if (!data) return
-    attemptId = data.attemptId
+    runId = data.runId
     actionId = createActionId()
     level.value = data.level
     policy.value = structuredClone(data.level.startPolicy)
@@ -78,7 +78,7 @@ export function useClearanceTower() {
       })),
     }
     const data = await send(
-      (signal) => submitAttempt(attemptId, body, signal),
+      (signal) => submitRun(runId, body, signal),
       'The day could not be run. Your policy is still here, so try again.',
     )
     if (!data) return

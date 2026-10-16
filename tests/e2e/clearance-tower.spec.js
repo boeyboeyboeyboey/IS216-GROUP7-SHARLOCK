@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures/auth.js'
 import { findLevel, LEVELS } from '../../server/src/modules/games/clearance-tower/levels.js'
 import { SOLUTIONS } from '../../server/tests/unit/clearance-tower/solutions.js'
 
@@ -10,14 +10,20 @@ test.beforeEach(async ({ page }) => {
 
 const nameOf = (list, id) => list.find((item) => item.id === id).name
 
-async function openCase(page, levelId) {
+// every full page load spends one signed-in csrf bootstrap, which the server rate-limits per ip,
+// so tests load the game once and move between cases with in-app clicks
+async function pickCase(page, levelId) {
   const level = findLevel(levelId)
-  await page.goto('/games/clearance-tower')
   await page.getByRole('button', { name: new RegExp(level.title) }).click()
   await expect(page.getByRole('heading', { name: level.title, level: 2 })).toBeFocused()
   await page.getByRole('button', { name: 'Open the policy desk' }).click()
   await expect(page.getByRole('heading', { name: /^Policy desk/ })).toBeFocused()
   return level
+}
+
+async function openCase(page, levelId) {
+  await page.goto('/games/clearance-tower')
+  return pickCase(page, levelId)
 }
 
 async function setGrants(page, level, grants) {
@@ -55,7 +61,7 @@ async function runWholeDay(page) {
 
 async function openCaseFile(page) {
   await page.getByRole('button', { name: 'Open the case file' }).click()
-  await expect(page.getByRole('heading', { level: 2 })).toBeFocused()
+  await expect(page.locator('.clearance-game [data-phase-heading]')).toBeFocused()
 }
 
 const pageOverflow = (page) =>
@@ -198,12 +204,14 @@ test('keeps the day script and answers out of every response before submitting',
     )
       bodies.push(await response.text())
   })
+  await page.goto('/games/clearance-tower')
   for (const level of LEVELS) {
-    await openCase(page, level.id)
-    await page.getByRole('link', { name: 'Back to town' }).click()
+    await pickCase(page, level.id)
+    await page.getByRole('button', { name: 'Dossier' }).click()
+    await page.getByRole('button', { name: 'All cases' }).click()
   }
   const seen = bodies.join('\n')
-  expect(seen).toContain('"attemptId"')
+  expect(seen).toContain('"runId"')
   for (const level of LEVELS) {
     for (const prompt of level.predictions) expect(seen).not.toContain(prompt.explanation)
     for (const event of level.day.filter((item) => item.kind !== 'work'))
@@ -230,7 +238,7 @@ test('fits a laptop-height window without page scroll', async ({ page }, testInf
   await page.goto('/games/clearance-tower')
   await expect(page.getByRole('button', { name: /The Matrix/ })).toBeVisible()
   expect(await fits()).toBe(true)
-  await openCase(page, 'roles-not-people')
+  await pickCase(page, 'roles-not-people')
   expect(await fits()).toBe(true)
 })
 
@@ -255,7 +263,9 @@ test('keeps the shared town styles after leaving the game', async ({ page }) => 
     })
   await page.goto('/')
   const before = await sharedStyle()
-  await openCase(page, 'the-matrix')
+  await page.getByLabel('Jump to').selectOption('clearance-tower')
+  await page.getByRole('region', { name: 'Clearance Tower', exact: true }).getByRole('link').click()
+  await pickCase(page, 'the-matrix')
   await page.getByRole('link', { name: 'Back to town' }).click()
   await expect(page).toHaveURL('/')
   await expect.poll(sharedStyle).toEqual(before)

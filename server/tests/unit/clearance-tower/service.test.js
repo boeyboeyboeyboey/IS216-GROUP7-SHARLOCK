@@ -4,7 +4,7 @@ import { parseStart, parseSubmission } from '../../../src/modules/games/clearanc
 import { createClearanceService } from '../../../src/modules/games/clearance-tower/service.js'
 import { predictionList, SOLUTIONS } from './solutions.js'
 
-const ATTEMPT_ID = '00000000-0000-4000-8000-000000000001'
+const RUN_ID = '00000000-0000-4000-8000-000000000001'
 
 function submission(levelId, overrides = {}) {
   const { policy, predictions } = SOLUTIONS[levelId]
@@ -133,47 +133,45 @@ describe('clearance tower service', () => {
     return { service, clock }
   }
 
-  it('lists six levels and starts an attempt with only public data', () => {
+  it('lists six levels and starts an run with only public data', () => {
     const { service } = createService()
     expect(service.listLevels().levels).toHaveLength(6)
-    const attempt = service.startAttempt({ levelId: 'the-gift' })
-    expect(attempt).toMatchObject({ attemptId: ATTEMPT_ID, saved: false })
-    expect(attempt.level.tasks.length).toBeGreaterThan(0)
-    expect(JSON.stringify(attempt)).not.toContain('budget macro')
+    const run = service.startRun({ levelId: 'the-gift' })
+    expect(run).toMatchObject({ runId: RUN_ID, saved: false })
+    expect(run.level.tasks.length).toBeGreaterThan(0)
+    expect(JSON.stringify(run)).not.toContain('budget macro')
   })
 
   it('submits once, replays the same action and refuses a second policy', () => {
     const { service } = createService()
-    const { attemptId } = service.startAttempt({ levelId: 'the-matrix' })
-    const first = service.submitAttempt(attemptId, submission('the-matrix'))
+    const { runId } = service.startRun({ levelId: 'the-matrix' })
+    const first = service.submitRun(runId, submission('the-matrix'))
     expect(first).toMatchObject({ score: 100, stars: 3, status: 'completed', saved: false })
-    expect(service.submitAttempt(attemptId, submission('the-matrix'))).toBe(first)
+    expect(service.submitRun(runId, submission('the-matrix'))).toBe(first)
 
     const changed = submission('the-matrix', { policy: { grants: [] } })
-    expect(() => service.submitAttempt(attemptId, changed)).toThrow(/different choices/)
+    expect(() => service.submitRun(runId, changed)).toThrow(/different choices/)
     expect(() =>
-      service.submitAttempt(attemptId, submission('the-matrix', { actionId: 'unit-action-02' })),
+      service.submitRun(runId, submission('the-matrix', { actionId: 'unit-action-02' })),
     ).toThrow(/already ran its day/)
   })
 
-  it('forgets idle attempts', () => {
+  it('forgets idle runs', () => {
     const { service, clock } = createService()
-    const { attemptId } = service.startAttempt({ levelId: 'the-matrix' })
+    const { runId } = service.startRun({ levelId: 'the-matrix' })
     clock.now += 31 * 60 * 1000
-    expect(() => service.submitAttempt(attemptId, submission('the-matrix'))).toThrow(/expired/)
+    expect(() => service.submitRun(runId, submission('the-matrix'))).toThrow(/expired/)
   })
 
-  it('keeps a bounded number of attempts', () => {
+  it('keeps a bounded number of runs', () => {
     let counter = 0
     const service = createClearanceService({
-      maxAttempts: 2,
+      maxRuns: 2,
       createId: () => `00000000-0000-4000-8000-${String((counter += 1)).padStart(12, '0')}`,
     })
-    const first = service.startAttempt({ levelId: 'the-matrix' })
-    service.startAttempt({ levelId: 'the-matrix' })
-    service.startAttempt({ levelId: 'the-matrix' })
-    expect(() => service.submitAttempt(first.attemptId, submission('the-matrix'))).toThrow(
-      /expired/,
-    )
+    const first = service.startRun({ levelId: 'the-matrix' })
+    service.startRun({ levelId: 'the-matrix' })
+    service.startRun({ levelId: 'the-matrix' })
+    expect(() => service.submitRun(first.runId, submission('the-matrix'))).toThrow(/expired/)
   })
 })

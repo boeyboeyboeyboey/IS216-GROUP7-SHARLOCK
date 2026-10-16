@@ -1,21 +1,20 @@
 import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { startMongo } from './lib/mongodb.js'
+import { parseTestRunnerArguments, startMongo, startMongoReplicaSet } from './lib/mongodb.js'
 import { assertSafeTestDatabaseUri } from '../server/src/config/database-uri.js'
 
-const [suite, ...extraArgs] = process.argv.slice(2)
+const { suite, extraArgs, replicaSet } = parseTestRunnerArguments(process.argv.slice(2))
 const commands = {
   integration: ['../node_modules/vitest/vitest.mjs', 'run', '--project', 'integration'],
   e2e: ['../node_modules/@playwright/test/cli.js', 'test'],
 }
-if (!commands[suite]) throw new Error('Choose integration or e2e.')
 
 const name = `sharlock_${randomBytes(8).toString('hex')}_test`
 console.log(
-  'Starting a disposable MongoDB for tests. The first run downloads the pinned database binary.',
+  `Starting a disposable MongoDB${replicaSet ? ' replica set' : ''} for tests. The first run downloads the pinned database binary.`,
 )
-const database = await startMongo({ dbName: name })
+const database = replicaSet ? await startMongoReplicaSet() : await startMongo({ dbName: name })
 let child
 const forwardSignal = (signal) => child?.kill(signal)
 const onInterrupt = () => forwardSignal('SIGINT')
@@ -33,6 +32,7 @@ try {
       env: {
         ...process.env,
         NODE_ENV: 'test',
+        SHARLOCK_TEST_REPLICA_SET: replicaSet ? '1' : '0',
         TEST_MONGODB_URI: uri,
         SESSION_SECRET: randomBytes(32).toString('hex'),
       },

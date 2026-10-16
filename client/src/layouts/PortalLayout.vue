@@ -1,13 +1,18 @@
 <script setup>
 import { computed, ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Offcanvas from 'bootstrap/js/dist/offcanvas'
-import ProfileWidget from '../components/portal/ProfileWidget.vue'
 import Navbar from '../components/portal/Navbar.vue'
 import PixelIcon from '../components/town/PixelIcon.vue'
-import { previewProfile } from '../data/portalPreview.js'
+import AccountSummary from '../features/auth/components/AccountSummary.vue'
+import { useAuthStore } from '../features/auth/store.js'
 
 const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
+const requestErrorMessage = computed(() =>
+  typeof auth.requestError === 'string' ? auth.requestError : auth.requestError?.message || '',
+)
 const panel = ref(null)
 const navbar = ref(null)
 const isTown = computed(() => route.meta.theme === 'town')
@@ -15,17 +20,41 @@ const menuOpen = ref(false)
 let offcanvas
 let media
 let routeChanged = false
-const navigation = [
+const navigation = computed(() => [
   { to: '/', label: 'Town map', icon: 'map' },
   { to: '/profile', label: 'Detective profile', icon: 'trophy' },
   { to: '/progress', label: 'Learning progress', icon: 'chart' },
+  ...(auth.user?.globalRoles?.includes('student')
+    ? [{ to: '/classes', label: 'Your classes', icon: 'people' }]
+    : []),
   { to: '/leaderboard', label: 'Cohort leaderboard', icon: 'people' },
-]
+  ...(auth.user?.globalRoles?.some((role) => ['instructor', 'admin'].includes(role))
+    ? [{ to: '/instructor', label: 'Class enrollment', icon: 'people' }]
+    : []),
+  ...(auth.user?.globalRoles?.includes('admin')
+    ? [{ to: '/admin', label: 'Administrator workspace', icon: 'shield' }]
+    : []),
+])
 function openMenu() {
   offcanvas?.show()
 }
 function closeMenu() {
   offcanvas?.hide()
+}
+async function signOut() {
+  try {
+    await auth.logout()
+    await router.replace('/login')
+  } catch {
+    // the auth store provides safe feedback and preserves a retryable session
+  }
+}
+async function retrySession() {
+  try {
+    await auth.restoreSession({ force: true })
+  } catch {
+    // keep the store's connection feedback available for another retry
+  }
 }
 function showState() {
   menuOpen.value = true
@@ -84,7 +113,15 @@ onBeforeUnmount(() => {
     :class="{ 'is-town': isTown, 'is-utility': route.meta.theme === 'utility' }"
   >
     <a href="#main-content" class="skip-link">Skip to content</a>
-    <Navbar ref="navbar" :town="isTown" :menu-open="menuOpen" @open-menu="openMenu" />
+    <Navbar
+      ref="navbar"
+      :town="isTown"
+      :menu-open="menuOpen"
+      :user="auth.user"
+      :logout-pending="auth.logoutPending"
+      @open-menu="openMenu"
+      @sign-out="signOut"
+    />
     <aside
       id="portal-menu"
       ref="panel"
@@ -99,18 +136,14 @@ onBeforeUnmount(() => {
         </button>
       </div>
       <div class="offcanvas-body">
-        <div v-if="isTown" class="town-menu-profile">
-          <img
-            src="/images/town/capybara-mint.svg"
-            width="96"
-            height="72"
-            alt="2D pixel-art capybara avatar wearing a mint scarf"
-          />
-          <p>{{ previewProfile.username }}</p>
-          <span>{{ previewProfile.title }}</span
-          ><strong>{{ previewProfile.points }} points</strong><small>Sample profile</small>
-        </div>
-        <ProfileWidget v-else v-bind="previewProfile" />
+        <AccountSummary
+          :status="auth.status"
+          :user="auth.user"
+          :logout-pending="auth.logoutPending"
+          :error="auth.requestError"
+          @sign-out="signOut"
+          @retry-session="retrySession"
+        />
         <p class="nav-caption">YOUR EXPLORER'S KIT</p>
         <nav class="nav flex-column portal-nav" aria-label="Main navigation">
           <RouterLink v-for="item in navigation" :key="item.to" :to="item.to" class="nav-link"
@@ -129,7 +162,12 @@ onBeforeUnmount(() => {
       </div>
     </aside>
     <div class="portal-workspace">
-      <main id="main-content" class="portal-main" tabindex="-1"><RouterView /></main>
+      <main id="main-content" class="portal-main" tabindex="-1">
+        <p v-if="requestErrorMessage && !route.meta.authPage" class="preview-notice" role="alert">
+          {{ requestErrorMessage }}
+        </p>
+        <RouterView />
+      </main>
       <footer class="portal-footer">
         <span>Made for curious minds.</span><span>SHARLOCK · WAD2</span>
       </footer>

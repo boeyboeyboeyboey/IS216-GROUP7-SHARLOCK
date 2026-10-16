@@ -1,7 +1,10 @@
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
+import { useVerifierChat } from './useVerifierChat.js'
 import {
   completeSession,
   isSessionGone,
+  NUDGE_IDLE_MS,
+  requestNudge,
   sendMessage,
   simulatorErrorMessage,
   startSession,
@@ -26,9 +29,82 @@ export function useSocialEngineeringSession() {
   const sessionId = ref('')
   const resetCode = ref('')
 
+  const activeChat = ref('attacker')
+  const unread = reactive({ attacker: 0, verifier: 0 })
+
   let controller
+  let nudgeTimer = null
+  let nudgesLeft = 3
   let generation = 0
+  const completing = ref(false)
   let disposed = false
+
+  function goneState() {
+    clearNudgeTimer()
+    status.value = 'error'
+    error.value = SESSION_GONE_MESSAGE
+  }
+
+  const verifierChat = useVerifierChat({
+    sessionId,
+    getSignal: () => controller?.signal,
+    onLeaked: () => {
+      if (disposed || result.value) return
+      leaked.value = true
+      closed.value = true
+      clearNudgeTimer()
+    },
+    onSessionGone: () => {
+      if (!disposed && !result.value) goneState()
+    },
+  })
+  const verifier = verifierChat.info
+  const verifierMessages = verifierChat.messages
+  const verifierPending = verifierChat.pending
+  const verifierTurnsUsed = verifierChat.turnsUsed
+  const verifierTurnBudget = verifierChat.turnBudget
+  const verifierContacted = verifierChat.contacted
+  const verifierError = verifierChat.error
+  const verifierEnded = verifierChat.ended
+  const verifierFailedText = verifierChat.failedText
+
+  const canSendVerifier = computed(
+    () =>
+      ['chatting', 'awaiting'].includes(status.value) &&
+      !completing.value &&
+      !leaked.value &&
+      !result.value &&
+      verifierChat.canSend.value,
+  )
+
+  function clearNudgeTimer() {
+    if (nudgeTimer !== null) clearTimeout(nudgeTimer)
+    nudgeTimer = null
+  }
+
+  function scheduleNudge() {
+    clearNudgeTimer()
+    if (disposed || !verifier.value || closed.value || result.value || nudgesLeft <= 0) return
+    nudgeTimer = setTimeout(fireNudge, NUDGE_IDLE_MS)
+  }
+
+  async function fireNudge() {
+    nudgeTimer = null
+    if (disposed || pending.value || closed.value || result.value || nudgesLeft <= 0) return
+    const request = generation
+    try {
+      const data = await requestNudge(sessionId.value, controller?.signal)
+      if (disposed || request !== generation) return
+      if (closed.value || result.value) return
+      if (typeof data?.nudgesLeft === 'number') nudgesLeft = data.nudgesLeft
+      if (!data?.message) return
+      messages.value = [...messages.value, { role: 'colleague', content: data.message }]
+      if (activeChat.value !== 'attacker') unread.attacker += 1
+      scheduleNudge()
+    } catch {
+      // nudges are optional; stay quiet and let the next send restart the timer
+    }
+  }
 
   const canSend = computed(
     () => status.value === 'chatting' && !closed.value && !pending.value && !result.value,
@@ -49,6 +125,27 @@ export function useSocialEngineeringSession() {
     error.value = ''
     sessionId.value = ''
     resetCode.value = ''
+    completing.value = false
+    clearNudgeTimer()
+    nudgesLeft = 3
+    verifierChat.clear()
+    activeChat.value = 'attacker'
+    unread.attacker = 0
+    unread.verifier = 0
+  }
+
+  function selectChat(id) {
+    if (id !== 'attacker' && id !== 'verifier') return
+    activeChat.value = id
+    unread[id] = 0
+  }
+
+  async function sendVerifier(content) {
+    if (!canSendVerifier.value) return
+    const request = generation
+    const replyText = await verifierChat.send(content)
+    if (disposed || request !== generation) return
+    if (replyText && activeChat.value !== 'verifier') unread.verifier += 1
   }
 
   async function start() {
@@ -67,6 +164,7 @@ export function useSocialEngineeringSession() {
       brief.value = data.brief
       turnBudget.value = data.brief?.turnBudget ?? 0
       messages.value = [{ role: 'colleague', content: data.openingMessage }]
+      verifierChat.init(data.verifier)
       status.value = 'briefing'
     } catch (requestError) {
       if (disposed || request !== generation) return
@@ -82,7 +180,9 @@ export function useSocialEngineeringSession() {
 
   // reveal the chat once the player has read the brief
   function begin() {
-    if (status.value === 'briefing') status.value = 'chatting'
+    if (status.value !== 'briefing') return
+    status.value = 'chatting'
+    scheduleNudge()
   }
 
   async function send(content) {
@@ -90,6 +190,7 @@ export function useSocialEngineeringSession() {
     if (!text || !canSend.value) return
     const request = generation
     messages.value = [...messages.value, { role: 'you', content: text }]
+    clearNudgeTimer()
     status.value = 'awaiting'
     pending.value = true
     error.value = ''
@@ -102,15 +203,17 @@ export function useSocialEngineeringSession() {
       if (data.ended) closed.value = true
       if (data.reply)
         messages.value = [...messages.value, { role: 'colleague', content: data.reply }]
+      if (data.reply && activeChat.value !== 'attacker') unread.attacker += 1
       status.value = 'chatting'
+      scheduleNudge()
     } catch (requestError) {
       if (disposed || request !== generation) return
       if (isSessionGone(requestError)) {
-        status.value = 'error'
-        error.value = SESSION_GONE_MESSAGE
+        goneState()
         return
       }
       status.value = 'chatting'
+      scheduleNudge()
       error.value = simulatorErrorMessage(
         requestError,
         'That message could not be delivered. Try again in a moment.',
@@ -124,6 +227,8 @@ export function useSocialEngineeringSession() {
     if (!canDecide.value && !closed.value) return
     if (result.value) return
     const request = generation
+    clearNudgeTimer()
+    completing.value = true
     status.value = 'awaiting'
     pending.value = true
     error.value = ''
@@ -131,21 +236,25 @@ export function useSocialEngineeringSession() {
       const data = await completeSession(sessionId.value, decision, controller?.signal)
       if (disposed || request !== generation) return
       result.value = data
+      clearNudgeTimer()
       status.value = 'ended'
     } catch (requestError) {
       if (disposed || request !== generation) return
       if (isSessionGone(requestError)) {
-        status.value = 'error'
-        error.value = SESSION_GONE_MESSAGE
+        goneState()
         return
       }
       status.value = 'chatting'
+      scheduleNudge()
       error.value = simulatorErrorMessage(
         requestError,
         'The debrief could not be loaded. Try again in a moment.',
       )
     } finally {
-      if (!disposed && request === generation) pending.value = false
+      if (!disposed && request === generation) {
+        pending.value = false
+        completing.value = false
+      }
     }
   }
 
@@ -155,6 +264,8 @@ export function useSocialEngineeringSession() {
 
   onBeforeUnmount(() => {
     disposed = true
+    clearNudgeTimer()
+    verifierChat.clear()
     controller?.abort()
   })
 
@@ -171,6 +282,20 @@ export function useSocialEngineeringSession() {
     result,
     error,
     resetCode,
+    verifier,
+    verifierMessages,
+    verifierPending,
+    verifierTurnsUsed,
+    verifierTurnBudget,
+    verifierContacted,
+    verifierError,
+    verifierEnded,
+    verifierFailedText,
+    activeChat,
+    unread,
+    canSendVerifier,
+    selectChat,
+    sendVerifier,
     canSend,
     canDecide,
     start,

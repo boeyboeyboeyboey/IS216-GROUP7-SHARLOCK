@@ -8,7 +8,7 @@ export const MAX_GRANTS = 64
 export const MAX_ROLES = 8
 export const MAX_ROLE_NAME_LENGTH = 24
 
-const ATTEMPT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+const RUN_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const ACTION_ID = /^[A-Za-z0-9-]{8,64}$/
 const ROLE_ID = /^[a-z0-9-]{1,24}$/
 
@@ -31,18 +31,18 @@ function invalid(fieldErrors) {
   )
 }
 
-export function attemptNotFound() {
+export function runNotFound() {
   return new ClearanceError(
-    'CLEAR_ATTEMPT_NOT_FOUND',
-    'That level has expired. Open it again to start a fresh attempt.',
+    'CLEAR_RUN_NOT_FOUND',
+    'That case has expired. Open it again to start fresh.',
     404,
   )
 }
 
 export function alreadySubmitted() {
   return new ClearanceError(
-    'CLEAR_ATTEMPT_SUBMITTED',
-    'This attempt already ran its day. Retry the level to try another policy.',
+    'CLEAR_RUN_SUBMITTED',
+    'This case already ran its day. Retry it to try another policy.',
     409,
   )
 }
@@ -97,8 +97,8 @@ function throwIfInvalid(fieldErrors) {
   if (Object.keys(fieldErrors).length) throw invalid(fieldErrors)
 }
 
-export function parseAttemptId(value) {
-  if (typeof value !== 'string' || !ATTEMPT_ID.test(value)) throw attemptNotFound()
+export function parseRunId(value) {
+  if (typeof value !== 'string' || !RUN_ID.test(value)) throw runNotFound()
   return value
 }
 

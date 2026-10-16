@@ -1,14 +1,15 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import request from 'supertest'
-import { createApp } from '../../../src/app.js'
 import { connectDatabase } from '../../../src/config/database.js'
 import { loadEnvironment } from '../../../src/config/env.js'
 import { formatCommand } from '../../../src/modules/games/cli-cyber-defender/parser.js'
 import { SCENARIOS } from '../../../src/modules/games/cli-cyber-defender/scenarios.js'
 import { createCliDefenderService } from '../../../src/modules/games/cli-cyber-defender/service.js'
+import { createTestApp, disposeTestAuthApps, initializeTestAuth } from '../auth/helpers.js'
 
 let database
 let app
+let authOptions
 const clock = { now: Date.parse('2026-10-12T08:00:00Z') }
 const base = '/api/games/cli-cyber-defender/runs'
 // the news feature is stubbed so this suite exercises only the cli routes
@@ -27,12 +28,14 @@ beforeAll(async () => {
   if (config.nodeEnv !== 'test')
     throw new Error('CLI integration tests require an isolated test database')
   database = await connectDatabase(config.databaseUri)
-  app = createApp(database, {
+  authOptions = await initializeTestAuth(database, config)
+  app = createTestApp(database, authOptions, {
     news: newsStub,
     cliDefender: { service: createCliDefenderService({ now: () => clock.now }) },
   })
 })
 afterAll(async () => {
+  await disposeTestAuthApps()
   await database?.close()
 })
 
@@ -136,7 +139,7 @@ describe('cli cyber defender http api', () => {
   })
 
   it('paces a client that floods the endpoint', async () => {
-    const paced = createApp(database, {
+    const paced = createTestApp(database, authOptions, {
       news: newsStub,
       cliDefender: { limit: 2 },
     })

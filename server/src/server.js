@@ -1,13 +1,19 @@
 import { initializeNewsStorage } from './modules/news/models.js'
 import { createNewsStore } from './modules/news/store.js'
-import { createLlmAdapter } from './modules/games/social-engineering-simulator/llm/adapter.js'
+import { createGameAdapters } from './modules/games/social-engineering-simulator/llmConfig.js'
 import { createSocialEngineeringService } from './modules/games/social-engineering-simulator/service.js'
+import { initializeAuthStorage } from './modules/auth/storage.js'
+import { initializeCohortStorage } from './modules/cohorts/storage.js'
+import { initializeAuditStorage } from './modules/audit/storage.js'
+import { initializeRecoveryStorage } from './modules/recovery/storage.js'
+import { initializeAttemptStorage } from './modules/attempts/storage.js'
 import { createApp } from './app.js'
 import { loadEnvironment } from './config/env.js'
 import { connectDatabase } from './config/database.js'
 
 let database
 let server
+let app
 let newsCleanup
 let shuttingDown = false
 
@@ -17,6 +23,7 @@ async function shutdown() {
   clearInterval(newsCleanup)
   const timeout = setTimeout(() => process.exit(1), 5000).unref()
   if (server) await new Promise((resolve) => server.close(resolve))
+  await app?.locals.disposeAuth?.()
   if (database) await database.close()
   clearTimeout(timeout)
 }
@@ -35,6 +42,33 @@ try {
   } catch {
     throw new Error('News storage could not initialize. Check database access and restart.')
   }
+  try {
+    await initializeAuthStorage(database)
+  } catch {
+    throw new Error('Auth storage could not initialize. Check database access and restart.')
+  }
+  try {
+    await initializeCohortStorage(database)
+  } catch {
+    throw new Error('Class storage could not initialize. Check database access and restart.')
+  }
+  try {
+    await initializeAuditStorage(database)
+  } catch {
+    throw new Error('Audit storage could not initialize. Check database access and restart.')
+  }
+  try {
+    await initializeRecoveryStorage(database)
+  } catch {
+    throw new Error('Activation storage could not initialize. Check database access and restart.')
+  }
+  try {
+    await initializeAttemptStorage(database)
+  } catch {
+    throw new Error(
+      'Saved activity storage could not initialize. Check database access and restart.',
+    )
+  }
   const newsStore = createNewsStore(database)
   newsCleanup = setInterval(
     () =>
@@ -43,21 +77,29 @@ try {
       }),
     60000,
   ).unref()
-  // the adapter reports configured:false when no llm env is set, so the
-  // simulator endpoints fail gracefully instead of the server refusing to start
-  const llmAdapter = createLlmAdapter({
-    baseUrl: config.llmBaseUrl,
-    model: config.llmModel,
-    apiKey: config.llmApiKey,
-    authToken: config.llmAuthToken,
-  })
-  server = createApp(database, {
+  // two adapters with fixed roles. the attacker is Gemini only: it needs
+  // LLM_API_KEY, and LLM_MODEL without LLM_API_KEY leaves it unconfigured.
+  // legacy LLM_BASE_URL / LLM_AUTH_TOKEN are ignored by the game. the colleague
+  // is Ollama only and is configured only when LLM_COLLEAGUE_BASE_URL is set,
+  // otherwise the game keeps the one-click verify. an unconfigured adapter
+  // reports configured:false, so the simulator endpoints fail gracefully
+  // instead of the server refusing to start
+  const { attacker, colleague } = createGameAdapters(config)
+  app = createApp(database, {
+    auth: {
+      nodeEnv: config.nodeEnv,
+      clientOrigin: config.clientOrigin,
+      sessionSecret: config.sessionSecret,
+    },
     news: {
       apiKey: config.nodeEnv === 'test' ? undefined : config.guardianApiKey,
       store: newsStore,
     },
-    socialEngineering: { service: createSocialEngineeringService({ adapter: llmAdapter }) },
-  }).listen(config.port, '127.0.0.1')
+    socialEngineering: {
+      service: createSocialEngineeringService({ adapter: attacker, verifierAdapter: colleague }),
+    },
+  })
+  server = app.listen(config.port, '127.0.0.1')
   server.on('listening', () =>
     console.log(`SHARLOCK API ready at http://localhost:${config.port}/api/health`),
   )

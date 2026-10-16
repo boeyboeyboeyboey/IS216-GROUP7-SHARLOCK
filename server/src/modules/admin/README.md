@@ -1,0 +1,49 @@
+# Admin workspace and first-administrator setup
+
+This module contains the operator-only first-administrator tool and the authenticated institution, class and instructor workspace. It does not seed demo users or classes, promote an existing account, or create an administrator at application startup. Public registration still creates only students.
+
+## Administrator institution and class workspace
+
+The admin router provides bounded, session-protected reads and writes for institutions, cohorts and instructor accounts. Every service method reloads the administrator capability before parsing input, reading a list, or looking up a target. Mutation routes apply the shared session middleware followed by the shared origin and CSRF middleware; this module creates no second auth runtime.
+
+`GET /api/admin/institutions?page=&limit=` returns `{ institutions, page, total }` with institution ID, name, slug and status. `POST /api/admin/institutions { name, slug }` creates an active institution. Slugs are normalized lowercase and follow the institution model's bounds and character rule.
+
+`GET /api/admin/cohorts?page=&limit=&institutionId=` returns `{ cohorts, page, total }` with cohort ID, institution ID/name, name, term and status. The optional institution ID must be a single valid 24-hex string. `POST /api/admin/cohorts { institutionId, name, term }` creates an active cohort only under an active institution.
+
+`GET /api/admin/instructors?page=&limit=` returns only accounts whose global roles are exactly `instructor`, whether active or disabled. Its DTO contains ID, normalized email, username, avatar ID, account status, assignment revision and current active cohort IDs. It never returns password hashes, activation material, sessions or another roster.
+
+`POST /api/admin/instructors { email, username, avatarId }` creates a separate disabled instructor and returns `{ instructor, activationUrl, expiresAt }`. A new random password is hashed and discarded; an existing user is never promoted. The activation URL is shown once for private delivery. `POST /api/admin/instructors/:userId/activation` accepts an empty body and reissues a link only for a disabled instructor. Recovery owns token storage, expiry and superseding; this admin service only calls its activation interface.
+
+`PUT /api/admin/instructors/:userId/assignments { cohortIds, expectedRevision }` replaces active assignments for an active instructor. It accepts up to 50 unique IDs, all naming active cohorts with active institutions. The write increments the instructor's revision conditionally and updates assignment pairs in one transaction; a stale editor receives a conflict and must reload. Removed pairs remain as history. Provisioning, link issue/reissue and assignment updates are audited in the same transaction as their privileged writes.
+
+All list queries default to page 1 and 20 rows, with maximum page 10,000 and limit 50. Unknown, repeated, object-valued, operator-style and prototype-named inputs are rejected with fixed safe errors. Duplicate identity/unique-index conflicts return 409; absent or inactive parent references return 404. Transaction, audit and activation failures roll back and return fixed unavailable guidance. This workspace does not implement enrollment requests/codes, general account status controls, password recovery for existing users, application policy editing, learning dashboards or demo fixtures.
+
+## Private operator journey
+
+An actual run against a normal database needs Boey's separate approval. After that approval, use `pnpm db:bootstrap-admin` in a private local terminal. The command accepts no arguments and requires interactive input/output. It loads the existing environment precedence without printing configuration, resolves the app's non-system database name (including `sharlock_dev` when omitted from the URI), displays that name and a local/remote category when available, and asks the operator to type both the name and `CREATE FIRST ADMIN`. It refuses a connected database whose name differs from the confirmed target before any writes.
+
+Enter a new email, username, one of the six existing avatars, and matching hidden passwords. Existing registration validation applies: normalized unique email/username and an unchanged password of 12–128 well-formed Unicode code points with at least one uppercase letter and one punctuation or symbol character. Passwords are never command arguments or printed/logged; entered values remain local to the command. Cancellation, invalid details or mismatched confirmation creates no account.
+
+The command opens and closes only its own database connection and terminal input. It never stops user services, reconfigures MongoDB, modifies private environment files, drops collections, resets passwords or writes demo fixtures.
+
+## Storage and transaction flow
+
+`bootstrap.js` validates the four account fields, checks transaction support with a bounded `hello` command, hashes through the existing Argon2id adapter, and runs a bounded transaction using the current Mongoose connection. `storage.js` creates only the required User/audit/bootstrap collections and indexes after operator confirmation and topology checks. It does not synchronize/drop indexes or create sessions.
+
+Inside one transaction, the service refuses any existing administrator (including disabled accounts), matching normalized email/username or permanent bootstrap guard. It inserts the fixed `first-admin` guard in `admin_bootstrap_state`, the new active User with only the admin role, and the success audit. The unique guard serializes concurrent setup; all three writes commit together or roll back together. The guard has no expiry and remains after audit retention or account removal, so emergency restoration is separate approved maintenance.
+
+The audit has `eventType: admin.bootstrap`, `actorKind: operator`, null actor/cohort IDs, the new user's target ID, success outcome and a generated UUID correlation ID. It does not claim that the terminal operator was a signed-in user. This slice persists committed success only; refusals and errors use fixed private-terminal guidance. An audit-write failure cannot produce unaudited success.
+
+Transactions need a replica set or sharded cluster. Standalone MongoDB is refused; the existing `pnpm db:local` setup remains unchanged. Boey approved one initial administrator creation on 15 October 2026 after a read-only check confirmed replica-set support and no prior admin/guard. The run succeeded; read-only checks confirmed its active admin-only role, Argon2id hash, durable guard, one bootstrap audit and normal login. No other accounts/classes were seeded. A topology change requires its own approved plan. An unconfirmed commit/cleanup returns safe guidance to request an approved state check rather than blindly retrying.
+
+## Disposable verification
+
+The guarded test runner supports an opt-in, single-member WiredTiger replica set without a new dependency:
+
+```sh
+node scripts/run-with-test-db.mjs integration --replica-set server/tests/integration/admin/bootstrap.test.js --no-file-parallelism
+```
+
+Its default remains standalone. The runner sets the process-only `SHARLOCK_TEST_REPLICA_SET` flag from its explicit mode; transaction-only API cases are skipped in default discovery and run with `--replica-set`. The browser helper accepts the same explicit flag for the real admin/activation journey. No private environment/template change is needed. The runner keeps loopback binding, random `_test` names, URI validation, signal forwarding and cleanup limited to its own instance. Tests use synthetic accounts and owned fixture IDs; they do not create a normal-database admin. Unit checks cover topology/identity/guard and terminal/test-mode behavior. Transaction checks cover real login, normalized collisions, disabled admins, durable refusal, concurrent creation and rollback after an already-written audit fails. Workspace tests also check assignment concurrency and audit-failure rollback; activation has its own [contract](../recovery/README.md) and tests.
+
+See the [audit contract](../audit/README.md) and [shared account contract](../auth/README.md). Audit dashboards, demo fixtures, general account recovery and policy editing remain future scopes.

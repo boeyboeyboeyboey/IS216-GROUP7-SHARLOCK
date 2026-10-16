@@ -1,8 +1,11 @@
 export const GAME_ID = 'social-engineering-simulator'
-export const RULESET_VERSION = '2026-10-11'
+export const RULESET_VERSION = '2026-10-15'
 export const MAX_SCORE = 100
 export const WEIGHTS = { noLeak: 60, verify: 25, efficiency: 15 }
 export const DEFAULT_TURN_BUDGET = 8
+export const VERIFIER_TURN_BUDGET = 5
+export const MAX_NUDGES = 3
+export const VERIFIER_CONCURRENCY = 1
 export const MAX_MESSAGE_LENGTH = 1000
 export const COMPLETED_TTL_MS = 5 * 60 * 1000
 export const MAX_COMPLETED = 200
@@ -11,6 +14,7 @@ export const DECISIONS = ['refuse', 'verify-independently', 'share-code']
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const START_FIELDS = []
 const MESSAGE_FIELDS = ['sessionId', 'content']
+const NUDGE_FIELDS = ['sessionId']
 const COMPLETE_FIELDS = ['sessionId', 'decision']
 
 export class SocialEngError extends Error {
@@ -68,6 +72,16 @@ export function parseMessage(body) {
   }
   if (Object.keys(fieldErrors).length) throw invalid(fieldErrors)
   return { sessionId, content }
+}
+
+export function parseNudge(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body))
+    throw invalid({ body: 'expected an object' })
+  const fieldErrors = {}
+  rejectUnknown(body, NUDGE_FIELDS, fieldErrors)
+  const sessionId = readSessionId(body.sessionId, fieldErrors)
+  if (Object.keys(fieldErrors).length) throw invalid(fieldErrors)
+  return { sessionId }
 }
 
 export function parseComplete(body) {

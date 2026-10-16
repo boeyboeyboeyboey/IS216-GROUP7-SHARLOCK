@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import ChatThread from './components/ChatThread.vue'
+import ConversationTabs from './components/ConversationTabs.vue'
 import DecisionBar from './components/DecisionBar.vue'
 import DebriefPanel from './components/DebriefPanel.vue'
 import MessageComposer from './components/MessageComposer.vue'
@@ -22,6 +23,19 @@ const {
   result,
   error,
   resetCode,
+  verifier,
+  verifierMessages,
+  verifierPending,
+  verifierTurnsUsed,
+  verifierTurnBudget,
+  verifierError,
+  verifierEnded,
+  verifierFailedText,
+  activeChat,
+  unread,
+  canSendVerifier,
+  selectChat,
+  sendVerifier,
   canSend,
   start,
   begin,
@@ -31,6 +45,28 @@ const {
 } = useSocialEngineeringSession()
 
 const personaName = computed(() => persona.value?.displayName ?? 'Colleague')
+const verifierName = computed(() => verifier.value?.displayName ?? 'Colleague')
+const onVerifierTab = computed(() => Boolean(verifier.value) && activeChat.value === 'verifier')
+const tabs = computed(() => [
+  { id: 'attacker', label: personaName.value, unread: unread.attacker },
+  { id: 'verifier', label: verifierName.value, unread: unread.verifier },
+])
+const threadMessages = computed(() =>
+  onVerifierTab.value ? verifierMessages.value : messages.value,
+)
+const threadPending = computed(() => (onVerifierTab.value ? verifierPending.value : pending.value))
+const threadName = computed(() => (onVerifierTab.value ? verifierName.value : personaName.value))
+const showComposer = computed(() =>
+  onVerifierTab.value ? !verifierEnded.value && !leaked.value : !closed.value,
+)
+const composerDisabled = computed(() =>
+  onVerifierTab.value ? !canSendVerifier.value : !canSend.value,
+)
+
+function sendActive(text) {
+  return onVerifierTab.value ? sendVerifier(text) : send(text)
+}
+
 const inConversation = computed(() => ['chatting', 'awaiting', 'ended'].includes(status.value))
 const fitsViewport = computed(() => inConversation.value || status.value === 'briefing')
 
@@ -38,7 +74,7 @@ onMounted(start)
 </script>
 
 <template>
-  <div class="soc-game" :class="{ 'is-fitted': fitsViewport }">
+  <div class="soc-game" :class="{ 'is-fitted': fitsViewport, 'is-wide': inConversation }">
     <div class="soc-intro">
       <RouterLink to="/" class="soc-back">Back to town</RouterLink>
       <h1 tabindex="-1">LLM Social Engineering Simulator</h1>
@@ -65,39 +101,74 @@ onMounted(start)
       @start="begin"
     />
 
-    <div v-else-if="inConversation" class="soc-conversation">
-      <DebriefPanel v-if="result" :result="result" @restart="reset" />
+    <div v-else-if="inConversation" class="soc-conversation" :class="{ 'is-chat': !result }">
+      <DebriefPanel
+        v-if="result"
+        :result="result"
+        :verifier-messages="verifierMessages"
+        :verifier-name="verifierName"
+        @restart="reset"
+      />
 
       <template v-else>
         <header class="soc-convo-head">
           <p class="soc-convo-persona">{{ personaName }}</p>
-          <p v-if="resetCode" class="soc-convo-code">
-            Your reset code:
-            <code class="soc-code" data-testid="soc-reset-code-chat">{{ resetCode }}</code>
+          <p v-if="onVerifierTab" class="soc-convo-turns" aria-live="polite">
+            Checks {{ verifierTurnsUsed }} of {{ verifierTurnBudget }}
           </p>
-          <p class="soc-convo-turns" aria-live="polite">Turn {{ turnsUsed }} of {{ turnBudget }}</p>
+          <p v-else class="soc-convo-turns" aria-live="polite">
+            Turn {{ turnsUsed }} of {{ turnBudget }}
+          </p>
         </header>
 
-        <ChatThread :messages="messages" :pending="pending" :persona-name="personaName" />
+        <div class="soc-convo-body">
+          <DecisionBar
+            :disabled="pending || Boolean(result)"
+            :hide-verify="Boolean(verifier)"
+            :colleague-name="verifier ? verifierName : ''"
+            :colleague-role="verifier ? verifier.role : ''"
+            :reset-code="resetCode"
+            @decide="complete"
+          />
 
-        <p v-if="leaked" class="soc-alert soc-alert-bad" role="alert">
-          You revealed the reset code. In a real incident this would compromise the account. Choose
-          how to end below.
-        </p>
-        <p v-else-if="closed" class="soc-alert" role="status">
-          The conversation has reached its limit. Make your final decision below.
-        </p>
+          <div class="soc-convo-main">
+            <ConversationTabs
+              v-if="verifier"
+              :tabs="tabs"
+              :active-id="activeChat"
+              @select="selectChat"
+            />
 
-        <MessageComposer
-          v-if="!closed"
-          :disabled="!canSend"
-          :max-length="MAX_MESSAGE_LENGTH"
-          @send="send"
-        />
+            <ChatThread
+              :messages="threadMessages"
+              :pending="threadPending"
+              :persona-name="threadName"
+            />
 
-        <p v-if="error" class="soc-alert soc-alert-bad" role="alert">{{ error }}</p>
+            <p v-if="leaked" class="soc-alert soc-alert-bad" role="alert">
+              You revealed the reset code. In a real incident this would compromise the account.
+              Choose how to end on the left.
+            </p>
+            <p v-else-if="closed && !onVerifierTab" class="soc-alert" role="status">
+              The conversation has reached its limit. Make your final decision on the left.
+            </p>
 
-        <DecisionBar :disabled="pending || Boolean(result)" @decide="complete" />
+            <MessageComposer
+              v-if="showComposer"
+              :key="onVerifierTab ? 'verifier' : 'attacker'"
+              :disabled="composerDisabled"
+              :max-length="MAX_MESSAGE_LENGTH"
+              :restore-text="onVerifierTab ? verifierFailedText : ''"
+              @send="sendActive"
+            />
+
+            <p v-if="onVerifierTab && verifierError" class="soc-alert soc-alert-bad" role="alert">
+              {{ verifierError }}
+            </p>
+
+            <p v-if="error" class="soc-alert soc-alert-bad" role="alert">{{ error }}</p>
+          </div>
+        </div>
       </template>
     </div>
   </div>

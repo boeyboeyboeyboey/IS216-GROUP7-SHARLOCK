@@ -3,6 +3,8 @@ import { computed } from 'vue'
 
 const props = defineProps({
   result: { type: Object, required: true },
+  verifierMessages: { type: Array, default: () => [] },
+  verifierName: { type: String, default: '' },
 })
 defineEmits(['restart'])
 
@@ -39,6 +41,16 @@ const outcomeLabel = computed(
       <p>{{ result.debrief.tactic }}</p>
       <p>{{ result.debrief.saferesponse }}</p>
       <p v-if="result.debrief.note" class="soc-debrief-note">{{ result.debrief.note }}</p>
+
+      <div v-if="verifierMessages.length" class="soc-check">
+        <h3>Your check</h3>
+        <ul class="soc-check-list">
+          <li v-for="(line, index) in verifierMessages" :key="index">
+            <strong>{{ line.role === 'you' ? 'You' : verifierName || 'Colleague' }}:</strong>
+            {{ line.content }}
+          </li>
+        </ul>
+      </div>
 
       <button type="button" class="soc-button soc-button-primary" @click="$emit('restart')">
         Try another colleague

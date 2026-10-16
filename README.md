@@ -81,8 +81,10 @@ Apply the same collision inspection to every custom proposal before
 accepting it. No chosen task means no implementation.
 
 5. CLARIFY AND AGREE BEFORE CODING
-After an open feature is selected, ask focused clarifying questions and
-conduct a dialogue with me. Finalize:
+For every feature or separately approved feature-change plan, include a
+focused question-and-answer checkpoint on the user journey, design,
+intended behavior and technical implementation. Build on answers I have
+already given instead of repeating questions. Finalize:
 - The learning objective, difficulty and required background knowledge.
 - Gameplay rules, scoring, feedback, replay and failure behavior.
 - Mobile, touch, keyboard and reduced-motion behavior.
@@ -93,8 +95,15 @@ conduct a dialogue with me. Finalize:
 - External services, zero-cost feasibility and test/acceptance criteria.
 
 Recommend concrete defaults, but do not treat silence as agreement.
-Present the final implementation plan and wait for my explicit approval
-before writing a single line of implementation code.
+Summarize settled decisions and open questions in the plan and task
+record. During implementation, ask follow-up questions when new ambiguity
+could materially affect experience, behavior, data/security, architecture,
+dependencies, acceptance or scope. Pause affected work for a required
+answer or approval and continue independent approved work. Clarification
+does not replace scope approval or contributor agreement. Present the
+final plan and wait for my explicit approval before implementation; do not
+repeatedly request approval for an unchanged scope. Silence is not
+agreement.
 
 6. BEGIN ONLY AFTER APPROVAL
 Recheck Git, TASKS.md and affected files immediately before editing.
@@ -139,6 +148,8 @@ For live Times stories, privately add `GUARDIAN_API_KEY` from [Guardian Open Pla
 
 Open **http://localhost:5173**. The existing workspace and scripts require pnpm; retain the single `pnpm-lock.yaml`.
 
+AUTH-01-A provides backend registration, login, session restoration and logout under `/api/auth`. AUTH-01-B connects the pixel-themed account pages: open `/register`, choose a capybara avatar, enter matching passwords and create an account; use `/login` for an existing account. COH-01 then handles class invitations or optional onboarding before town. Usernames accept 3–32 letters, numbers, underscores or hyphens. New passwords require 12–128 Unicode characters, an uppercase letter and a punctuation/symbol character; existing passwords remain usable at login. Town, games and The Sharlock Times require sign-in in the browser; About remains public, while signed-out Profile/Progress pages offer account links. Accounts, avatars and class memberships are saved; game results remain unsaved. See the [browser journey](client/src/features/auth/README.md), [auth API contract](server/src/modules/auth/README.md) and [preset assets and prompts](client/public/images/avatars/README.md). Startup creates the required collections and indexes without seeding accounts or changing existing learning records.
+
 Before the browser tests run for the first time, and again after any `@playwright/test` version change, install the matching browser:
 
 ```sh
@@ -147,7 +158,19 @@ pnpm exec playwright install chromium
 
 Skip it and **every** E2E test fails instantly with `browserType.launch: Executable doesn't exist`. That looks like a broken suite but is only a missing download - Playwright pins a browser revision per version, so an upgrade invalidates the one already on disk.
 
-**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator, CLI Cyber Defender and Clearance Tower games, plus combined About/introduction, one scored-game preview and database health check. The four games remain in Review and do not persist results. Authentication, permissions and persistent learning records remain pending. Localhost demonstration; zero project budget.
+**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator, CLI Cyber Defender and Clearance Tower games, plus combined About/introduction, one scored-game preview and database health check. The four games remain in Review and do not persist results. AUTH-01-A/B and COH-01 provide accounts, six capybara presets and approved class membership; permission integration across game APIs, server game-resource ownership and persistent learning records remain pending. Localhost demonstration; zero project budget.
+
+DATA-01-A/AUTH-02-A adds the backend class foundation: institutions, cohorts, memberships, instructor assignments, own-account read endpoints and current server context/access checks. COH-01 connects student class requests and assigned-staff approval; saved game integration remains future work. See the [class API and permission contract](server/src/modules/cohorts/README.md).
+
+LOG-01-A/SEED-01-A provides metadata-only auditing with 90-day retention and current-admin-only reads. `pnpm db:bootstrap-admin` requires an interactive terminal, typed database/action confirmation and transaction-capable MongoDB; it resolves the same database as the app, never promotes an existing account and never runs automatically. Boey separately approved and completed one normal-database administrator setup on 15 October 2026; credentials stay private. See the [audit contract](server/src/modules/audit/README.md) and [setup/transaction contract](server/src/modules/admin/README.md).
+
+ADMIN-01-A/REC-01-A replaces `/admin` with a real administrator workspace. Sign in as an administrator to create institutions/classes, provision a separate instructor, privately deliver its once-visible activation link and assign the activated instructor to active classes. The instructor opens `/activate-account#token=...`, sets a password and signs in normally; the link expires after 24 hours and works once. Existing users are never promoted. No demo fixtures, student enrollment, general recovery or learning dashboard is included. See the [admin journey](client/src/features/admin/README.md) and [activation contract](server/src/modules/recovery/README.md). These slices remain in Review.
+
+Targeted transaction and browser checks use `node scripts/run-with-test-db.mjs integration --replica-set` and `node scripts/run-with-test-db.mjs e2e --replica-set tests/e2e/admin-workspace.spec.js --workers=1`. The helper creates and removes its own disposable `_test` database; default test commands remain standalone and skip transaction-only API cases.
+
+COH-01 adds `/classes` for joining and membership status, `/join-class` for invitations and optional onboarding, and enrollment controls at `/instructor`. New and existing students see the optional step once after sign-in; Skip allows personal play. Assigned instructors and administrators issue reusable seven-day invitations, approve/decline requests and remove members. Codes appear once; replacing or revoking one blocks future requests without removing current members. Class access requires approval. Enrollment writes, including onboarding completion, require transaction-capable MongoDB and commit with metadata-only audits. The account/enrollment browser journeys run with `node scripts/run-with-test-db.mjs e2e --replica-set tests/e2e/auth.spec.js tests/e2e/cohorts.spec.js --workers=1`; standalone discovery skips those transaction-dependent journeys. See the [student/staff flow](client/src/features/cohorts/README.md). No normal-data demo records are created.
+
+GAME-01-A adds the shared server foundation for saved attempts/results: authenticated context-bound starts, owner-only reads, revision-checked actions and immutable completion, with atomic retry receipts. Active accounts retain their own completed class results after class access is removed; further class play still requires current access. Normal startup has no registered scored adapters, so the three existing games remain unsaved pending separately owner-agreed integrations. The sample adapter exists only in tests; no game UI, progress awards, leaderboard or learning dashboard is added. See the [saved-attempt contract](server/src/modules/attempts/README.md). Focused verification uses `node scripts/run-with-test-db.mjs integration server/tests/integration/attempts/attempts.test.js --no-file-parallelism`; its single-document writes do not require replica-set mode.
 
 ## 3. Tooling Recommendation
 
@@ -165,6 +188,7 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 - **[DESIGN.md](DESIGN.md):** Mandatory shared pixel design, exact tokens/components, game-local design freedom, responsiveness and building registration.
 - **[agents.md](agents.md):** AI operating instructions, conflict detection, overwrite restrictions and review workflow.
 - **[CODE_STYLE.md](CODE_STYLE.md):** Authoritative readability rules, human review checklist and small-batch maintenance workflow.
+- **[Saved-game integration guide](docs/saved-game-integration.md):** Owner-approved planning workflow for connecting one existing game to saved accounts and results; the guide does not authorize a migration.
 - **[Course reference index](TASKS.md#course-reference-index):** Supplied project brief, CS440 lecture decks and WAD2 teaching slides under `documentation/`. The 21 September additions include CS440 security basics, encryption, certificates, authentication, access control, network/software/web security and WAD2 Week 6 on Vue components, props, slots, events and local storage. Read the relevant sources before mapping learning objectives or making course/assessment claims; the index records filename/version ambiguities.
 
 **When adding UI:** follow the exact current [shared design contract](DESIGN.md#rules-for-new-pages-and-features): Pixelify Sans, cream/earthy-green tokens, square borders, hard shadows, pixel artwork/icons, the retained 3D navbar logo and existing town controls. Reuse the shared components. Admin/log content retains its functional-style exception. **Games may use their own design philosophy** inside their module; their styles must not change the shared navbar, town building/card or other pages. Task 3 hover-card refinement is skipped; Tasks 4–5 are accepted, with evidence in TASKS.md.
@@ -300,6 +324,8 @@ Prompt instructions are not an authorization boundary. Give the model no tools o
 
 **Acceptance:** Test prompt-override attempts, code disclosure, verification/report scoring, double-send, timeout/retry and malformed output. Record a separate real local-model rehearsal.
 
+**Implemented (15 October 2026, Eric, branch `g-soc-real-colleague`; unsaved, pending review):** the one-click verify choice is replaced by a second chat with a different real colleague (for example Marcus Tan in the IT Service Centre) who honestly does not know the sender, when a colleague model is configured. The game runs two LLM roles at once. The bad actor always uses Gemini (`LLM_API_KEY` + `LLM_MODEL`); the real colleague always uses Ollama (`LLM_COLLEAGUE_BASE_URL`, `LLM_COLLEAGUE_MODEL`, optional `LLM_COLLEAGUE_AUTH_TOKEN` and `LLM_COLLEAGUE_TIMEOUT_MS`), and `LLM_BASE_URL` / `LLM_AUTH_TOKEN` are no longer read by the game. Two new interim endpoints, `POST /api/games/social-engineering-simulator/verifier-message` with `{ sessionId, content }` and `POST .../nudge` with `{ sessionId }`, serve the colleague chat and up to three scripted bad-actor pressure lines. The colleague gets 5 replies per run and only one colleague reply is generated at a time across the server (`SOC_VERIFIER_LIMIT` 409, `SOC_VERIFIER_BUSY` 429); a reply may take up to 60 seconds on the server (the setting accepts 1000 to 60000 ms) and the browser waits 65 seconds, applied outside the guarded `llm/` folder. The colleague's reply is trimmed on the server to at most three sentences with any URLs removed, and the scripted pressure lines the player saw are added to the bad actor's next prompt so it remembers them. The server scores: the 25 verify points follow contact, so they are earned when the colleague actually replied at least once and the run is not compromised (refusing after checking scores 100; refusing without checking scores 75 and the debrief says to check). Changed 16 October 2026 at Eric's request: with the colleague chat on, the "Verify through a known channel" decision is removed and only "Refuse and end" and "Share the code" remain (the API still accepts `verify-independently` for compatibility; without contact it counts as a refusal). With no colleague configured the game keeps the old one-click verify. A tab strip switches between the two chats, a hint on the decision rail says to check with the colleague first, and the debrief adds a "Your check" block. A message containing the reset code ends the run in either chat. Unit tests pass with mocked adapters, but the live rehearsal against the Ollama gateway and the browser layout check at the project widths have **not** been run yet.
+
 **Current status:** Eric’s implementation is playable at `/games/social-engineering-simulator`, unsaved and pending review. It uses server-authoritative scoring and interim in-memory endpoints; AUTH-01/AUTH-02/DATA-01/GAME-01 and persistence remain pending. See TASKS.md for the implementation record, current adapter evidence and unverified provider configuration/live-model status.
 
 ### G-PHISH — The Phishing Post-Mortem
@@ -406,7 +432,7 @@ The screen never authenticates the player as a real administrator.
 - `AccessMatrix.vue({ agents, files, modelValue, view, disabled })` emits `update:modelValue`, `update:view`; `LabelBoard.vue({ files, clearances, categories, modelValue, disabled })` and `RoleDesigner.vue({ level, modelValue, disabled })` emit `update:modelValue`.
 - `PredictionPanel.vue({ prompts, modelValue, disabled })` emits `update:modelValue`; `TowerView.vue({ level, policy, currentEvent, shownEvents })`; `DayControls.vue({ playing, finished, position, total, speed })` emits `play`, `pause`, `step`, `skip`, `update:speed`; `EventLog.vue({ level, events })`; `MeterBoard.vue({ breakdown })`; `LevelDebrief.vue({ level, result, hasNext })` emits `retry`, `next`, `levels`.
 - `useClearanceTower.js` owns the attempt, policy draft, predictions, pending/error state and request cancellation; `useDayPlayback.js` owns the event index and interval timer, cleared on unmount.
-- Interim unsaved endpoints until GAME-01: `GET /api/games/clearance-tower/levels`, `POST .../attempts` with `{ levelId }`, `POST .../attempts/:attemptId/submit` with `{ actionId, policy, predictions }`. One submission per attempt; the same action ID replays its result. The day script, prediction answers and explanations stay on the server until submission.
+- Interim unsaved endpoints until an owner-approved saved-attempt adapter exists: `GET /api/games/clearance-tower/levels`, `POST .../runs` with `{ levelId }`, `POST .../runs/:runId/submit` with `{ actionId, policy, predictions }`. They use “runs”, like CLI, so they never shadow the shared `POST /api/games/:gameId/attempts` route. One submission per run; the same action ID replays its result. The day script, prediction answers and explanations stay on the server until submission.
 - Future Mongoose `state`: `{ levelId, policy, predictions, submittedAt }`.
 
 The game follows the hub's light town palette and Pixelify Sans, scoped under `.clearance-game`. Reduced motion stops autoplay and animations, so players step through the duty log.

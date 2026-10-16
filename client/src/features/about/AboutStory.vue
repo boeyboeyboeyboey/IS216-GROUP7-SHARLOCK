@@ -22,7 +22,7 @@ import SharlockTip from '../../components/portal/SharlockTip.vue'
         </p>
         <RouterLink to="/" class="btn btn-primary"
           >Explore the town <PixelIcon name="arrow" :size="20" aria-hidden="true" /></RouterLink
-        ><span class="landing-preview-note">Explore freely · no account needed</span>
+        ><span class="landing-preview-note">Sign in to explore · every activity is open</span>
       </div>
       <div class="hero-art">
         <span class="art-label art-label-top"
@@ -79,9 +79,9 @@ import SharlockTip from '../../components/portal/SharlockTip.vue'
         foundational concepts easier to apply through interactive, controlled exercises.
       </p>
       <p class="preview-notice">
-        Read The Sharlock Times and explore the town's games and previews. The playable games do not
-        save results yet. Profile points and badges are illustrative; accounts and saved learning
-        records are still being developed.
+        Create an account or sign in to read The Sharlock Times and explore the town's games and
+        previews. Your account and avatar are saved; game results, progress and achievements are not
+        saved yet.
       </p>
     </section>
     <ConnectionStatus />

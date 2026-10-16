@@ -3,6 +3,8 @@ import { api } from '../../services/api.js'
 const BASE = '/games/social-engineering-simulator'
 
 export const MAX_MESSAGE_LENGTH = 1000
+export const NUDGE_IDLE_MS = 12000
+export const VERIFIER_TIMEOUT_MS = 65000
 
 export const DECISIONS = [
   {
@@ -31,6 +33,22 @@ export function startSession(signal) {
 export function sendMessage(sessionId, content, signal) {
   return api
     .post(`${BASE}/message`, { sessionId, content }, { signal, timeout: 45000 })
+    .then(({ data }) => data)
+}
+
+export function sendVerifierMessage(sessionId, content, signal) {
+  return api
+    .post(
+      `${BASE}/verifier-message`,
+      { sessionId, content },
+      { signal, timeout: VERIFIER_TIMEOUT_MS },
+    )
+    .then(({ data }) => data)
+}
+
+export function requestNudge(sessionId, signal) {
+  return api
+    .post(`${BASE}/nudge`, { sessionId }, { signal, timeout: 15000 })
     .then(({ data }) => data)
 }
 

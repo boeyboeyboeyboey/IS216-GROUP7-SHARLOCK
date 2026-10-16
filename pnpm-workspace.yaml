@@ -3,9 +3,10 @@ packages:
   - server
 
 strictPeerDependencies: true
-onlyBuiltDependencies:
-  - esbuild
 minimumReleaseAgeExclude:
   - '@vitest/mocker@5.0.1'
   - '@vitest/spy@5.0.1'
   - vitest@5.0.1
+allowBuilds:
+  argon2: true
+  esbuild: true
