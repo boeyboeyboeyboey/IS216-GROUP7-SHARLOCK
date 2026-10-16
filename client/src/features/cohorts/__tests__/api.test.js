@@ -1,0 +1,95 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mocks = vi.hoisted(() => ({
+  api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+  requestCsrfToken: vi.fn(),
+}))
+vi.mock('../../../services/api.js', () => ({ api: mocks.api }))
+vi.mock('../../auth/api.js', () => ({ requestCsrfToken: mocks.requestCsrfToken }))
+
+import {
+  issueValidatedEnrollmentCode,
+  issueEnrollmentCode,
+  joinClass,
+  listMemberships,
+  revokeEnrollmentCode,
+  updateMembership,
+} from '../api.js'
+
+describe('cohort API', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('uses bounded own-membership paging and exact student join payloads', async () => {
+    mocks.api.get.mockResolvedValue({ data: { memberships: [], page: 1, total: 0 } })
+    mocks.api.post.mockResolvedValue({ data: { membership: { status: 'pending' } } })
+    await listMemberships()
+    await joinClass({ code: 'ABCDEFGHJKLMPQRS' })
+    await joinClass({ invitation: true })
+    expect(mocks.api.get).toHaveBeenCalledWith('/me/memberships', {
+      params: { page: 1, limit: 20 },
+      signal: undefined,
+    })
+    expect(mocks.api.post.mock.calls.map(([path, body]) => [path, body])).toEqual([
+      ['/cohorts/join-requests', { code: 'ABCDEFGHJKLMPQRS' }],
+      ['/cohorts/join-requests', { invitation: true }],
+    ])
+  })
+
+  it('gets a fresh CSRF token for each mutation and never retries a rejected action', async () => {
+    mocks.requestCsrfToken
+      .mockResolvedValueOnce('csrf-one')
+      .mockResolvedValueOnce('csrf-two')
+      .mockResolvedValueOnce('csrf-three')
+    mocks.api.patch.mockResolvedValue({ data: {} })
+    mocks.api.post.mockRejectedValueOnce({
+      response: { status: 409, data: { error: { code: 'COHORT_CONFLICT', message: 'secret' } } },
+    })
+    mocks.api.delete.mockResolvedValue({ data: {} })
+    await updateMembership('class-id', 'member-id', 'active', 7)
+    await expect(issueEnrollmentCode('class-id', 4)).rejects.toMatchObject({
+      name: 'CohortApiError',
+      message: 'This class changed while you were viewing it. Refresh and try again.',
+    })
+    await revokeEnrollmentCode('class-id', 'code-id', 8)
+    expect(mocks.requestCsrfToken).toHaveBeenCalledTimes(3)
+    expect(mocks.api.patch).toHaveBeenCalledWith(
+      '/cohorts/class-id/memberships/member-id',
+      { status: 'active', expectedRevision: 7 },
+      { signal: undefined, headers: { 'X-CSRF-Token': 'csrf-one' } },
+    )
+    expect(mocks.api.post).toHaveBeenCalledTimes(1)
+    expect(mocks.api.delete).toHaveBeenCalledWith('/cohorts/class-id/enrollment-codes/code-id', {
+      signal: undefined,
+      headers: { 'X-CSRF-Token': 'csrf-three' },
+      data: { expectedRevision: 8 },
+    })
+  })
+
+  it('accepts only a same-origin one-time class link whose fragment matches the issued code', async () => {
+    const rawCode = 'ABCDEFGHJKLMPQRS'
+    mocks.requestCsrfToken.mockResolvedValue('csrf')
+    mocks.api.post
+      .mockResolvedValueOnce({
+        data: {
+          id: 'code-id',
+          revision: 2,
+          rawCode,
+          expiresAt: '2099-01-01T00:00:00.000Z',
+          invitationUrl: `${window.location.origin}/join-class#code=${rawCode}`,
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          id: 'code-id',
+          revision: 2,
+          rawCode,
+          expiresAt: '2099-01-01T00:00:00.000Z',
+          invitationUrl: `https://elsewhere.example/join-class#code=${rawCode}`,
+        },
+      })
+    await expect(issueValidatedEnrollmentCode('class-id', 1)).resolves.toMatchObject({ rawCode })
+    await expect(issueValidatedEnrollmentCode('class-id', 1)).rejects.toMatchObject({
+      code: 'COHORT_CODE_UNAVAILABLE',
+    })
+  })
+})

@@ -1,22 +1,25 @@
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import request from 'supertest'
-import { createApp } from '../../src/app.js'
 import { connectDatabase } from '../../src/config/database.js'
 import { loadEnvironment } from '../../src/config/env.js'
+import { createTestApp, disposeTestAuthApps, initializeTestAuth } from './auth/helpers.js'
 
 let database
 let app
+let authOptions
 
 beforeAll(async () => {
   // validate the test target before opening a database connection
   const config = loadEnvironment()
   if (config.nodeEnv !== 'test') throw new Error('Integration tests require NODE_ENV=test.')
   database = await connectDatabase(config.databaseUri)
-  app = createApp(database)
+  authOptions = await initializeTestAuth(database, config)
+  app = createTestApp(database, authOptions)
 })
 
 afterAll(async () => {
+  await disposeTestAuthApps()
   await database?.close()
 })
 
@@ -42,7 +45,9 @@ describe('Express and MongoDB scaffold', () => {
   it('reports a disconnected database as unavailable', async () => {
     const connection = await connectDatabase(loadEnvironment().databaseUri)
     await connection.close()
-    const response = await request(createApp(connection)).get('/api/health').expect(503)
+    const response = await request(createTestApp(connection, authOptions))
+      .get('/api/health')
+      .expect(503)
     expect(response.body).toEqual({ status: 'unavailable', database: 'unavailable' })
   })
 

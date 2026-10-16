@@ -2,12 +2,18 @@ import { initializeNewsStorage } from './modules/news/models.js'
 import { createNewsStore } from './modules/news/store.js'
 import { createGameAdapters } from './modules/games/social-engineering-simulator/llmConfig.js'
 import { createSocialEngineeringService } from './modules/games/social-engineering-simulator/service.js'
+import { initializeAuthStorage } from './modules/auth/storage.js'
+import { initializeCohortStorage } from './modules/cohorts/storage.js'
+import { initializeAuditStorage } from './modules/audit/storage.js'
+import { initializeRecoveryStorage } from './modules/recovery/storage.js'
+import { initializeAttemptStorage } from './modules/attempts/storage.js'
 import { createApp } from './app.js'
 import { loadEnvironment } from './config/env.js'
 import { connectDatabase } from './config/database.js'
 
 let database
 let server
+let app
 let newsCleanup
 let shuttingDown = false
 
@@ -17,6 +23,7 @@ async function shutdown() {
   clearInterval(newsCleanup)
   const timeout = setTimeout(() => process.exit(1), 5000).unref()
   if (server) await new Promise((resolve) => server.close(resolve))
+  await app?.locals.disposeAuth?.()
   if (database) await database.close()
   clearTimeout(timeout)
 }
@@ -35,6 +42,33 @@ try {
   } catch {
     throw new Error('News storage could not initialize. Check database access and restart.')
   }
+  try {
+    await initializeAuthStorage(database)
+  } catch {
+    throw new Error('Auth storage could not initialize. Check database access and restart.')
+  }
+  try {
+    await initializeCohortStorage(database)
+  } catch {
+    throw new Error('Class storage could not initialize. Check database access and restart.')
+  }
+  try {
+    await initializeAuditStorage(database)
+  } catch {
+    throw new Error('Audit storage could not initialize. Check database access and restart.')
+  }
+  try {
+    await initializeRecoveryStorage(database)
+  } catch {
+    throw new Error('Activation storage could not initialize. Check database access and restart.')
+  }
+  try {
+    await initializeAttemptStorage(database)
+  } catch {
+    throw new Error(
+      'Saved activity storage could not initialize. Check database access and restart.',
+    )
+  }
   const newsStore = createNewsStore(database)
   newsCleanup = setInterval(
     () =>
@@ -51,7 +85,12 @@ try {
   // reports configured:false, so the simulator endpoints fail gracefully
   // instead of the server refusing to start
   const { attacker, colleague } = createGameAdapters(config)
-  server = createApp(database, {
+  app = createApp(database, {
+    auth: {
+      nodeEnv: config.nodeEnv,
+      clientOrigin: config.clientOrigin,
+      sessionSecret: config.sessionSecret,
+    },
     news: {
       apiKey: config.nodeEnv === 'test' ? undefined : config.guardianApiKey,
       store: newsStore,
@@ -59,7 +98,8 @@ try {
     socialEngineering: {
       service: createSocialEngineeringService({ adapter: attacker, verifierAdapter: colleague }),
     },
-  }).listen(config.port, '127.0.0.1')
+  })
+  server = app.listen(config.port, '127.0.0.1')
   server.on('listening', () =>
     console.log(`SHARLOCK API ready at http://localhost:${config.port}/api/health`),
   )
