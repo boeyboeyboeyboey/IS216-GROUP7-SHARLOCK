@@ -30,19 +30,32 @@ export function createStudentRecoveryGuards(database) {
       .session(session)
       .lean()
     if (!target) throw new StudentRecoveryError()
-    const eligibility = { issuer, target, scopeCohortId, assignment: null, membership: null }
+    const eligibility = {
+      issuer,
+      target,
+      scopeCohortId,
+      cohort: null,
+      institution: null,
+      assignment: null,
+      membership: null,
+    }
     if (!scopeCohortId) return eligibility
 
     const cohort = await Cohort.findOne({ _id: scopeCohortId, status: 'active' })
-      .select('_id institutionId')
+      .select('_id institutionId +recoveryRevision')
       .session(session)
       .lean()
     if (!cohort) throw new StudentRecoveryError()
-    const institution = await Institution.exists({
+    eligibility.cohort = cohort
+    const institution = await Institution.findOne({
       _id: cohort.institutionId,
       status: 'active',
-    }).session(session)
+    })
+      .select('_id recoveryRevision')
+      .session(session)
+      .lean()
     if (!institution) throw new StudentRecoveryError()
+    eligibility.institution = institution
     eligibility.assignment = await InstructorAssignment.findOne({
       userId: issuer._id,
       cohortId: scopeCohortId,
@@ -82,7 +95,8 @@ export function createStudentRecoveryGuards(database) {
   }
 
   async function acquireEligibility(eligibility, session) {
-    const { issuer, target, scopeCohortId, assignment, membership } = eligibility
+    const { issuer, target, scopeCohortId, cohort, institution, assignment, membership } =
+      eligibility
     await incrementGuard(
       User,
       issuer,
@@ -99,6 +113,13 @@ export function createStudentRecoveryGuards(database) {
       session,
     )
     if (scopeCohortId) {
+      await incrementGuard(Institution, institution, { status: 'active' }, session)
+      await incrementGuard(
+        Cohort,
+        cohort,
+        { status: 'active', institutionId: institution._id },
+        session,
+      )
       await incrementGuard(InstructorAssignment, assignment, { status: 'active' }, session)
       await incrementGuard(Membership, membership, { status: 'active' }, session)
     }

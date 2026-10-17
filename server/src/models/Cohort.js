@@ -11,6 +11,23 @@ const cohortSchema = new Schema(
     name: { type: String, required: true, trim: true, minlength: 1, maxlength: 100 },
     term: { type: String, required: true, trim: true, minlength: 1, maxlength: 50 },
     status: { type: String, enum: ['active', 'inactive'], default: 'active', required: true },
+    adminRevision: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+      max: Number.MAX_SAFE_INTEGER,
+      validate: Number.isSafeInteger,
+    },
+    recoveryRevision: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+      max: Number.MAX_SAFE_INTEGER,
+      validate: Number.isSafeInteger,
+      select: false,
+    },
   },
   {
     timestamps: true,

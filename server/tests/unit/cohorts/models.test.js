@@ -112,4 +112,18 @@ describe('cohort data models', () => {
     expect(() => new Cohort({ institutionId, name: 'WAD', term: '2026', extra: 'x' })).toThrow()
     database.destroy()
   })
+
+  it('separates admin edit revisions from hidden recovery guard revisions', async () => {
+    const { Institution, Cohort, database } = createModels()
+    const institution = new Institution({ name: 'School', slug: 'school' })
+    const cohort = new Cohort({ institutionId, name: 'Class', term: '2026 T2' })
+    await Promise.all([institution.validate(), cohort.validate()])
+    expect(institution.adminRevision).toBe(0)
+    expect(institution.recoveryRevision).toBe(0)
+    expect(cohort.adminRevision).toBe(0)
+    expect(cohort.recoveryRevision).toBe(0)
+    expect(Institution.schema.path('recoveryRevision').options.select).toBe(false)
+    expect(Cohort.schema.path('recoveryRevision').options.select).toBe(false)
+    database.destroy()
+  })
 })

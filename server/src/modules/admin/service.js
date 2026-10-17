@@ -7,6 +7,8 @@ import { userModel } from '../../models/User.js'
 import { createAuditService } from '../audit/service.js'
 import { hashPassword } from '../auth/password.js'
 import { assertTransactionSupport } from './bootstrap.js'
+import { enrollmentCodeModel } from '../cohorts/enrollment-code-model.js'
+import { passwordResetModel } from '../recovery/model.js'
 import {
   AdminError,
   parseAdminListQuery,
@@ -14,8 +16,11 @@ import {
   assertEmptyAdminQuery,
   assertEmptyAdminBody,
   parseAssignmentsInput,
+  parseAccountStatusInput,
   parseCohortInput,
+  parseCohortUpdateInput,
   parseInstitutionInput,
+  parseInstitutionUpdateInput,
   parseInstructorInput,
 } from './policy.js'
 import { createPermissionService } from '../../services/permissions.js'
@@ -35,12 +40,44 @@ function idString(value) {
   return value?.toString?.() ?? null
 }
 
+function revisionFilter(field, revision) {
+  return revision === 0
+    ? { $or: [{ [field]: 0 }, { [field]: { $exists: false } }] }
+    : { [field]: revision }
+}
+
+function revisionConditions(...conditions) {
+  return { $and: conditions }
+}
+
+function nextRevision(value) {
+  const revision = value ?? 0
+  if (!Number.isSafeInteger(revision) || revision < 0 || revision >= Number.MAX_SAFE_INTEGER) {
+    throw new AdminError('ADMIN_CONFLICT')
+  }
+  return revision + 1
+}
+
+async function touchRecoveryGuard(Model, record, filter, session) {
+  const revision = record.recoveryRevision ?? 0
+  const changed = await Model.updateOne(
+    revisionConditions(
+      { _id: record._id, ...filter },
+      revisionFilter('recoveryRevision', revision),
+    ),
+    { $set: { recoveryRevision: nextRevision(revision) } },
+    { session },
+  )
+  if (!changed.modifiedCount) throw new AdminError('ADMIN_CONFLICT')
+}
+
 function institutionDto(institution) {
   return {
     id: idString(institution._id),
     name: institution.name,
     slug: institution.slug,
     status: institution.status,
+    revision: institution.adminRevision ?? 0,
   }
 }
 
@@ -49,13 +86,15 @@ function cohortDto(cohort, institutions) {
     id: idString(cohort._id),
     institutionId: idString(cohort.institutionId),
     institutionName: institutions.get(idString(cohort.institutionId))?.name ?? null,
+    institutionStatus: institutions.get(idString(cohort.institutionId))?.status ?? null,
     name: cohort.name,
     term: cohort.term,
     status: cohort.status,
+    revision: cohort.adminRevision ?? 0,
   }
 }
 
-function instructorDto(instructor, cohortIds = []) {
+function instructorDto(instructor, cohortIds = [], assignedCohorts = []) {
   return {
     id: idString(instructor._id),
     email: instructor.emailNormalized,
@@ -64,6 +103,7 @@ function instructorDto(instructor, cohortIds = []) {
     accountStatus: instructor.accountStatus,
     assignmentRevision: instructor.instructorAssignmentRevision ?? 0,
     cohortIds: cohortIds.map(idString),
+    assignedCohorts,
   }
 }
 
@@ -84,6 +124,8 @@ export function createAdminService(
   const Institution = institutionModel(database)
   const Cohort = cohortModel(database)
   const InstructorAssignment = instructorAssignmentModel(database)
+  const EnrollmentCode = enrollmentCodeModel(database)
+  const PasswordReset = passwordResetModel(database)
   const permissions = createPermissionService(database)
   const auditWriter = recordAuditEvent || createAuditService(database, { now }).recordAuditEvent
   let activationService = providedActivationService
@@ -168,6 +210,108 @@ export function createAdminService(
     return { institutions: institutions.map(institutionDto), page, total }
   }
 
+  function accountDto(account) {
+    return {
+      id: idString(account._id),
+      username: account.username,
+      avatarId: account.avatarId,
+      globalRoles: [...account.globalRoles],
+      accountStatus: account.accountStatus,
+      revision: account.authVersion ?? 0,
+    }
+  }
+
+  async function listUsers(actor, query) {
+    await requireAdmin(actor, 'admin:accounts:manage')
+    const { page, limit, role, accountStatus } = parseAdminListQuery(query, { users: true })
+    const filter = {
+      ...(role
+        ? { globalRoles: [role] }
+        : { $or: [{ globalRoles: ['student'] }, { globalRoles: ['instructor'] }] }),
+      ...(accountStatus ? { accountStatus } : {}),
+    }
+    const skip = (page - 1) * limit
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select('_id username avatarId globalRoles accountStatus authVersion')
+        .sort({ _id: 1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(filter),
+    ])
+    return { users: users.map(accountDto), page, total }
+  }
+
+  async function updateUserStatus(actor, userId, input, query = {}) {
+    const currentActor = await requireAdmin(actor, 'admin:accounts:manage')
+    assertEmptyAdminQuery(query)
+    const targetId = objectId(parseAdminObjectId(userId, 'userId'))
+    const parsed = parseAccountStatusInput(input)
+    if (currentActor.id === idString(targetId)) throw new AdminError('ADMIN_FORBIDDEN')
+    return withTransaction(async (session) => {
+      await assertTransactionAdministrator(currentActor, session)
+      const target = await User.findById(targetId)
+        .select('_id username avatarId globalRoles accountStatus authVersion +recoveryRevision')
+        .session(session)
+        .lean()
+      if (!target || !['student', 'instructor'].some((role) =>
+        target.globalRoles.length === 1 && target.globalRoles[0] === role,
+      )) {
+        throw new AdminError('ADMIN_NOT_FOUND')
+      }
+      const currentAuthVersion = target.authVersion ?? 0
+      if (currentAuthVersion !== parsed.expectedRevision) {
+        throw new AdminError('ADMIN_STALE_ACCOUNT')
+      }
+      if (target.globalRoles[0] === 'instructor' &&
+        target.accountStatus === 'disabled' && parsed.accountStatus === 'active') {
+        throw new AdminError('ADMIN_INSTRUCTOR_ACTIVATION_REQUIRED')
+      }
+      if (target.accountStatus === parsed.accountStatus) throw new AdminError('ADMIN_CONFLICT')
+
+      const currentRecoveryRevision = target.recoveryRevision ?? 0
+      const updated = await User.findOneAndUpdate(
+        revisionConditions(
+          {
+            _id: targetId,
+            globalRoles: target.globalRoles,
+            accountStatus: target.accountStatus,
+          },
+          revisionFilter('authVersion', currentAuthVersion),
+          revisionFilter('recoveryRevision', currentRecoveryRevision),
+        ),
+        {
+          $set: { accountStatus: parsed.accountStatus },
+          $inc: { authVersion: 1, recoveryRevision: 1 },
+        },
+        { session, new: true, runValidators: true },
+      )
+        .select('_id username avatarId globalRoles accountStatus authVersion')
+        .lean()
+      if (!updated) throw new AdminError('ADMIN_STALE_ACCOUNT')
+
+      const occurredAt = new Date(now())
+      if (!Number.isFinite(occurredAt.getTime())) throw new AdminError('ADMIN_UNAVAILABLE')
+      await PasswordReset.updateMany(
+        { userId: targetId, consumedAt: null, revokedAt: null },
+        { $set: { revokedAt: occurredAt } },
+        { session },
+      )
+      await database.db.collection('auth_sessions').deleteMany(
+        { 'session.userId': idString(targetId) },
+        { session },
+      )
+      await recordAdminEvent(
+        currentActor,
+        parsed.accountStatus === 'disabled' ? 'admin.user.disable' : 'admin.user.enable',
+        targetId,
+        session,
+      )
+      return { user: accountDto(updated) }
+    })
+  }
+
   async function createInstitution(actor, input, query = {}) {
     const currentActor = await requireAdmin(actor, 'admin:classes:manage')
     assertEmptyAdminQuery(query)
@@ -192,7 +336,7 @@ export function createAdminService(
     const institutionIds = [...new Set(cohorts.map(({ institutionId: id }) => idString(id)))]
     const institutions = institutionIds.length
       ? await Institution.find({ _id: { $in: institutionIds } })
-          .select('_id name')
+          .select('_id name status')
           .lean()
       : []
     const institutionById = new Map(
@@ -207,17 +351,17 @@ export function createAdminService(
     const parsed = parseCohortInput(input)
     return withTransaction(async (session) => {
       await assertTransactionAdministrator(currentActor, session)
-      const institution = await Institution.findOne({
-        _id: objectId(parsed.institutionId),
-        status: 'active',
-      })
+      const institutionId = objectId(parsed.institutionId)
+      const institution = await Institution.findOne({ _id: institutionId, status: 'active' })
+        .select('_id name slug status adminRevision +recoveryRevision')
         .session(session)
         .lean()
       if (!institution) throw new AdminError('ADMIN_NOT_FOUND')
+      await touchRecoveryGuard(Institution, institution, { status: 'active' }, session)
       const [cohort] = await Cohort.create(
         [
           {
-            institutionId: objectId(parsed.institutionId),
+            institutionId,
             name: parsed.name,
             term: parsed.term,
             status: 'active',
@@ -227,6 +371,165 @@ export function createAdminService(
       )
       await recordAdminEvent(currentActor, 'admin.cohort.create', cohort._id, session)
       return cohortDto(cohort.toObject(), new Map([[idString(institution._id), institution]]))
+    })
+  }
+
+  async function updateInstitution(actor, institutionId, input, query = {}) {
+    const currentActor = await requireAdmin(actor, 'admin:classes:manage')
+    assertEmptyAdminQuery(query)
+    const id = parseAdminObjectId(institutionId)
+    const parsed = parseInstitutionUpdateInput(input)
+    return withTransaction(async (session) => {
+      await assertTransactionAdministrator(currentActor, session)
+      const current = await Institution.findOne({ _id: objectId(id) })
+        .select('_id name slug status adminRevision +recoveryRevision')
+        .session(session)
+        .lean()
+      if (!current) throw new AdminError('ADMIN_NOT_FOUND')
+      const revision = current.adminRevision ?? 0
+      if (revision !== parsed.expectedRevision) throw new AdminError('ADMIN_STALE_INSTITUTION')
+      const name = parsed.name ?? current.name
+      const status = parsed.status ?? current.status
+      if (current.name === name && current.status === status)
+        throw new AdminError('ADMIN_CONFLICT')
+      if (current.status !== status && status === 'inactive') {
+        const activeCohort = await Cohort.exists({ institutionId: current._id, status: 'active' })
+          .session(session)
+        if (activeCohort) throw new AdminError('ADMIN_CONFLICT')
+      }
+      const changesStatus = current.status !== status
+      const nextAdminRevision = nextRevision(revision)
+      const expectedRecoveryRevision = current.recoveryRevision ?? 0
+      const filter = revisionConditions(
+        { _id: current._id, status: current.status },
+        revisionFilter('adminRevision', revision),
+        ...(changesStatus
+          ? [revisionFilter('recoveryRevision', expectedRecoveryRevision)]
+          : []),
+      )
+      const update = {
+        $set: {
+          name,
+          status,
+          adminRevision: nextAdminRevision,
+          ...(changesStatus
+            ? { recoveryRevision: nextRevision(expectedRecoveryRevision) }
+            : {}),
+        },
+      }
+      const changed = await Institution.findOneAndUpdate(filter, update, {
+        new: true,
+        session,
+        runValidators: true,
+      }).lean()
+      if (!changed) throw new AdminError('ADMIN_STALE_INSTITUTION')
+      await recordAdminEvent(currentActor, 'admin.institution.update', changed._id, session)
+      return { institution: institutionDto(changed) }
+    })
+  }
+
+  async function updateCohort(actor, cohortId, input, query = {}) {
+    const currentActor = await requireAdmin(actor, 'admin:classes:manage')
+    assertEmptyAdminQuery(query)
+    const id = parseAdminObjectId(cohortId)
+    const parsed = parseCohortUpdateInput(input)
+    return withTransaction(async (session) => {
+      await assertTransactionAdministrator(currentActor, session)
+      const current = await Cohort.findOne({ _id: objectId(id) })
+        .select('_id institutionId name term status adminRevision +recoveryRevision')
+        .session(session)
+        .lean()
+      if (!current) throw new AdminError('ADMIN_NOT_FOUND')
+      const revision = current.adminRevision ?? 0
+      if (revision !== parsed.expectedRevision) throw new AdminError('ADMIN_STALE_COHORT')
+      const name = parsed.name ?? current.name
+      const term = parsed.term ?? current.term
+      const status = parsed.status ?? current.status
+      if (
+        current.name === name &&
+        current.term === term &&
+        current.status === status
+      )
+        throw new AdminError('ADMIN_CONFLICT')
+      const changesStatus = current.status !== status
+      const institutionId = current.institutionId
+      const parent = await Institution.findById(institutionId)
+        .select('_id status +recoveryRevision')
+        .session(session)
+        .lean()
+      if (!parent) throw new AdminError('ADMIN_NOT_FOUND')
+      if (changesStatus && status === 'active' && parent.status !== 'active') {
+        throw new AdminError('ADMIN_NOT_FOUND')
+      }
+      if (changesStatus && parent.status === 'active') {
+        const parentGuard = await Institution.updateOne(
+          revisionConditions(
+            { _id: institutionId, status: 'active' },
+            revisionFilter('recoveryRevision', parent.recoveryRevision ?? 0),
+          ),
+          { $set: { recoveryRevision: nextRevision(parent.recoveryRevision) } },
+          { session },
+        )
+        if (!parentGuard.modifiedCount) throw new AdminError('ADMIN_CONFLICT')
+      }
+
+      const nextAdminRevision = nextRevision(revision)
+      const expectedRecoveryRevision = current.recoveryRevision ?? 0
+      const filter = revisionConditions(
+        { _id: current._id, institutionId, status: current.status },
+        revisionFilter('adminRevision', revision),
+        ...(changesStatus
+          ? [revisionFilter('recoveryRevision', expectedRecoveryRevision)]
+          : []),
+      )
+      const update = {
+        $set: {
+          name,
+          term,
+          status,
+          adminRevision: nextAdminRevision,
+          ...(changesStatus
+            ? { recoveryRevision: nextRevision(expectedRecoveryRevision) }
+            : {}),
+        },
+      }
+      const changed = await Cohort.findOneAndUpdate(filter, update, {
+        new: true,
+        session,
+        runValidators: true,
+      }).lean()
+      if (!changed) throw new AdminError('ADMIN_STALE_COHORT')
+      if (changesStatus && status === 'inactive') {
+        const code = await EnrollmentCode.findOne({ cohortId: current._id, revokedAt: null })
+          .select('_id revision')
+          .session(session)
+          .lean()
+        if (code) {
+          const codeRevision = code.revision ?? 0
+          if (
+            !Number.isSafeInteger(codeRevision) ||
+            codeRevision < 0 ||
+            codeRevision >= Number.MAX_SAFE_INTEGER
+          )
+            throw new AdminError('ADMIN_CONFLICT')
+          const codeFilter = revisionConditions(
+            { _id: code._id, cohortId: current._id, revokedAt: null },
+            revisionFilter('revision', codeRevision),
+          )
+          const revoked = await EnrollmentCode.updateOne(
+            codeFilter,
+            { $set: { revokedAt: new Date(now()), revision: codeRevision + 1 } },
+            { session, runValidators: true },
+          )
+          if (!revoked.modifiedCount) throw new AdminError('ADMIN_CONFLICT')
+        }
+      }
+      await recordAdminEvent(currentActor, 'admin.cohort.update', changed._id, session)
+      const institution = await Institution.findById(institutionId)
+        .select('_id name status')
+        .session(session)
+        .lean()
+      return { cohort: cohortDto(changed, new Map([[idString(institutionId), institution]])) }
     })
   }
 
@@ -245,18 +548,58 @@ export function createAdminService(
       User.countDocuments(filter),
     ])
     const ids = instructors.map(({ _id }) => _id)
+    const assignmentCounts = ids.length
+      ? await InstructorAssignment.aggregate([
+          { $match: { userId: { $in: ids }, status: 'active' } },
+          { $group: { _id: '$userId', total: { $sum: 1 } } },
+        ])
+      : []
+    if (assignmentCounts.some(({ total }) => total > 50)) throw new AdminError('ADMIN_UNAVAILABLE')
     const assignments = ids.length
       ? await InstructorAssignment.find({ userId: { $in: ids }, status: 'active' })
           .select('userId cohortId')
+          .limit(ids.length * 50)
           .lean()
       : []
+    const assignedCohortIds = [...new Set(assignments.map(({ cohortId }) => idString(cohortId)))]
+    const assignedCohortRows = assignedCohortIds.length
+      ? await Cohort.find({ _id: { $in: assignedCohortIds } })
+          .select('_id institutionId name term status adminRevision')
+          .lean()
+      : []
+    const assignedInstitutionIds = [
+      ...new Set(assignedCohortRows.map(({ institutionId }) => idString(institutionId))),
+    ]
+    const assignedInstitutions = assignedInstitutionIds.length
+      ? await Institution.find({ _id: { $in: assignedInstitutionIds } })
+          .select('_id name status')
+          .lean()
+      : []
+    const assignedInstitutionsById = new Map(
+      assignedInstitutions.map((institution) => [idString(institution._id), institution]),
+    )
+    const assignedCohortsById = new Map(
+      assignedCohortRows.map((cohort) => [
+        idString(cohort._id),
+        cohortDto(cohort, assignedInstitutionsById),
+      ]),
+    )
     const cohortIdsByUser = new Map(instructors.map(({ _id }) => [idString(_id), []]))
+    const assignedCohortsByUser = new Map(instructors.map(({ _id }) => [idString(_id), []]))
     for (const assignment of assignments) {
-      cohortIdsByUser.get(idString(assignment.userId))?.push(assignment.cohortId)
+      const userId = idString(assignment.userId)
+      const cohortId = idString(assignment.cohortId)
+      cohortIdsByUser.get(userId)?.push(cohortId)
+      const cohort = assignedCohortsById.get(cohortId)
+      if (cohort) assignedCohortsByUser.get(userId)?.push(cohort)
     }
     return {
       instructors: instructors.map((instructor) =>
-        instructorDto(instructor, cohortIdsByUser.get(idString(instructor._id))),
+        instructorDto(
+          instructor,
+          cohortIdsByUser.get(idString(instructor._id)),
+          assignedCohortsByUser.get(idString(instructor._id)),
+        ),
       ),
       page,
       total,
@@ -348,27 +691,61 @@ export function createAdminService(
         throw new AdminError('ADMIN_STALE_ASSIGNMENTS')
 
       const cohortObjectIds = parsed.cohortIds.map(objectId)
-      if (cohortObjectIds.length) {
-        const cohorts = await Cohort.find({
-          _id: { $in: cohortObjectIds },
-          status: 'active',
-        })
-          .select('_id institutionId')
-          .session(session)
-          .lean()
-        if (cohorts.length !== cohortObjectIds.length) throw new AdminError('ADMIN_NOT_FOUND')
-        const institutionIds = [
-          ...new Set(cohorts.map(({ institutionId }) => idString(institutionId))),
-        ]
-        const activeInstitutions = await Institution.find({
-          _id: { $in: institutionIds },
-          status: 'active',
-        })
-          .select('_id')
-          .session(session)
-          .lean()
-        if (activeInstitutions.length !== institutionIds.length)
+      const existingAssignments = await InstructorAssignment.find({
+        userId: instructorId,
+        status: 'active',
+      })
+        .select('cohortId')
+        .session(session)
+        .lean()
+      if (existingAssignments.length > 50) throw new AdminError('ADMIN_UNAVAILABLE')
+      const existingIds = new Set(existingAssignments.map(({ cohortId }) => idString(cohortId)))
+      const cohorts = cohortObjectIds.length
+        ? await Cohort.find({ _id: { $in: cohortObjectIds } })
+            .select('_id institutionId name term status adminRevision +recoveryRevision')
+            .session(session)
+            .lean()
+        : []
+      if (cohorts.length !== cohortObjectIds.length) throw new AdminError('ADMIN_NOT_FOUND')
+      const institutionIds = [...new Set(cohorts.map(({ institutionId }) => idString(institutionId)))]
+      const institutions = institutionIds.length
+        ? await Institution.find({ _id: { $in: institutionIds } })
+            .select('_id name status +recoveryRevision')
+            .session(session)
+            .lean()
+        : []
+      const institutionById = new Map(institutions.map((row) => [idString(row._id), row]))
+      const eligibleIds = new Set(
+        cohorts
+          .filter(
+            (cohort) =>
+              cohort.status === 'active' &&
+              institutionById.get(idString(cohort.institutionId))?.status === 'active',
+          )
+          .map((cohort) => idString(cohort._id)),
+      )
+      for (const cohortId of parsed.cohortIds) {
+        if (!eligibleIds.has(cohortId) && !existingIds.has(cohortId)) {
           throw new AdminError('ADMIN_NOT_FOUND')
+        }
+      }
+      const cohortByIdForWrites = new Map(cohorts.map((cohort) => [idString(cohort._id), cohort]))
+      const guardedInstitutions = new Set()
+      for (const cohortId of parsed.cohortIds) {
+        if (existingIds.has(cohortId)) continue
+        const cohort = cohortByIdForWrites.get(cohortId)
+        const institution = institutionById.get(idString(cohort.institutionId))
+        const institutionId = idString(institution._id)
+        if (!guardedInstitutions.has(institutionId)) {
+          await touchRecoveryGuard(Institution, institution, { status: 'active' }, session)
+          guardedInstitutions.add(institutionId)
+        }
+        await touchRecoveryGuard(
+          Cohort,
+          cohort,
+          { status: 'active', institutionId: institution._id },
+          session,
+        )
       }
 
       const revisionFilter =
@@ -408,6 +785,7 @@ export function createAdminService(
         { session },
       )
       for (const cohortId of cohortObjectIds) {
+        if (existingIds.has(idString(cohortId))) continue
         await InstructorAssignment.updateOne(
           { userId: instructorId, cohortId },
           { $set: { status: 'active' }, $setOnInsert: { userId: instructorId, cohortId } },
@@ -420,15 +798,30 @@ export function createAdminService(
         instructorId,
         session,
       )
-      return { instructor: instructorDto(updated, parsed.cohortIds) }
+      return {
+        instructor: instructorDto(
+          updated,
+          parsed.cohortIds,
+          parsed.cohortIds.map((cohortId) =>
+            cohortDto(
+              cohortByIdForWrites.get(cohortId),
+              institutionById,
+            ),
+          ),
+        ),
+      }
     })
   }
 
   return Object.freeze({
+    listUsers,
+    updateUserStatus,
     listInstitutions,
     createInstitution,
+    updateInstitution,
     listCohorts,
     createCohort,
+    updateCohort,
     listInstructors,
     provisionInstructor,
     reissueActivation,

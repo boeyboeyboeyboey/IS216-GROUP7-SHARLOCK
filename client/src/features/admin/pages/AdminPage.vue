@@ -2,7 +2,9 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { avatarFor } from '../../auth/avatars.js'
 import ActivationLinkDialog from '../components/ActivationLinkDialog.vue'
+import AccountStatusPanel from '../components/AccountStatusPanel.vue'
 import AssignmentEditor from '../components/AssignmentEditor.vue'
+import AuditEventsPanel from '../components/AuditEventsPanel.vue'
 import InstitutionCohortForm from '../components/InstitutionCohortForm.vue'
 import InstructorProvisionForm from '../components/InstructorProvisionForm.vue'
 import RecoveryIssueForm from '../../recovery/components/RecoveryIssueForm.vue'
@@ -17,6 +19,8 @@ import {
   listInstitutions,
   listInstructors,
   reissueInstructorActivation,
+  updateCohort,
+  updateInstitution,
   updateInstructorAssignments,
 } from '../api.js'
 import { issueAdminRecovery, lookupStudent, safeRecoveryError } from '../../recovery/api.js'
@@ -45,9 +49,13 @@ const loadingAssignmentCohorts = ref(false)
 const loadingInstructors = ref(false)
 const pendingInstitution = ref(false)
 const pendingCohort = ref(false)
+const updatingInstitutionId = ref('')
+const updatingCohortId = ref('')
 const pendingInstructor = ref(false)
 const pendingAssignments = ref(Object.create(null))
 const reissuing = ref(Object.create(null))
+const activationErrors = ref(Object.create(null))
+const activationAccessError = ref('')
 const institutionError = ref('')
 const instructorError = ref('')
 const assignmentErrors = ref(Object.create(null))
@@ -144,9 +152,7 @@ async function loadAssignmentCohorts(page = assignmentCohortPage.value) {
       signal: controller.signal,
     })
     if (!isCurrentRequest('assignment-cohorts', controller)) return
-    assignmentCohorts.value = rowsFor(response, 'cohorts').filter(
-      (cohort) => cohort.status === 'active',
-    )
+    assignmentCohorts.value = rowsFor(response, 'cohorts')
     assignmentCohortTotal.value = totalFor(response)
   } catch (error) {
     if (!isCurrentRequest('assignment-cohorts', controller)) return
@@ -208,7 +214,7 @@ async function createInstitutionEntry(input) {
 }
 
 async function createCohortEntry(input) {
-  if (pendingCohort.value || !selectedInstitutionId.value) return
+  if (pendingCohort.value || !input.institutionId) return
   institutionError.value = ''
   pendingCohort.value = true
   const controller = startRequest('create-cohort')
@@ -226,6 +232,75 @@ async function createCohortEntry(input) {
     }
   } finally {
     if (controllers.get('create-cohort') === controller) pendingCohort.value = false
+  }
+}
+
+async function updateInstitutionEntry({ id, name, status, expectedRevision }) {
+  if (updatingInstitutionId.value) return
+  institutionError.value = ''
+  updatingInstitutionId.value = id
+  const controller = startRequest(`update-institution-${id}`)
+  try {
+    await updateInstitution(id, { name, status, expectedRevision }, controller.signal)
+    if (disposed) return
+    institutionForm.value?.finishInstitutionEdit()
+    await Promise.all([
+      loadInstitutions(institutionPage.value),
+      loadCohorts(cohortPage.value),
+      loadAssignmentCohorts(1),
+      loadInstructors(instructorPage.value),
+    ])
+  } catch (error) {
+    if (!disposed && !controller.signal.aborted) {
+      institutionError.value = safeMessage(
+        error,
+        'The institution could not be updated. Review and try again.',
+      )
+      if (error instanceof AdminApiError && error.code === 'ADMIN_STALE_INSTITUTION') {
+        institutionForm.value?.finishInstitutionEdit()
+        await Promise.all([
+          loadInstitutions(institutionPage.value),
+          loadCohorts(cohortPage.value),
+          loadAssignmentCohorts(1),
+        ])
+      }
+    }
+  } finally {
+    if (updatingInstitutionId.value === id) updatingInstitutionId.value = ''
+  }
+}
+
+async function updateCohortEntry({ id, name, term, status, expectedRevision }) {
+  if (updatingCohortId.value) return
+  institutionError.value = ''
+  updatingCohortId.value = id
+  const controller = startRequest(`update-cohort-${id}`)
+  try {
+    await updateCohort(id, { name, term, status, expectedRevision }, controller.signal)
+    if (disposed) return
+    institutionForm.value?.finishCohortEdit()
+    await Promise.all([
+      loadCohorts(cohortPage.value),
+      loadAssignmentCohorts(1),
+      loadInstructors(instructorPage.value),
+    ])
+  } catch (error) {
+    if (!disposed && !controller.signal.aborted) {
+      institutionError.value = safeMessage(
+        error,
+        'The class could not be updated. Review and try again.',
+      )
+      if (error instanceof AdminApiError && error.code === 'ADMIN_STALE_COHORT') {
+        institutionForm.value?.finishCohortEdit()
+        await Promise.all([
+          loadCohorts(cohortPage.value),
+          loadAssignmentCohorts(1),
+          loadInstructors(instructorPage.value),
+        ])
+      }
+    }
+  } finally {
+    if (updatingCohortId.value === id) updatingCohortId.value = ''
   }
 }
 
@@ -315,7 +390,8 @@ function closeRecoveryLink() {
 
 async function reissueActivation(instructorId) {
   if (reissuing.value[instructorId]) return
-  instructorError.value = ''
+  activationErrors.value = { ...activationErrors.value, [instructorId]: '' }
+  activationAccessError.value = ''
   reissuing.value = { ...reissuing.value, [instructorId]: true }
   const controller = startRequest(`reissue-${instructorId}`)
   try {
@@ -325,10 +401,19 @@ async function reissueActivation(instructorId) {
     await loadInstructors(instructorPage.value)
   } catch (error) {
     if (!disposed && !controller.signal.aborted) {
-      instructorError.value = safeMessage(
-        error,
-        'A new activation link could not be prepared. Try again later.',
-      )
+      if (error instanceof AdminApiError && [401, 403].includes(error.status)) {
+        activationAccessError.value = safeMessage(
+          error,
+          'Your administrator session or account access has expired. Sign in again or ask an administrator to check access.',
+        )
+      }
+      activationErrors.value = {
+        ...activationErrors.value,
+        [instructorId]: safeMessage(
+          error,
+          'A new activation link could not be prepared. Try again later.',
+        ),
+      }
     }
   } finally {
     if (controllers.get(`reissue-${instructorId}`) === controller) {
@@ -412,9 +497,13 @@ onBeforeUnmount(() => {
       :loading-cohorts="loadingCohorts"
       :pending-institution="pendingInstitution"
       :pending-cohort="pendingCohort"
+      :updating-institution-id="updatingInstitutionId"
+      :updating-cohort-id="updatingCohortId"
       :error="institutionError"
       @create-institution="createInstitutionEntry"
       @create-cohort="createCohortEntry"
+      @update-institution="updateInstitutionEntry"
+      @update-cohort="updateCohortEntry"
       @select-institution="selectedInstitutionId = $event"
       @institution-page="loadInstitutions"
       @cohort-page="loadCohorts"
@@ -425,6 +514,13 @@ onBeforeUnmount(() => {
       :pending="pendingInstructor"
       :error="instructorError"
       @provision="provisionInstructor"
+    />
+
+    <AccountStatusPanel
+      :reissuing="reissuing"
+      :activation-errors="activationErrors"
+      :access-error="activationAccessError"
+      @reissue-activation="reissueActivation"
     />
 
     <section class="recovery-panel" aria-labelledby="admin-recovery-title">
@@ -489,15 +585,6 @@ onBeforeUnmount(() => {
               </span>
             </div>
           </div>
-          <button
-            v-if="instructor.accountStatus === 'disabled'"
-            class="admin-workspace__text-button"
-            type="button"
-            :disabled="reissuing[instructor.id]"
-            @click="reissueActivation(instructor.id)"
-          >
-            {{ reissuing[instructor.id] ? 'Preparing link…' : 'Reissue activation link' }}
-          </button>
           <AssignmentEditor
             :instructor="instructor"
             :cohorts="assignmentCohorts"
@@ -534,6 +621,8 @@ onBeforeUnmount(() => {
         </button>
       </div>
     </section>
+
+    <AuditEventsPanel />
 
     <ActivationLinkDialog
       v-if="activationLink"

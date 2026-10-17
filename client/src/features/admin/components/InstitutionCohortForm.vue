@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
   institutions: { type: Array, default: () => [] },
@@ -13,11 +13,15 @@ const props = defineProps({
   loadingCohorts: { type: Boolean, default: false },
   pendingInstitution: { type: Boolean, default: false },
   pendingCohort: { type: Boolean, default: false },
+  updatingInstitutionId: { type: String, default: '' },
+  updatingCohortId: { type: String, default: '' },
   error: { type: String, default: '' },
 })
 const emit = defineEmits([
   'create-institution',
   'create-cohort',
+  'update-institution',
+  'update-cohort',
   'select-institution',
   'institution-page',
   'cohort-page',
@@ -27,6 +31,26 @@ const institutionName = ref('')
 const institutionSlug = ref('')
 const cohortName = ref('')
 const cohortTerm = ref('')
+const institutionEditId = ref('')
+const institutionDraft = ref({ name: '', status: 'active' })
+const cohortEditId = ref('')
+const cohortDraft = ref({ name: '', term: '', status: 'active' })
+const activeInstitutions = computed(() =>
+  props.institutions.filter((institution) => institution.status === 'active'),
+)
+const cohortInstitutionId = ref('')
+
+watch(
+  () => [activeInstitutions.value, props.selectedInstitutionId],
+  ([rows, selectedId]) => {
+    if (rows.some(({ id }) => id === selectedId)) {
+      cohortInstitutionId.value = selectedId
+    } else if (!rows.some(({ id }) => id === cohortInstitutionId.value)) {
+      cohortInstitutionId.value = rows[0]?.id || ''
+    }
+  },
+  { immediate: true },
+)
 
 function createInstitution() {
   emit('create-institution', {
@@ -37,10 +61,49 @@ function createInstitution() {
 
 function createCohort() {
   emit('create-cohort', {
-    institutionId: props.selectedInstitutionId,
+    institutionId: cohortInstitutionId.value,
     name: cohortName.value,
     term: cohortTerm.value,
   })
+}
+
+function editInstitution(institution) {
+  institutionEditId.value = institution.id
+  institutionDraft.value = { name: institution.name, status: institution.status }
+  cohortEditId.value = ''
+}
+
+function editCohort(cohort) {
+  cohortEditId.value = cohort.id
+  cohortDraft.value = { name: cohort.name, term: cohort.term, status: cohort.status }
+  institutionEditId.value = ''
+}
+
+function saveInstitution(institution) {
+  emit('update-institution', {
+    id: institution.id,
+    name: institutionDraft.value.name,
+    status: institutionDraft.value.status,
+    expectedRevision: institution.revision ?? 0,
+  })
+}
+
+function saveCohort(cohort) {
+  emit('update-cohort', {
+    id: cohort.id,
+    name: cohortDraft.value.name,
+    term: cohortDraft.value.term,
+    status: cohortDraft.value.status,
+    expectedRevision: cohort.revision ?? 0,
+  })
+}
+
+function finishInstitutionEdit() {
+  institutionEditId.value = ''
+}
+
+function finishCohortEdit() {
+  cohortEditId.value = ''
 }
 
 function resetInstitutionForm() {
@@ -53,7 +116,7 @@ function resetCohortForm() {
   cohortTerm.value = ''
 }
 
-defineExpose({ resetInstitutionForm, resetCohortForm })
+defineExpose({ resetInstitutionForm, resetCohortForm, finishInstitutionEdit, finishCohortEdit })
 
 function statusLabel(status) {
   return status === 'active' ? 'Active' : 'Inactive'
@@ -109,18 +172,67 @@ function statusLabel(status) {
         </p>
         <ul v-else class="admin-workspace__list">
           <li v-for="institution in institutions" :key="institution.id">
-            <div>
+            <form
+              v-if="institutionEditId === institution.id"
+              class="admin-workspace__edit-form"
+              @submit.prevent="saveInstitution(institution)"
+            >
+              <label :for="`admin-institution-edit-name-${institution.id}`">Institution name</label>
+              <input
+                :id="`admin-institution-edit-name-${institution.id}`"
+                v-model="institutionDraft.name"
+                maxlength="100"
+                required
+                :disabled="updatingInstitutionId === institution.id"
+              />
+              <label :for="`admin-institution-edit-status-${institution.id}`">Status</label>
+              <select
+                :id="`admin-institution-edit-status-${institution.id}`"
+                v-model="institutionDraft.status"
+                :disabled="updatingInstitutionId === institution.id"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <button
+                class="admin-workspace__button"
+                type="submit"
+                :disabled="updatingInstitutionId === institution.id"
+              >
+                {{ updatingInstitutionId === institution.id ? 'Saving…' : 'Save institution' }}
+              </button>
+              <button
+                class="admin-workspace__text-button"
+                type="button"
+                :disabled="updatingInstitutionId === institution.id"
+                @click="finishInstitutionEdit"
+              >
+                Cancel
+              </button>
+            </form>
+            <div v-else>
               <strong>{{ institution.name }}</strong>
               <span>{{ institution.slug }} · {{ statusLabel(institution.status) }}</span>
             </div>
-            <button
-              class="admin-workspace__text-button"
-              type="button"
-              :aria-pressed="selectedInstitutionId === institution.id"
-              @click="emit('select-institution', institution.id)"
-            >
-              {{ selectedInstitutionId === institution.id ? 'Selected' : 'Use for class' }}
-            </button>
+            <div class="admin-workspace__list-actions">
+              <button
+                v-if="institutionEditId !== institution.id"
+                class="admin-workspace__text-button"
+                type="button"
+                :aria-label="`Edit ${institution.name}`"
+                @click="editInstitution(institution)"
+              >
+                Edit
+              </button>
+              <button
+                class="admin-workspace__text-button"
+                type="button"
+                :aria-pressed="selectedInstitutionId === institution.id"
+                @click="emit('select-institution', institution.id)"
+              >
+                {{ selectedInstitutionId === institution.id ? 'Selected' : 'View classes' }}
+              </button>
+            </div>
           </li>
         </ul>
         <div class="admin-workspace__pagination" aria-label="Institution pages">
@@ -153,13 +265,17 @@ function statusLabel(status) {
         <label for="admin-cohort-institution">Institution</label>
         <select
           id="admin-cohort-institution"
-          :value="selectedInstitutionId"
+          v-model="cohortInstitutionId"
           required
-          :disabled="pendingCohort || institutions.length === 0"
+          :disabled="pendingCohort || activeInstitutions.length === 0"
           @change="emit('select-institution', $event.target.value)"
         >
           <option value="" disabled>Select an institution</option>
-          <option v-for="institution in institutions" :key="institution.id" :value="institution.id">
+          <option
+            v-for="institution in activeInstitutions"
+            :key="institution.id"
+            :value="institution.id"
+          >
             {{ institution.name }}
           </option>
         </select>
@@ -184,7 +300,7 @@ function statusLabel(status) {
         <button
           class="admin-workspace__button"
           type="submit"
-          :disabled="pendingCohort || !selectedInstitutionId"
+          :disabled="pendingCohort || !cohortInstitutionId"
         >
           {{ pendingCohort ? 'Creating…' : 'Create class' }}
         </button>
@@ -198,13 +314,68 @@ function statusLabel(status) {
         </p>
         <ul v-else class="admin-workspace__list">
           <li v-for="cohort in cohorts" :key="cohort.id">
-            <div>
+            <form
+              v-if="cohortEditId === cohort.id"
+              class="admin-workspace__edit-form"
+              @submit.prevent="saveCohort(cohort)"
+            >
+              <label :for="`admin-cohort-edit-name-${cohort.id}`">Class name</label>
+              <input
+                :id="`admin-cohort-edit-name-${cohort.id}`"
+                v-model="cohortDraft.name"
+                maxlength="100"
+                required
+                :disabled="updatingCohortId === cohort.id"
+              />
+              <label :for="`admin-cohort-edit-term-${cohort.id}`">Term</label>
+              <input
+                :id="`admin-cohort-edit-term-${cohort.id}`"
+                v-model="cohortDraft.term"
+                maxlength="50"
+                required
+                :disabled="updatingCohortId === cohort.id"
+              />
+              <label :for="`admin-cohort-edit-status-${cohort.id}`">Status</label>
+              <select
+                :id="`admin-cohort-edit-status-${cohort.id}`"
+                v-model="cohortDraft.status"
+                :disabled="updatingCohortId === cohort.id"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <button
+                class="admin-workspace__button"
+                type="submit"
+                :disabled="updatingCohortId === cohort.id"
+              >
+                {{ updatingCohortId === cohort.id ? 'Saving…' : 'Save class' }}
+              </button>
+              <button
+                class="admin-workspace__text-button"
+                type="button"
+                :disabled="updatingCohortId === cohort.id"
+                @click="finishCohortEdit"
+              >
+                Cancel
+              </button>
+            </form>
+            <div v-else>
               <strong>{{ cohort.name }}</strong>
               <span
                 >{{ cohort.institutionName }} · {{ cohort.term }} ·
                 {{ statusLabel(cohort.status) }}</span
               >
             </div>
+            <button
+              v-if="cohortEditId !== cohort.id"
+              class="admin-workspace__text-button"
+              type="button"
+              :aria-label="`Edit ${cohort.name}`"
+              @click="editCohort(cohort)"
+            >
+              Edit
+            </button>
           </li>
         </ul>
         <div class="admin-workspace__pagination" aria-label="Class pages">

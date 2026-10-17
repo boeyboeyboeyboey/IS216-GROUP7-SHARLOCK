@@ -12,6 +12,7 @@ const adminCapabilities = new Set([
   'admin:classes:manage',
   'admin:instructors:manage',
   'admin:recovery:manage',
+  'admin:accounts:manage',
 ])
 
 function inaccessibleCohort() {

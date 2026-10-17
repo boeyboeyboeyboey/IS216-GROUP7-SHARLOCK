@@ -93,6 +93,35 @@ export function createAdminRouter(
     message: 'Too many instructor account requests. Please try again later.',
   })
 
+  router.get('/admin/users', ...sessionMiddleware, async (request, response, next) => {
+    try {
+      response.json(await service.listUsers(response.locals.authUser, request.query))
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  router.patch(
+    '/admin/users/:userId',
+    ...sessionMiddleware,
+    ordinaryWrites.middleware,
+    ...mutationMiddleware,
+    async (request, response, next) => {
+      try {
+        response.json(
+          await service.updateUserStatus(
+            response.locals.authUser,
+            request.params.userId,
+            request.body,
+            request.query,
+          ),
+        )
+      } catch (error) {
+        next(error)
+      }
+    },
+  )
+
   router.get('/admin/institutions', ...sessionMiddleware, async (request, response, next) => {
     try {
       response.json(await service.listInstitutions(response.locals.authUser, request.query))
@@ -119,6 +148,27 @@ export function createAdminRouter(
     },
   )
 
+  router.patch(
+    '/admin/institutions/:institutionId',
+    ...sessionMiddleware,
+    ordinaryWrites.middleware,
+    ...mutationMiddleware,
+    async (request, response, next) => {
+      try {
+        response.json(
+          await service.updateInstitution(
+            response.locals.authUser,
+            request.params.institutionId,
+            request.body,
+            request.query,
+          ),
+        )
+      } catch (error) {
+        next(error)
+      }
+    },
+  )
+
   router.get('/admin/cohorts', ...sessionMiddleware, async (request, response, next) => {
     try {
       response.json(await service.listCohorts(response.locals.authUser, request.query))
@@ -137,6 +187,27 @@ export function createAdminRouter(
         response
           .status(201)
           .json(await service.createCohort(response.locals.authUser, request.body, request.query))
+      } catch (error) {
+        next(error)
+      }
+    },
+  )
+
+  router.patch(
+    '/admin/cohorts/:cohortId',
+    ...sessionMiddleware,
+    ordinaryWrites.middleware,
+    ...mutationMiddleware,
+    async (request, response, next) => {
+      try {
+        response.json(
+          await service.updateCohort(
+            response.locals.authUser,
+            request.params.cohortId,
+            request.body,
+            request.query,
+          ),
+        )
       } catch (error) {
         next(error)
       }
