@@ -46,6 +46,7 @@ defineExpose({ focusMenu: () => menuButton.value?.focus() })
           class="header-link account-link d-none"
           :class="town ? 'd-xl-inline-flex' : 'd-md-inline-flex'"
           :aria-label="`Your profile: ${user.username}`"
+          :title="user.username"
         >
           <img :src="avatar.path" width="32" height="32" :alt="avatar.label" />
           <span class="account-name d-none d-xl-inline">{{ user.username }}</span>

@@ -798,8 +798,9 @@
   }
 
   .phish-game.is-fitted .phish-back {
-    min-height: 0;
-    padding: 0.25rem 0;
+    min-height: 44px;
+    margin-block: -0.5rem;
+    padding: 0;
   }
 
   .phish-game.is-fitted h1 {
@@ -879,6 +880,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* the instruction line wraps so it is never cut off on a phone */
+.phish-game .sharmail-verdict-target em {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .phish-game .sharmail-verdict-status {

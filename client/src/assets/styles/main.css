@@ -260,6 +260,17 @@ main:focus {
   font-size: 1rem;
   min-height: 44px;
 }
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  font-weight: 600;
+}
+.back-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
 .header-link:hover,
 .text-link:hover,
 .sidebar-about:hover {
@@ -333,7 +344,7 @@ main:focus {
 .nav-caption {
   font-size: 1rem;
   letter-spacing: 0.12em;
-  margin: 1.618rem 0 0.618rem 0.6rem;
+  margin: 1.3rem 0 0.5rem 0.6rem;
 }
 .portal-nav {
   gap: 0.35rem;
@@ -343,7 +354,8 @@ main:focus {
   align-items: center;
   gap: 0.65rem;
   border-radius: 0;
-  padding: 0.618rem 0.7rem;
+  min-height: 44px;
+  padding: 0.5rem 0.7rem;
   font-size: 1rem;
   color: var(--text-main);
 }
@@ -757,7 +769,7 @@ main:focus {
 }
 @media (max-width: 767.98px) {
   .case-preview {
-    padding-top: 2.618rem;
+    padding-top: 2.1rem;
   }
 }
 .case-preview-art {
@@ -1156,10 +1168,10 @@ main:focus {
    below 600px tall the sidebar scrolls again so nothing becomes unreachable */
 @media (min-width: 768px) and (min-height: 600px) {
   .portal-sidebar.fit-sidebar {
-    overflow-y: hidden;
+    overflow-y: auto;
   }
   .fit-sidebar .offcanvas-body {
-    padding-top: 1.272rem;
+    padding-top: 1.3rem;
   }
   .fit-sidebar .nav-caption {
     margin-top: 0;
@@ -1173,8 +1185,8 @@ main:focus {
     padding: 0.75rem;
   }
 }
-@media (min-width: 768px) and (min-height: 600px) and (max-height: 780px) {
-  .fit-sidebar .sidebar-note {
+@media (min-width: 768px) and (max-height: 980px) {
+  .sidebar-note {
     display: none;
   }
 }
@@ -1196,7 +1208,7 @@ main:focus {
 .past-achievements__card {
   display: grid;
   gap: 1rem;
-  padding: clamp(1rem, 4vw, 1.618rem);
+  padding: clamp(1rem, 4vw, 1.3rem);
 }
 .past-achievements .achievement-list {
   margin: 0;
@@ -1212,12 +1224,12 @@ main:focus {
     font-size: clamp(2rem, 4dvh, 2.6rem);
   }
   .profile-view .page-description {
-    margin: clamp(0.5rem, 1.5dvh, 1rem) 0 clamp(1rem, 3dvh, 1.618rem);
+    margin: clamp(0.5rem, 1.5dvh, 1rem) 0 clamp(1rem, 3dvh, 1.3rem);
   }
   .profile-view .profile-overview {
     gap: 1rem;
-    margin: clamp(1rem, 3dvh, 1.618rem) 0;
-    padding: clamp(1rem, 3dvh, 1.618rem) 1.618rem;
+    margin: clamp(1rem, 3dvh, 1.3rem) 0;
+    padding: clamp(1rem, 3dvh, 1.3rem) 1.3rem;
   }
   .profile-view .large-avatar img {
     width: 104px;
@@ -1227,7 +1239,7 @@ main:focus {
     padding: 0.5rem 1rem;
   }
   .profile-view .trophy-case {
-    margin: clamp(1rem, 3dvh, 1.618rem) 0 0;
+    margin: clamp(1rem, 3dvh, 1.3rem) 0 0;
   }
   .profile-view .achievement-list {
     display: grid;

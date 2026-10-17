@@ -80,7 +80,7 @@ async function backToInbox() {
 <template>
   <div class="phish-game is-fitted">
     <div class="phish-intro">
-      <RouterLink to="/" class="phish-back">Back to town</RouterLink>
+      <RouterLink to="/" class="phish-back back-link">Back to town</RouterLink>
       <h1 tabindex="-1">The Phishing Post-Mortem</h1>
       <p class="phish-strap">
         Several of these messages are hostile. Only one of them caused the compromise. Find it, and
@@ -117,7 +117,7 @@ async function backToInbox() {
           ref="readingPane"
           class="sharmail-pane sharmail-pane-reading"
           :class="{ 'is-mobile-hidden': pane === 'inbox' }"
-          tabindex="-1"
+          tabindex="0"
           aria-label="Reading pane"
         >
           <button type="button" class="sharmail-back" @click="backToInbox">Back to inbox</button>

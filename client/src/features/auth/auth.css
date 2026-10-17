@@ -293,10 +293,10 @@
   margin: 0;
 }
 
-/* spacing steps follow the golden ratio: 0.618rem -> 1rem -> 1.618rem */
+/* spacing steps follow the DESIGN.md scale: 0.5, 0.8, 1.3, 2.1, 3.4rem */
 .auth-summary {
   min-width: 0;
-  padding: 1rem 1rem 1.618rem;
+  padding: 1rem 1rem 1.3rem;
 }
 
 .auth-summary__state,
@@ -316,7 +316,7 @@
 
 .auth-summary__links {
   display: grid;
-  gap: 0.618rem;
+  gap: 0.5rem;
 }
 
 .auth-summary__state > .btn,
@@ -457,7 +457,7 @@
 
   .auth-card {
     max-height: 100%;
-    padding: 1.618rem 2.618rem;
+    padding: 1.3rem 2.1rem;
     overflow-y: auto;
   }
 
@@ -488,7 +488,15 @@
 
   /* the page now sits flush under the header, so the art stays inside it instead of overhanging */
   .auth-page__art {
-    top: 0.618rem;
+    top: 0.5rem;
+  }
+}
+
+/* desktop: the header already shows the account (avatar, name, Sign out or Sign in, Create account),
+   so the sidebar box is hidden unless it carries a session notice the header cannot show */
+@media (min-width: 768px) {
+  .auth-summary:not(:has(.auth-session-notice)) {
+    display: none;
   }
 }
 

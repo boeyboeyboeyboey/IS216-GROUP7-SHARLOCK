@@ -120,7 +120,7 @@ watch([phase, paused], async ([next, isPaused]) => {
   <div class="cli-game is-fitted">
     <div class="cli-intro">
       <nav class="cli-nav" aria-label="Game navigation">
-        <RouterLink v-if="!inGame" to="/" class="cli-back"
+        <RouterLink v-if="!inGame" to="/" class="cli-back back-link"
           ><span aria-hidden="true">&larr;&nbsp;</span>Back to town</RouterLink
         >
         <span v-if="inGame && mode === 'practice'" class="cli-mode-tag">Practice</span>
