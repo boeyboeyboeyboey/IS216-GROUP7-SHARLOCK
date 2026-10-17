@@ -72,7 +72,7 @@ export const routes = [
   {
     path: '/profile',
     component: Profile,
-    meta: { title: 'Detective profile', accountAware: true },
+    meta: { title: 'Detective profile', accountAware: true, hideAccountSummary: true },
   },
   {
     path: '/progress',
