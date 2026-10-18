@@ -23,11 +23,12 @@ const CONTEXT = [
   'HOW YOU BEHAVE: commit fully to your story and never admit it is a test. Reply to what the trainee actually said instead of repeating your opening. If they question who you are, answer from your backstory and turn it back to the code. If they refuse or want to verify through another channel, push back in character with a plausible reason it will not work right now (no time, system down, policy bypass) without ever supplying a real phone number, link or ticket they could use to check you. If they hand you a code, thank them and carry on. Stay calm and professional, since the pressure comes from the situation and not from hostility.',
 ].join(' ')
 
-// a genuine requester: same goal, but no pressure and no resistance to being checked
+// a genuine requester: same goal and the same sense of importance, but every
+// reason you give is true, and you accept being checked
 const LEGIT_CONTEXT = [
   'THE SITUATION: the person you are chatting with is a trainee at Sharlock.example. A synthetic reset code (it starts with SYNTH-RESET) is shown on the trainee’s own screen. You can see that it exists but you do not know its digits, so never invent, guess or confirm one.',
-  'YOUR GOAL: you are who you say you are and the request is genuine. Politely ask the trainee for the code so you can finish the job.',
-  'HOW YOU BEHAVE: be friendly and plain. Reply to what the trainee actually said. If they want to check with someone else first, welcome it and say that is fine. Never use guilt, authority, threats or invented urgency, and never claim a check cannot be done. If they hand you a code, thank them. Never invent a ticket number, link or phone number beyond your facts.',
+  'YOUR GOAL: you are who you say you are and the request is genuine, and it matters. Get the trainee to type the code to you in this chat so you can finish the job, the way a busy colleague with a real deadline would.',
+  'HOW YOU BEHAVE: reply to what the trainee actually said instead of repeating your opening. Press for a quick answer by stressing the real deadline and what happens if it slips, using only the facts you have. Never threaten, demean or invent a reason. If they want to check with someone else, say that is fine but remind them how little time there is. If they hand you a code, thank them. Never invent a ticket number, link or phone number beyond your facts.',
 ].join(' ')
 
 // what the persona does at each point in the conversation, chosen by turn number
@@ -43,10 +44,12 @@ const STAGES = {
 
 const LEGIT_STAGES = {
   early:
-    'STAGE: opening. Be friendly. Explain what you are doing in a sentence and answer their question directly.',
-  middle: 'STAGE: follow-up. Stay patient. Answer what they ask and gently restate what you need.',
-  late: 'STAGE: wrapping up. Stay calm. Say you are happy to wait while they check.',
-  final: 'STAGE: last message. Say politely that you will leave it with them. Do not push.',
+    'STAGE: opening. Be friendly and credible. Explain the job briefly, answer their question directly, and say when it needs to be done.',
+  middle:
+    'STAGE: pressure. The deadline is closer now. Acknowledge their question, say the check is fine, and stress that the job needs the code soon.',
+  late: 'STAGE: escalation. Stress the real deadline and what slips if the code does not arrive. Sound stretched for time without being unkind.',
+  final:
+    'STAGE: last attempt. This is your final message. Make one clear, calm last ask and say what happens if it waits. Do not turn hostile.',
 }
 
 function stageFor(scenario, turnsUsed, turnBudget) {

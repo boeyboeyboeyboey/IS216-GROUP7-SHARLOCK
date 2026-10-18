@@ -96,11 +96,15 @@ describe('social-engineering scenarios', () => {
     expect(new Set(SCENARIOS.map((scenario) => scenario.id)).size).toBe(SCENARIOS.length)
   })
 
-  it('shifts a legitimate persona through calm stages without escalation', () => {
-    const legit = { ...SCENARIOS[0], legitimate: true }
+  it('lets a legitimate persona press with true facts while accepting a check', () => {
+    const legit = SCENARIOS.find((scenario) => scenario.legitimate)
     const stage = (turn) => promptForTurn(legit, turn, 8)
     expect(stage(0)).toMatch(/STAGE: opening\./)
-    expect(stage(5)).not.toMatch(/guilt|escalation|consequences/i)
-    expect(stage(7)).toMatch(/STAGE: last message\./)
+    expect(stage(5)).toMatch(/STAGE: escalation\./)
+    expect(stage(7)).toMatch(/STAGE: last attempt\./)
+    expect(legit.systemPrompt).toMatch(/real deadline/)
+    expect(legit.systemPrompt).toMatch(/that is fine/)
+    expect(legit.systemPrompt).not.toMatch(/guilt|authority/i)
+    expect(legit.systemPrompt).toContain('Apply the described workplace pressure')
   })
 })

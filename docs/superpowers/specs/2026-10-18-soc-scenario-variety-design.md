@@ -65,7 +65,7 @@ New legitimate scenarios (the player started or expected the contact, and the co
 
 Each scenario needs: a `SCENARIOS` entry (id, display name, tactic, unique synthetic code `SYNTH-RESET-NNNN`, turn budget 8, public brief, scripted opening, system prompt), a `VERIFIERS` entry (colleague name and role, facts, voice, three example exchanges, three scripted nudges), and a `legitimate` flag.
 
-Legitimate personas are friendly and may mention time, but do not manipulate: no guilt, no authority claims, no invented urgency. The attack personas keep the pressure tactic they were written for.
+Legitimate personas apply real pressure too (a true deadline and what slips if it is missed), so that pressure is never a tell. They use only true facts: no guilt, no authority claims, no invented urgency, and they accept being checked. The attack personas keep the pressure tactic they were written for.
 
 ### Brief and label rules (so the brief itself is not a tell)
 

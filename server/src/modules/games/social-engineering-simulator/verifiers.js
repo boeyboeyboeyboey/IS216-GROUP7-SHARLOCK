@@ -211,9 +211,9 @@ const VERIFIERS = {
       ['Is the ticket portal up?', 'Yes, the ticket portal is up.'],
     ],
     nudges: [
-      'Are you still there? I am happy to wait while you check.',
-      'No rush, I can finish the reset once you are ready.',
-      'I will leave the ticket open for you. Just let me know when you are ready.',
+      'Are you still there? The reset needs to go through today and I cannot hold the ticket much longer.',
+      'If this slips to tomorrow you stay locked out overnight. I just need the code from your screen.',
+      'Checking is fine, but the ticket closes at the end of my shift. Please send the code when you can.',
     ],
   },
   'scheduled-migration': {
@@ -231,9 +231,9 @@ const VERIFIERS = {
       ['Was it announced?', 'Yes, it was announced earlier this week.'],
     ],
     nudges: [
-      'Hi again, just checking in. Tonight’s window is still open whenever you are ready.',
-      'No pressure, I can wait while you confirm.',
-      'I will be around until the window opens. Let me know when you are ready.',
+      'Are you still there? The migration window opens soon and your mailbox is one of the last waiting.',
+      'If your mailbox misses tonight it waits for the next window, which is next week. I need the code to include it.',
+      'Checking is fine, but the window closes at midnight. Please send the code before then.',
     ],
   },
 }
