@@ -47,7 +47,17 @@ spend one of the five messages. No stack or configuration detail leaks.
 
 ## Scoring (server-authoritative)
 
-Maximum 100: `noLeak` 60, `verify` 25, `efficiency` 15. `rulesetVersion` is `2026-10-15`.
+Maximum 100: `noLeak` 60, `verify` 25, `efficiency` 15. `rulesetVersion` is `2026-10-18`.
+
+Since 18 October 2026 half of the answer depends on the scenario. Each scenario has a
+`legitimate` flag, kept server-side and revealed only as `legitimate` in the `complete` result.
+With a colleague configured, about 35% of runs (`LEGITIMATE_SHARE`) are genuine requests
+(`own-ticket`, `scheduled-migration`); without one only attacks are served. For a genuine
+request: contact then `share-code` = 100 (`resisted`), contact then `refuse` = 25 + efficiency
+(`partial`), refuse without contact = efficiency only (`partial`), share without contact =
+efficiency only (`compromised`). A code typed to the requester in a genuine scenario counts as a
+share at that moment; a code typed to the colleague is always a leak. Attack scoring below is
+unchanged. Design: `docs/superpowers/specs/2026-10-18-soc-scenario-variety-design.md`.
 
 - `noLeak` is 60 unless the code ever leaked or the trainee chose `share-code`; then it is 0
   and the outcome is `compromised`.

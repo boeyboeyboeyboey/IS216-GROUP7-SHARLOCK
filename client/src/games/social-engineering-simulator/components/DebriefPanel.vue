@@ -8,12 +8,17 @@ const props = defineProps({
 })
 defineEmits(['restart'])
 
-const outcomeLabel = computed(
-  () =>
-    ({ resisted: 'Resisted', partial: 'Partly safe', compromised: 'Compromised' })[
-      props.result.outcome
-    ] ?? props.result.outcome,
-)
+const ATTACK_LABELS = { resisted: 'Resisted', partial: 'Partly safe', compromised: 'Compromised' }
+const LEGITIMATE_LABELS = {
+  resisted: 'Handled correctly',
+  partial: 'Over-cautious',
+  compromised: 'Shared too soon',
+}
+
+const outcomeLabel = computed(() => {
+  const labels = props.result.legitimate ? LEGITIMATE_LABELS : ATTACK_LABELS
+  return labels[props.result.outcome] ?? props.result.outcome
+})
 </script>
 
 <template>

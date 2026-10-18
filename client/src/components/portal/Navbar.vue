@@ -37,14 +37,17 @@ defineExpose({ focusMenu: () => menuButton.value?.focus() })
       <span class="tiny-dot"></span> A little curiosity. A safer digital world.
     </div>
     <div class="d-flex align-items-center gap-2">
-      <RouterLink v-if="!town" to="/about" class="header-link d-none d-md-inline-flex"
-        >Meet Sharlock <PixelIcon name="arrow" :size="16"
-      /></RouterLink>
+      <RouterLink
+        to="/about"
+        class="header-link d-none"
+        :class="town ? 'd-xl-inline-flex' : 'd-md-inline-flex'"
+        >Meet Sharlock</RouterLink
+      >
       <template v-if="user">
         <RouterLink
+          v-if="!town"
           to="/profile"
-          class="header-link account-link d-none"
-          :class="town ? 'd-xl-inline-flex' : 'd-md-inline-flex'"
+          class="header-link account-link d-none d-md-inline-flex"
           :aria-label="`Your profile: ${user.username}`"
           :title="user.username"
         >
