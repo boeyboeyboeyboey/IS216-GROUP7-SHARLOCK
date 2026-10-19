@@ -137,7 +137,7 @@ describe('saved phishing attempts', () => {
     const started = await startCase(student)
     expect(started).toMatchObject({
       gameId: GAME,
-      rulesetVersion: 'phish-2',
+      rulesetVersion: 'phish-1',
       context: { kind: 'personal', cohortId: null },
       mode: 'standard',
       status: 'active',
@@ -280,7 +280,7 @@ describe('saved phishing attempts', () => {
     expect(finished.body).toMatchObject({
       status: 'completed',
       score: 100,
-      rulesetVersion: 'phish-2',
+      rulesetVersion: 'phish-1',
     })
     expect(finished.body.publicState.debrief.patientZero.id).toBe(answers.patientZeroId)
   })

@@ -42,7 +42,7 @@ const correctVerdict = {
 describe('phishing saved-attempt ruleset', () => {
   it('registers as the current untimed standard ruleset', () => {
     const ruleset = entry()
-    expect(ruleset.storageKey).toBe('phishing-post-mortem@phish-2')
+    expect(ruleset.storageKey).toBe('phishing-post-mortem@phish-1')
     expect(ruleset.maxScore).toBe(100)
     expect(ruleset.maxActions).toBe(1)
     expect(ruleset.competitive).toBe(false)
@@ -89,12 +89,9 @@ describe('phishing saved-attempt ruleset', () => {
     expect(finished.debrief.patientZero.id).toBe(rebuilt.answers.patientZeroId)
   })
 
-  it('keeps phish-1 registered so earlier attempts can still be finished', () => {
-    const registry = createAttemptRegistry(createPhishingRulesets({ random: () => 0 }))
-    expect(registry.getCurrent('phishing-post-mortem').rulesetVersion).toBe('phish-2')
-    const legacy = registry.get('phishing-post-mortem', 'phish-1')
-    expect(legacy.current).toBe(false)
-    const state = {
+  it('still scores a state saved before generated cases existed', () => {
+    const ruleset = entry()
+    const earlier = {
       caseId: 'case-01',
       datasetVersion: content.datasetVersion,
       emailOrder: content.emails.map((email) => email.id),
@@ -102,12 +99,12 @@ describe('phishing saved-attempt ruleset', () => {
       evidenceIds: [],
       submittedAt: null,
     }
-    const submitted = legacy.applyAction(
-      state,
+    const submitted = ruleset.applyAction(
+      earlier,
       { type: 'submit-verdict', payload: correctVerdict },
       meta(),
     )
-    expect(legacy.summarize(submitted, meta()).score).toBe(100)
+    expect(ruleset.summarize(submitted, meta()).score).toBe(100)
   })
 
   it('serializes the case without any answer key before completion', () => {
@@ -201,14 +198,15 @@ describe('phishing saved-attempt ruleset', () => {
 describe('saved phishing state document', () => {
   const database = createConnection()
   afterAll(() => database.close())
-  const registry = createAttemptRegistry([createPhishingRuleset({ random: () => 0 })])
+  // exactly what server.js registers, so a shared-model conflict between entries shows up here
+  const registry = createAttemptRegistry(createPhishingRulesets({ random: () => 0 }))
   const Attempt = getRulesetModel(database, registry, registry.entries[0])
   const document = (state) =>
     new Attempt({
       playerId: new Types.ObjectId(),
       gameId: 'phishing-post-mortem',
-      rulesetVersion: 'phish-2',
-      rulesetKey: 'phishing-post-mortem@phish-2',
+      rulesetVersion: 'phish-1',
+      rulesetKey: 'phishing-post-mortem@phish-1',
       context: { kind: 'personal', cohortId: null },
       mode: 'standard',
       competitiveEligible: false,
@@ -236,6 +234,24 @@ describe('saved phishing state document', () => {
       meta(),
     )
     await expect(document(submitted).validate()).resolves.toBeUndefined()
+  })
+
+  it('stores a generated state and an earlier state without the new fields', async () => {
+    const generatedRuleset = createPhishingRuleset({ random: () => 0.99 })
+    const { state } = startedState(generatedRuleset)
+    expect(state.source).toBe('generated')
+    await expect(document(state).validate()).resolves.toBeUndefined()
+    const earlier = {
+      caseId: 'case-01',
+      datasetVersion: content.datasetVersion,
+      emailOrder: content.emails.map((email) => email.id),
+      selectedEmailId: null,
+      evidenceIds: [],
+      submittedAt: null,
+    }
+    const stored = document(earlier)
+    await expect(stored.validate()).resolves.toBeUndefined()
+    expect(stored.state.source).toBe('authored')
   })
 
   it('rejects state fields outside the declared schema', () => {
