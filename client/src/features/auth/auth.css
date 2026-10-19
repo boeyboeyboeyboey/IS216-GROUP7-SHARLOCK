@@ -99,8 +99,12 @@
   box-shadow: var(--shadow-pixel);
 }
 
+/* a field with a problem gets a thicker border and the warning tint, so it stands out without
+   depending on colour alone (the message below also carries a "!" marker) */
 .auth-field input[aria-invalid='true'] {
+  border-width: 3px;
   border-color: var(--border-strong);
+  background: var(--alert-warning);
   box-shadow: var(--shadow-pixel);
 }
 
@@ -119,14 +123,35 @@
 }
 
 .auth-field-error {
-  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.8rem;
+  border: 3px solid var(--border-strong);
+  background: var(--alert-warning);
+  box-shadow: 3px 3px 0 var(--border-strong);
   color: var(--text-main);
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* square warning marker: the message never relies on colour alone */
+.auth-field-error::before {
+  content: '!';
+  flex: 0 0 auto;
+  width: 1.618rem;
+  height: 1.618rem;
+  border: 3px solid var(--border-strong);
+  background: var(--surface);
+  line-height: 1.2;
+  text-align: center;
 }
 
 .auth-password-control {
   display: flex;
+  gap: 0.8rem;
   min-width: 0;
 }
 
@@ -134,16 +159,31 @@
   min-width: 0;
 }
 
+/* same raised pixel button as the rest of the page: accent fill, hard shadow, pressed state */
 .auth-password-toggle {
   flex: 0 0 auto;
   min-width: 68px;
-  margin-left: 2px;
-  padding: 0 0.75rem;
+  padding: 0 0.8rem;
   border: 2px solid var(--border-strong);
-  background: var(--accent-secondary);
+  border-radius: 0;
+  background: var(--accent-primary);
+  box-shadow: var(--shadow-pixel);
   color: var(--text-main);
-  font-size: 0.9rem;
+  font-family: inherit;
+  font-size: 1rem;
   font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-password-toggle:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+
+.auth-password-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .auth-submit {
@@ -500,10 +540,129 @@
   }
 }
 
+/* step indicator: three square cells, filled up to the current step */
+.auth-steps {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0 0 0.8rem;
+}
+
+.auth-steps__cell {
+  display: block;
+  width: 1.3rem;
+  height: 0.8rem;
+  border: 3px solid var(--border-strong);
+  background: var(--surface);
+}
+
+.auth-steps__cell--on {
+  background: var(--accent-primary);
+}
+
+/* six code boxes, each 1 : 1.618 (width : height) */
+.auth-code {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.5rem;
+  max-width: 24rem;
+}
+
+.auth-code__box {
+  width: 100%;
+  aspect-ratio: 1 / 1.618;
+  min-height: 44px;
+  padding: 0;
+  border: 3px solid var(--border-strong);
+  border-radius: 0;
+  background: #fff;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 1.618rem;
+  font-weight: 700;
+  text-align: center;
+  caret-color: var(--text-main);
+}
+
+.auth-code__box--filled {
+  background: var(--accent-primary);
+}
+
+.auth-code__box:focus-visible {
+  outline: 3px solid var(--text-main);
+  outline-offset: 2px;
+}
+
+.auth-verify__intro {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.auth-verify__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.auth-verify__link {
+  min-height: 44px;
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  color: var(--text-main);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.auth-verify__link:disabled {
+  text-decoration: none;
+  opacity: 0.7;
+  cursor: default;
+}
+
+/* step changes stay stepped (pixel look) but use enough frames to read as motion, not lag.
+   leaving is short so the next screen is never kept waiting */
+.auth-step-enter-active {
+  animation: auth-step-in 0.2s steps(8, end) both;
+}
+
+.auth-step-leave-active {
+  animation: auth-step-out 0.1s steps(4, end) both;
+}
+
+.auth-code--shake {
+  animation: auth-shake 0.3s steps(6, end);
+}
+
+@keyframes auth-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+@keyframes auth-step-out {
+  to {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+
+@keyframes auth-shake {
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-page *,
   .auth-summary * {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+    animation: none !important;
   }
 }

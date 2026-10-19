@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { readVerificationCode } from './fixtures/mail.js'
 
 const PASSWORD = 'Correct-Horse-🔒-2026'
 
@@ -66,6 +67,22 @@ test('registers, restores, signs out, signs in, and stops a protected action aft
 
   await page.getByLabel('Confirm password').fill(PASSWORD)
   await page.getByRole('button', { name: 'Create account' }).click()
+
+  // the account only signs in once the emailed code is confirmed
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible()
+  const confirm = page.getByRole('button', { name: 'Confirm code' })
+  await expect(confirm).toBeDisabled()
+  const code = await readVerificationCode(email)
+  const wrongCode = code === '000000' ? '000001' : '000000'
+  await page.getByLabel('Digit 1 of 6').click()
+  await page.keyboard.type(wrongCode)
+  await expect(confirm).toBeEnabled()
+  await confirm.click()
+  await expect(page.getByRole('alert')).toContainText('That code is not right')
+  await expect(page.getByLabel('Digit 1 of 6')).toHaveValue('')
+  await page.getByLabel('Digit 1 of 6').click()
+  await page.keyboard.type(code)
+  await confirm.click()
   await expect(page).toHaveURL('/join-class?onboarding=1')
   await page.getByRole('button', { name: 'Skip and explore Sharlock' }).click()
   await expect(page).toHaveURL('/')
@@ -85,9 +102,18 @@ test('registers, restores, signs out, signs in, and stops a protected action aft
   await page.goto('/games/phishing-post-mortem')
   await expect(page.getByRole('heading', { name: 'The Phishing Post-Mortem' })).toBeVisible()
 
-  await page.goto('/profile')
+  // /profile hides the account box in the mobile menu, so sign out from a page that shows it
+  await page.goto('/progress')
   const header = page.getByRole('banner')
   const desktopSignOut = header.getByRole('button', { name: 'Sign out' })
+  // the header fills in once the session is restored; wait for either route before choosing one
+  await expect
+    .poll(
+      async () =>
+        (await desktopSignOut.isVisible()) ||
+        (await page.getByRole('button', { name: 'Open navigation and profile' }).isVisible()),
+    )
+    .toBe(true)
   if (await desktopSignOut.isVisible()) {
     await desktopSignOut.click()
   } else {

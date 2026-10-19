@@ -16,6 +16,8 @@ const authRequests = vi.hoisted(() => ({
   requestLogin: vi.fn(),
   requestLogout: vi.fn(),
   requestRegistration: vi.fn(),
+  requestVerifyEmail: vi.fn(),
+  requestResendVerification: vi.fn(),
 }))
 
 vi.mock('../api.js', async () => {
@@ -32,6 +34,29 @@ const account = Object.freeze({
   passwordHash: 'private-value',
   authVersion: 22,
 })
+
+const verification = Object.freeze({
+  email: account.email,
+  delivery: 'sent',
+  expiresAt: '2026-10-19T12:10:00.000Z',
+  resendAvailableAt: '2026-10-19T12:00:30.000Z',
+})
+
+// registration ends at the code screen; the account only signs in once its code is confirmed
+async function registerAndVerify(auth, signedInToken = 'signed-in-token') {
+  authRequests.requestRegistration.mockResolvedValue({
+    verification,
+    csrfToken: 'pending-token',
+  })
+  authRequests.requestVerifyEmail.mockResolvedValue({ user: account, csrfToken: signedInToken })
+  await auth.register({
+    email: account.email,
+    username: account.username,
+    password: 'Correct-Horse-🔒-2026',
+    avatarId: account.avatarId,
+  })
+  return auth.verifyEmail('123456')
+}
 
 function rejectedAuth(code, status, message = 'private backend detail') {
   return Object.assign(new Error(message), {
@@ -79,10 +104,6 @@ describe('auth store', () => {
 
   it('keeps the current identity visible during a forced session check', async () => {
     authRequests.requestCsrfToken.mockResolvedValue('anonymous-token')
-    authRequests.requestRegistration.mockResolvedValue({
-      user: account,
-      csrfToken: 'signed-in-token',
-    })
     let resolveCurrentUser
     authRequests.requestCurrentUser.mockReturnValue(
       new Promise((resolve) => {
@@ -90,12 +111,7 @@ describe('auth store', () => {
       }),
     )
     const auth = useAuthStore()
-    await auth.register({
-      email: account.email,
-      username: account.username,
-      password: 'Correct-Horse-🔒-2026',
-      avatarId: account.avatarId,
-    })
+    await registerAndVerify(auth)
 
     const restoring = auth.restoreSession({ force: true })
     expect(auth.status).toBe('authenticated')
@@ -104,15 +120,19 @@ describe('auth store', () => {
     await expect(restoring).resolves.toMatchObject({ username: account.username })
   })
 
-  it('sends only the four approved registration fields and stores automatic sign-in', async () => {
+  it('sends only the four approved registration fields and waits for the emailed code', async () => {
     authRequests.requestCsrfToken.mockResolvedValue('anonymous-token')
     authRequests.requestRegistration.mockResolvedValue({
+      verification: { ...verification, passwordHash: 'must-not-be-kept' },
+      csrfToken: 'pending-token',
+    })
+    authRequests.requestVerifyEmail.mockResolvedValue({
       user: { ...account, passwordHash: 'must-not-be-kept' },
       csrfToken: 'rotated-token',
     })
     const auth = useAuthStore()
 
-    await auth.register({
+    const registered = await auth.register({
       email: ' Detective@Example.test ',
       username: ' Case_Finder ',
       password: 'Correct-Horse-🔒-2026',
@@ -135,9 +155,86 @@ describe('auth store', () => {
       'password',
       'avatarId',
     ])
+    // no identity yet: the code screen is next, and only public fields are kept
+    expect(registered).toBeNull()
+    expect(auth.status).not.toBe('authenticated')
+    expect(auth.user).toBeNull()
+    expect(auth.pendingVerification).toEqual(verification)
+    expect(auth.csrfToken).toBe('pending-token')
+
+    await auth.verifyEmail('123 456')
+    expect(authRequests.requestVerifyEmail).toHaveBeenCalledWith(
+      { code: '123456' },
+      'pending-token',
+    )
     expect(auth.status).toBe('authenticated')
+    expect(auth.pendingVerification).toBeNull()
     expect(auth.csrfToken).toBe('rotated-token')
     expect(auth.user).not.toHaveProperty('passwordHash')
+  })
+
+  it('validates the code locally and surfaces a wrong code without losing the screen', async () => {
+    authRequests.requestCsrfToken.mockResolvedValue('anonymous-token')
+    authRequests.requestRegistration.mockResolvedValue({ verification, csrfToken: 'pending-token' })
+    const auth = useAuthStore()
+    await auth.register({
+      email: account.email,
+      username: account.username,
+      password: 'Correct-Horse-🔒-2026',
+      avatarId: account.avatarId,
+    })
+
+    await expect(auth.verifyEmail('12345')).rejects.toMatchObject({ code: 'VALIDATION_ERROR' })
+    expect(authRequests.requestVerifyEmail).not.toHaveBeenCalled()
+
+    authRequests.requestVerifyEmail.mockRejectedValue(
+      rejectedAuth('VERIFICATION_CODE_INVALID', 400),
+    )
+    await expect(auth.verifyEmail('123456')).rejects.toMatchObject({
+      message: 'That code is not right. Check it and try again.',
+    })
+    expect(auth.pendingVerification).toEqual(verification)
+    expect(auth.status).not.toBe('authenticated')
+
+    // when the server forgot the sign-up, the screen returns to the form
+    authRequests.requestVerifyEmail.mockRejectedValue(rejectedAuth('VERIFICATION_NOT_PENDING', 409))
+    await expect(auth.verifyEmail('123456')).rejects.toMatchObject({
+      code: 'VERIFICATION_NOT_PENDING',
+    })
+    expect(auth.pendingVerification).toBeNull()
+  })
+
+  it('resends a code and replaces the pending details', async () => {
+    authRequests.requestCsrfToken.mockResolvedValue('anonymous-token')
+    authRequests.requestRegistration.mockResolvedValue({ verification, csrfToken: 'pending-token' })
+    const auth = useAuthStore()
+    await auth.register({
+      email: account.email,
+      username: account.username,
+      password: 'Correct-Horse-🔒-2026',
+      avatarId: account.avatarId,
+    })
+
+    const later = { ...verification, resendAvailableAt: '2026-10-19T12:01:00.000Z' }
+    authRequests.requestResendVerification.mockResolvedValue({ verification: later })
+    await auth.resendVerification()
+    expect(authRequests.requestResendVerification).toHaveBeenCalledWith('pending-token')
+    expect(auth.pendingVerification).toEqual(later)
+
+    auth.cancelVerification()
+    expect(auth.pendingVerification).toBeNull()
+    await expect(auth.resendVerification()).resolves.toBeNull()
+  })
+
+  it('holds a correct-password login of an unconfirmed account at the code screen', async () => {
+    authRequests.requestCsrfToken.mockResolvedValue('anonymous-token')
+    authRequests.requestLogin.mockResolvedValue({ verification, csrfToken: 'pending-token' })
+    const auth = useAuthStore()
+
+    const result = await auth.login({ email: account.email, password: 'Correct-Horse-🔒-2026' })
+    expect(result).toBeNull()
+    expect(auth.pendingVerification).toEqual(verification)
+    expect(auth.status).not.toBe('authenticated')
   })
 
   it('refreshes a rejected CSRF token without replaying the sign-in POST', async () => {
@@ -227,10 +324,6 @@ describe('auth store', () => {
 
   it('keeps the user visible while logout is pending and clears it after success', async () => {
     authRequests.requestCsrfToken.mockResolvedValue('anonymous-token')
-    authRequests.requestRegistration.mockResolvedValue({
-      user: account,
-      csrfToken: 'signed-in-token',
-    })
     let finishLogout
     authRequests.requestLogout.mockReturnValue(
       new Promise((resolve) => {
@@ -238,12 +331,7 @@ describe('auth store', () => {
       }),
     )
     const auth = useAuthStore()
-    await auth.register({
-      email: account.email,
-      username: account.username,
-      password: 'Correct-Horse-🔒-2026',
-      avatarId: account.avatarId,
-    })
+    await registerAndVerify(auth)
 
     const signingOut = auth.logout()
     expect(auth.logoutPending).toBe(true)
@@ -262,18 +350,9 @@ describe('auth store', () => {
 
   it('keeps the account available when logout could not reach the server', async () => {
     authRequests.requestCsrfToken.mockResolvedValue('anonymous-token')
-    authRequests.requestRegistration.mockResolvedValue({
-      user: account,
-      csrfToken: 'signed-in-token',
-    })
     authRequests.requestLogout.mockRejectedValue(new Error('private transport details'))
     const auth = useAuthStore()
-    await auth.register({
-      email: account.email,
-      username: account.username,
-      password: 'Correct-Horse-🔒-2026',
-      avatarId: account.avatarId,
-    })
+    await registerAndVerify(auth)
 
     await expect(auth.logout()).rejects.toMatchObject({
       message: 'We could not reach Sharlock. Check your connection and try again.',
@@ -394,6 +473,64 @@ describe('auth forms and account summary', () => {
     expect(wrapper.get('#register-password').attributes('aria-invalid')).toBe('true')
     expect(wrapper.get('#register-password-error').text()).not.toBe('')
     expect(wrapper.emitted('submit')).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('warns after a field is left and clears the warning as soon as it is valid', async () => {
+    const wrapper = mount(RegisterForm)
+    const email = wrapper.get('#register-email')
+
+    // nothing is flagged while typing or when an empty field is left
+    await email.setValue('abc')
+    expect(wrapper.find('#register-email-error').exists()).toBe(false)
+    await email.trigger('blur')
+    expect(wrapper.get('#register-email-error').text()).toContain('valid email')
+    expect(email.attributes('aria-invalid')).toBe('true')
+    // the banner waits for a submit attempt
+    expect(wrapper.find('.auth-error-summary').exists()).toBe(false)
+
+    await email.setValue('abc@school.edu')
+    expect(wrapper.find('#register-email-error').exists()).toBe(false)
+    expect(email.attributes('aria-invalid')).toBe('false')
+
+    await wrapper.get('#register-username').trigger('blur')
+    expect(wrapper.find('#register-username-error').exists()).toBe(false)
+
+    // mismatch follows both password fields once the confirmation has been left
+    await wrapper.get('#register-password').setValue('Correct-Horse-2026!')
+    const confirmation = wrapper.get('#register-confirmation')
+    await confirmation.setValue('Correct-Horse')
+    await confirmation.trigger('blur')
+    expect(wrapper.get('#register-confirmation-error').text()).toBe('Passwords must match.')
+    await confirmation.setValue('Correct-Horse-2026!')
+    expect(wrapper.find('#register-confirmation-error').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('shows the banner after a submit attempt and hides it once every field is fixed', async () => {
+    const wrapper = mount(RegisterForm)
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.find('.auth-error-summary').exists()).toBe(true)
+
+    await wrapper.get('#register-email').setValue('detective@example.test')
+    await wrapper.get('#register-username').setValue('Case_Finder')
+    await wrapper.get('#register-password').setValue('Correct-Horse-🔒-2026')
+    await wrapper.get('#register-confirmation').setValue('Correct-Horse-🔒-2026')
+    expect(wrapper.find('.auth-error-summary').exists()).toBe(false)
+    expect(wrapper.findAll('.auth-field-error')).toHaveLength(0)
+    wrapper.unmount()
+  })
+
+  it('clears a server-reported field error when that field is edited', async () => {
+    const wrapper = mount(RegisterForm, {
+      props: { error: 'Check the highlighted fields.', fieldErrors: { username: 'Taken.' } },
+    })
+    expect(wrapper.get('#register-username-error').text()).toBe('Taken.')
+    expect(wrapper.find('.auth-error-summary').exists()).toBe(true)
+
+    await wrapper.get('#register-username').setValue('Another_Name')
+    expect(wrapper.find('#register-username-error').exists()).toBe(false)
+    expect(wrapper.find('.auth-error-summary').exists()).toBe(false)
     wrapper.unmount()
   })
 

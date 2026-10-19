@@ -4,7 +4,7 @@ This backend module provides student registration, account sign-in, session rest
 
 ## Request flow
 
-`GET /api/auth/csrf` creates or reuses a short-lived anonymous Mongo session and returns a synchronizer token. Registration, login and logout require an exact trusted `Origin` (or the same origin parsed from `Referer` when `Origin` is absent) and the token in `X-CSRF-Token`. Successful registration creates only a student; successful registration and login rotate the session ID, persist the new session, and return a fresh token. Every auth request rechecks an authenticated session's idle and absolute bounds plus the current account status and auth version. An expired authenticated session may obtain a fresh anonymous token through a new bootstrap request; disabled or version-stale sessions are invalidated. `GET /api/auth/me` returns only the current safe user DTO. `POST /api/auth/logout` destroys the current session.
+`GET /api/auth/csrf` creates or reuses a short-lived anonymous Mongo session and returns a synchronizer token. Registration, login and logout require an exact trusted `Origin` (or the same origin parsed from `Referer` when `Origin` is absent) and the token in `X-CSRF-Token`. Registration creates only a student and, with AUTH-03, ends at a pending-verification session; confirming the emailed code and login rotate the session ID, persist the new session, and return a fresh token. Every auth request rechecks an authenticated session's idle and absolute bounds plus the current account status and auth version. An expired authenticated session may obtain a fresh anonymous token through a new bootstrap request; disabled or version-stale sessions are invalidated. `GET /api/auth/me` returns only the current safe user DTO. `POST /api/auth/logout` destroys the current session.
 
 ## HTTP contract
 
@@ -13,8 +13,10 @@ All auth responses use `Cache-Control: no-store`. The browser sends the session 
 | Endpoint                                | Exact JSON body                           | Success                                                   |
 | --------------------------------------- | ----------------------------------------- | --------------------------------------------------------- |
 | `GET /api/auth/csrf`                    | none                                      | 200 `{ csrfToken }`                                       |
-| `POST /api/auth/register`               | `{ email, username, password, avatarId }` | 201 `{ user, csrfToken }`, automatically signed in        |
-| `POST /api/auth/login`                  | `{ email, password }`                     | 200 `{ user, csrfToken }`                                 |
+| `POST /api/auth/register`               | `{ email, username, password, avatarId }` | 202 `{ verification, csrfToken }`, not signed in yet      |
+| `POST /api/auth/verify-email`           | `{ code }`                                | 201 `{ user, csrfToken }`, signed in                      |
+| `POST /api/auth/verify-email/resend`    | empty or `{}`                             | 202 `{ verification }`                                    |
+| `POST /api/auth/login`                  | `{ email, password }`                     | 200 `{ user, csrfToken }`, or 202 `{ verification, csrfToken }` when the email is unconfirmed |
 | `GET /api/auth/me`                      | none                                      | 200 `{ user }`, or 401 when unauthenticated               |
 | `POST /api/auth/logout`                 | empty or `{}`                             | 204, current session invalidated                          |
 | `POST /api/auth/class-invitation`       | `{ code }`                                | 204, hash retained in the current session for ten minutes |
@@ -36,9 +38,20 @@ Sessions use `express-session` with the maintained `connect-mongo` store over th
 
 Password operations are Argon2id at 19 MiB, two iterations and one lane, with two process-wide operations allowed at once and no waiting queue. IP limits cover CSRF bootstrap, registration, login and activation (10 activation requests per 15 minutes). A separate HMAC-keyed email/IP counter records only failed credential checks and expires after fifteen minutes; raw addresses and credentials are not used as limiter keys or logged.
 
-Instructor activation is mounted at `POST /api/auth/activate-account` through the same origin/CSRF/session runtime; [recovery](../recovery/README.md) owns its transaction. [Admin](../admin/README.md) owns institution/class/instructor management. [Cohorts](../cohorts/README.md) owns enrollment and onboarding. General password recovery, email verification, account profile changes and persistent learning records remain pending. The current game APIs remain available under their existing contracts until separately approved integration.
+Instructor activation is mounted at `POST /api/auth/activate-account` through the same origin/CSRF/session runtime; [recovery](../recovery/README.md) owns its transaction. [Admin](../admin/README.md) owns institution/class/instructor management. [Cohorts](../cohorts/README.md) owns enrollment and onboarding. General password recovery, account profile changes and persistent learning records remain pending. Sign-up [email verification](#email-verification) is implemented as AUTH-03. The current game APIs remain available under their existing contracts until separately approved integration.
 
 Invitation capture requires the existing session, origin and CSRF protections, with a combined 30 capture/clear requests per fifteen minutes per IP. It validates code shape without revealing class existence to anonymous callers. Only a SHA-256 hash and ten-minute expiry enter session storage. Successful registration/login carries that allowlisted draft through session rotation without extending its lifetime; the public user DTO and credential payloads are unchanged. Logout destroys it with the session. Enrollment checks the current invitation record after authentication; a draft grants no membership authority.
+
+## Email verification
+
+AUTH-03 adds a six-digit confirmation step between registration and the first signed-in session. This is a project demonstration: **no real email is sent and no provider, credential or paid service is used.** The code is a `crypto.randomInt` value printed by the console mailer (`mailer.js`) to the server terminal as `[mail:dev] Verification code for <email>: <code>`. A real provider would replace only that one-method adapter. Browser tests run the server with `NODE_ENV=test` and `TEST_MAIL_OUTBOX`, which swaps in a file mailer; nothing else selects it.
+
+- **Registration** creates the student with a pending `emailVerification` state and returns 202. The browser holds only an anonymous session that remembers the waiting account (`pendingVerificationUserId`, 30 minutes, longer than the code so an expired code can be resent). No authenticated session exists until the code is confirmed. A pending class-invitation draft is carried through confirmation.
+- **Code rules** (`verification.js`): 6 digits, valid 10 minutes, stored only as an HMAC-SHA256 of the account id and code keyed by the session secret, compared in constant time. An attempt is reserved atomically before comparing, so parallel guesses all count; 5 wrong guesses lock the code until a new one is requested. Resend waits 30 seconds, allows 5 sends per hour and replaces the stored code with fresh attempts. A failed send does not start the cooldown.
+- **Sign-in** of an unconfirmed account with the correct password returns 202 and sends a code instead of starting a session; wrong passwords still return the generic 401. `findActiveSessionUser` also refuses unconfirmed accounts.
+- **Existing accounts count as verified.** The pending state is the only marker, so every account created earlier, by the admin tool or by activation needs no migration. `authService.register` is unchanged and still creates a verified account for those internal callers.
+- **Reclaiming an address:** a new registration may replace an unconfirmed account only after its code has expired. Replacing a live one would let anyone swap the password under someone who is still confirming.
+- Failures use `VERIFICATION_CODE_INVALID`, `VERIFICATION_CODE_EXPIRED`, `VERIFICATION_ATTEMPTS_EXCEEDED` and `VERIFICATION_NOT_PENDING`; resend limits use the shared 429. Verification requests share a 30-per-15-minutes IP limit.
 
 ## Reusable protected-request boundary
 

@@ -19,6 +19,7 @@ export function createApp(
   database,
   {
     auth,
+    mail = {},
     admin = {},
     audit = {},
     cohorts = {},
@@ -40,7 +41,7 @@ export function createApp(
     next()
   })
   app.use(express.json({ limit: '16kb' }))
-  const authRuntime = createAuthRouter(database, auth)
+  const authRuntime = createAuthRouter(database, auth, mail.mailer ? { mailer: mail.mailer } : {})
   app.use('/api/auth', authRuntime.router)
   const adminRouter = createAdminRouter(database, {
     ...admin,

@@ -1,0 +1,77 @@
+/* 8-bit screen wipe into town. Blocks switch on or off in single hard steps, never fade, and the
+   overlay blocks clicks while it plays so nothing is activated under it. */
+.pixel-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  pointer-events: all;
+}
+
+.pixel-wipe__grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--wipe-columns), 1fr);
+  grid-template-rows: repeat(var(--wipe-rows), 1fr);
+}
+
+.pixel-wipe__cell {
+  background: var(--border-strong);
+  opacity: 0;
+}
+
+/* covering: each block turns on at its diagonal step */
+.pixel-wipe--cover .pixel-wipe__cell {
+  animation: pixel-wipe-on 1ms steps(1, end) var(--delay) forwards;
+}
+
+/* revealing: the screen is fully covered, then each block turns off at its diagonal step */
+.pixel-wipe--reveal .pixel-wipe__cell {
+  opacity: 1;
+  animation: pixel-wipe-off 1ms steps(1, end) var(--delay) forwards;
+}
+
+.pixel-wipe__label {
+  position: relative;
+  margin: 0;
+  padding: 0.8rem 1.3rem;
+  border: 3px solid var(--text-main);
+  background: var(--surface);
+  box-shadow: 4px 4px 0 var(--text-main);
+  color: var(--text-main);
+  font-family: var(--font-pixel);
+  font-size: 1.272rem;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0;
+}
+
+.pixel-wipe--cover .pixel-wipe__label {
+  animation: pixel-wipe-on 1ms steps(1, end) var(--label-delay) forwards;
+}
+
+.pixel-wipe--reveal .pixel-wipe__label {
+  opacity: 1;
+  animation: pixel-wipe-off 1ms steps(1, end) 0ms forwards;
+}
+
+@keyframes pixel-wipe-on {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pixel-wipe-off {
+  to {
+    opacity: 0;
+  }
+}
+
+/* the sequencing code skips the wipe entirely for reduced motion; this is only a safety net */
+@media (prefers-reduced-motion: reduce) {
+  .pixel-wipe {
+    display: none;
+  }
+}

@@ -5,6 +5,14 @@ export const SESSION_COOKIE_NAME = 'sharlock.sid'
 export const AUTH_IDLE_MS = 30 * 60 * 1000
 export const AUTH_ABSOLUTE_MS = 8 * 60 * 60 * 1000
 export const CSRF_ABSOLUTE_MS = 10 * 60 * 1000
+// an anonymous session that is waiting for an emailed code outlives that code, so an expired
+// code is reported as such and can be replaced with Resend.
+export const VERIFICATION_SESSION_MS = 30 * 60 * 1000
+
+function idleWindowFor(sessionData) {
+  if (sessionData.userId) return AUTH_IDLE_MS
+  return sessionData.pendingVerificationUserId ? VERIFICATION_SESSION_MS : CSRF_ABSOLUTE_MS
+}
 
 function safeSettings(settings) {
   if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
@@ -79,8 +87,7 @@ function sessionExpiresAt(sessionData, now) {
   const absoluteExpiry = sessionData.absoluteExpiresAt
     ? new Date(sessionData.absoluteExpiresAt).getTime()
     : currentTime + AUTH_ABSOLUTE_MS
-  const idleWindow = sessionData.userId ? AUTH_IDLE_MS : CSRF_ABSOLUTE_MS
-  return new Date(Math.min(currentTime + idleWindow, absoluteExpiry))
+  return new Date(Math.min(currentTime + idleWindowFor(sessionData), absoluteExpiry))
 }
 
 export class AuthMongoStore extends session.Store {
@@ -147,8 +154,7 @@ export class AuthMongoStore extends session.Store {
     const absoluteExpiry = sessionData.absoluteExpiresAt
       ? new Date(sessionData.absoluteExpiresAt).getTime()
       : touchedAt + CSRF_ABSOLUTE_MS
-    const idleWindow = sessionData.userId ? AUTH_IDLE_MS : CSRF_ABSOLUTE_MS
-    const expiresAt = new Date(Math.min(touchedAt + idleWindow, absoluteExpiry))
+    const expiresAt = new Date(Math.min(touchedAt + idleWindowFor(sessionData), absoluteExpiry))
     this.collection
       .updateOne(
         {
@@ -219,7 +225,7 @@ export function setSessionCookieLifetime(request, now = Date.now) {
   const absoluteExpiry = request.session.absoluteExpiresAt
     ? new Date(request.session.absoluteExpiresAt).getTime()
     : currentTime + CSRF_ABSOLUTE_MS
-  const maxAge = request.session.userId ? AUTH_IDLE_MS : CSRF_ABSOLUTE_MS
+  const maxAge = idleWindowFor(request.session)
   request.session.cookie.maxAge = Math.max(0, Math.min(maxAge, absoluteExpiry - currentTime))
   request.session.cookie.expires = new Date(
     currentTime + Math.max(0, Math.min(maxAge, absoluteExpiry - currentTime)),
@@ -251,6 +257,15 @@ export function createAnonymousSessionValues(now = Date.now) {
   }
 }
 
+export function createPendingVerificationSessionValues(userId, now = Date.now) {
+  const currentTime = now()
+  return {
+    ...createAnonymousSessionValues(() => currentTime),
+    absoluteExpiresAt: new Date(currentTime + VERIFICATION_SESSION_MS),
+    pendingVerificationUserId: userId,
+  }
+}
+
 export function createAuthenticatedSessionValues(userId, authVersion, now = Date.now) {
   const currentTime = now()
   return {
@@ -270,8 +285,7 @@ export function sessionIsExpired(sessionData, now = Date.now) {
   if (!sessionData.lastSeenAt) return true
   const lastSeenAt = new Date(sessionData.lastSeenAt).getTime()
   if (!Number.isFinite(lastSeenAt)) return true
-  const idleWindow = sessionData.userId ? AUTH_IDLE_MS : CSRF_ABSOLUTE_MS
-  return currentTime - lastSeenAt >= idleWindow
+  return currentTime - lastSeenAt >= idleWindowFor(sessionData)
 }
 
 export function clearSessionCookie(response, secureCookie) {

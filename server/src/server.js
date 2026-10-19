@@ -3,6 +3,7 @@ import { createNewsStore } from './modules/news/store.js'
 import { createGameAdapters } from './modules/games/social-engineering-simulator/llmConfig.js'
 import { createSocialEngineeringService } from './modules/games/social-engineering-simulator/service.js'
 import { initializeAuthStorage } from './modules/auth/storage.js'
+import { createFileMailer } from './modules/auth/mailer.js'
 import { initializeCohortStorage } from './modules/cohorts/storage.js'
 import { initializeAuditStorage } from './modules/audit/storage.js'
 import { initializeRecoveryStorage } from './modules/recovery/storage.js'
@@ -85,12 +86,15 @@ try {
   // reports configured:false, so the simulator endpoints fail gracefully
   // instead of the server refusing to start
   const { attacker, colleague } = createGameAdapters(config)
+  // sign-up codes are printed by the console mailer; only browser tests swap in a file mailer
+  const testOutbox = config.nodeEnv === 'test' ? process.env.TEST_MAIL_OUTBOX : undefined
   app = createApp(database, {
     auth: {
       nodeEnv: config.nodeEnv,
       clientOrigin: config.clientOrigin,
       sessionSecret: config.sessionSecret,
     },
+    ...(testOutbox && { mail: { mailer: createFileMailer(testOutbox) } }),
     news: {
       apiKey: config.nodeEnv === 'test' ? undefined : config.guardianApiKey,
       store: newsStore,

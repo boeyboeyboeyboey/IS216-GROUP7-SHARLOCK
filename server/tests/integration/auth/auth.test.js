@@ -16,6 +16,7 @@ import {
   disposeTestAuthApps,
   initializeTestAuth,
   registerTestStudent,
+  testMailer,
 } from './helpers.js'
 
 let database
@@ -41,6 +42,16 @@ function cookieValue(response) {
 function sessionId(cookie) {
   const value = decodeURIComponent(cookie.slice('sharlock.sid='.length))
   return value.slice(2).split('.')[0]
+}
+
+// completes a pending registration the way a student does: read the logged code and confirm it
+async function confirmEmail(agent, csrfToken, email) {
+  return agent
+    .post('/api/auth/verify-email')
+    .set('Origin', baseAuthOptions.clientOrigin)
+    .set('X-CSRF-Token', csrfToken)
+    .send({ code: testMailer(app).lastCodeFor(email) })
+    .expect(201)
 }
 
 async function prepareLoginAgent(
@@ -146,20 +157,25 @@ describe('account and Mongo session HTTP contract', () => {
         password: 'AlphaBravo1!',
         avatarId: 'mint',
       })
-      .expect(201)
+      .expect(202)
+    const verified = await confirmEmail(
+      agent,
+      registration.body.csrfToken,
+      'minimum-password@example.test',
+    )
     expect(await agent.get('/api/auth/me').expect(200)).toMatchObject({
-      body: { user: registration.body.user },
+      body: { user: verified.body.user },
     })
     await agent
       .post('/api/auth/logout')
       .set('Origin', baseAuthOptions.clientOrigin)
-      .set('X-CSRF-Token', registration.body.csrfToken)
+      .set('X-CSRF-Token', verified.body.csrfToken)
       .send({})
       .expect(204)
     const login = await prepareLoginAgent('minimum-password@example.test', 'AlphaBravo1!')
     expect(login.response.status).toBe(200)
     expect(await login.agent.get('/api/auth/me').expect(200)).toMatchObject({
-      body: { user: { id: registration.body.user.id } },
+      body: { user: { id: verified.body.user.id } },
     })
 
     const legacyPassword = 'legacylowercasepassword'
@@ -192,12 +208,21 @@ describe('account and Mongo session HTTP contract', () => {
     expect(bootstrap.headers['set-cookie'][0]).toContain('Path=/api')
     expect(bootstrap.headers['set-cookie'][0]).not.toMatch(/Domain=|; Secure/i)
 
-    const registration = await agent
+    const pending = await agent
       .post('/api/auth/register')
       .set('Origin', baseAuthOptions.clientOrigin)
       .set('X-CSRF-Token', bootstrap.body.csrfToken)
       .send(validRegistration)
-      .expect(201)
+      .expect(202)
+    // no identity exists until the emailed code is confirmed
+    expect(Object.keys(pending.body).sort()).toEqual(['csrfToken', 'verification'])
+    expect(pending.body.verification).toMatchObject({
+      email: 'student@example.test',
+      delivery: 'sent',
+    })
+    expect(pending.text).not.toMatch(/passwordHash|codeHash|"code"/)
+    await agent.get('/api/auth/me').expect(401)
+    const registration = await confirmEmail(agent, pending.body.csrfToken, validRegistration.email)
     expect(Object.keys(registration.body).sort()).toEqual(['csrfToken', 'user'])
     expect(Object.keys(registration.body.user).sort()).toEqual(
       ['avatarId', 'email', 'globalRoles', 'id', 'username'].sort(),
@@ -312,7 +337,7 @@ describe('account and Mongo session HTTP contract', () => {
       .set('Referer', `${baseAuthOptions.clientOrigin}/join`)
       .set('X-CSRF-Token', refererOnly.body.csrfToken)
       .send({ ...body, email: 'trusted-referer@example.test', username: 'Trusted_Ref' })
-      .expect(201)
+      .expect(202)
   })
 
   it('rejects unknown and prototype-named fields and handles duplicate creation races safely', async () => {
@@ -348,7 +373,7 @@ describe('account and Mongo session HTTP contract', () => {
           .send({ ...validRegistration, email: 'race@example.test', username: 'Race_User' }),
       ),
     )
-    expect(results.map(({ status }) => status).sort()).toEqual([201, 409])
+    expect(results.map(({ status }) => status).sort()).toEqual([202, 409])
     const conflict = results.find(({ status }) => status === 409)
     expect(conflict.body.error).toMatchObject({
       code: 'ACCOUNT_UNAVAILABLE',
