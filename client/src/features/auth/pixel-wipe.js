@@ -9,7 +9,7 @@ import { gameCatalog } from '../../data/gameCatalog.js'
 // screen is held covered so the card can be read, then the blocks clear.
 //
 // Timing: every pattern takes the same WIPE_COVER_MS to cover (and to clear), and the hold fills the
-// rest, so each wipe lasts about 1.7 s from the first block to the last (0.42 + 0.83 + 0.42, plus
+// rest, so each wipe lasts about 1.6 s from the first block to the last (0.42 + 0.73 + 0.42, plus
 // two frames for the new page to paint).
 export const WIPE_COLUMNS = 16
 export const WIPE_ROWS = 10
@@ -20,7 +20,7 @@ const SETTLE_MS = 60
 const WATCHDOG_MS = 8000
 // how long the screen stays fully covered so the destination card can be read; a click or key
 // press skips the rest of it
-export const WIPE_HOLD_MS = 830
+export const WIPE_HOLD_MS = 730
 
 // Each pattern is first written in any convenient unit ("when does this block go, relative to the
 // others"), then scaled so the first block goes at 0 ms and the last at WIPE_COVER_MS - SETTLE_MS.

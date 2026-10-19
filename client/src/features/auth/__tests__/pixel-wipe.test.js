@@ -85,10 +85,10 @@ describe('wipe patterns', () => {
     }
   })
 
-  it('add up to about 1.7 seconds from first block to last', () => {
+  it('add up to about 1.6 seconds from first block to last', () => {
     const total = WIPE_COVER_MS + WIPE_HOLD_MS + WIPE_COVER_MS
-    expect(total).toBeGreaterThanOrEqual(1650)
-    expect(total).toBeLessThanOrEqual(1700)
+    expect(total).toBeGreaterThanOrEqual(1550)
+    expect(total).toBeLessThanOrEqual(1600)
   })
 
   it('gives every tab its own emoji', () => {
