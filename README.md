@@ -158,7 +158,7 @@ pnpm exec playwright install chromium
 
 Skip it and **every** E2E test fails instantly with `browserType.launch: Executable doesn't exist`. That looks like a broken suite but is only a missing download - Playwright pins a browser revision per version, so an upgrade invalidates the one already on disk.
 
-**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator and CLI Cyber Defender games, plus combined About/introduction, two scored-game previews and database health check. The three games remain in Review and do not persist results. AUTH-01-A/B and COH-01 provide accounts, six capybara presets and approved class membership; permission integration across game APIs, server game-resource ownership and persistent learning records remain pending. Localhost demonstration; zero project budget.
+**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator, CLI Cyber Defender and Clearance Tower games, plus combined About/introduction, one scored-game preview and database health check. The four games remain in Review and do not persist results. AUTH-01-A/B and COH-01 provide accounts, six capybara presets and approved class membership; permission integration across game APIs, server game-resource ownership and persistent learning records remain pending. Localhost demonstration; zero project budget.
 
 DATA-01-A/AUTH-02-A adds the backend class foundation: institutions, cohorts, memberships, instructor assignments, own-account read endpoints and current server context/access checks. COH-01 connects student class requests and assigned-staff approval; saved game integration remains future work. See the [class API and permission contract](server/src/modules/cohorts/README.md).
 
@@ -197,7 +197,7 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 
 ## 5. Game Backlog
 
-The five scored games have implementation blueprints, but a blueprint does not authorize work. G-NEWS / Cyber News Central is accepted by Boey; G-PHISH, G-SOC and G-CLI are playable unsaved implementations pending review; G-SQL and G-REGEX remain clearly labelled previews. The town has six activities. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
+The five scored games have implementation blueprints, but a blueprint does not authorize work. G-NEWS / Cyber News Central is accepted by Boey; G-PHISH, G-SOC, G-CLI and G-CLEAR (which replaced G-REGEX) are playable unsaved implementations pending review; G-SQL remains a clearly labelled preview. The town has six activities. Star ratings describe learner difficulty. New scope must be agreed through the kickoff dialogue.
 
 ### Shared implementation blueprint
 
@@ -210,7 +210,7 @@ The following proposed persistence contract applies to the five scored games. Ra
 - Requests: reuse `client/src/services/api.js`; its base URL already contains `/api`.
 - State: keep gameplay in a module composable using `ref`, `reactive` and `computed`. Reserve Pinia for shared account/context state.
 - Visual boundary: follow [DESIGN.md](DESIGN.md#rules-for-new-pages-and-features). Game modules may choose their own design philosophy and scoped fonts/artwork/controls; shared navigation, town registration/cards and shared pages retain the exact hub scheme. Verify accessibility/responsiveness and no style leakage.
-- Town integration: all six activities have one catalog entry and building. SQL-injection and regex use the generic preview route and `isPreview: true`; news, phishing, social-engineering and CLI are playable behind their existing routes. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
+- Town integration: all six activities have one catalog entry and building. SQL injection uses the generic preview route and `isPreview: true`; news, phishing, social-engineering, CLI and Clearance Tower (in the former regex shed) are playable behind their routes. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
 
 **Proposed shared API**
 
@@ -407,42 +407,39 @@ The screen never authenticates the player as a real administrator.
 
 **Acceptance:** Test the example payload, false equalities, payload text contained entirely within a string, malformed quoting, unsupported syntax, retry deduplication and repair scoring. Prove the simulation never grants real privileges or executes a query.
 
-### G-REGEX — Regex Defender
+### G-CLEAR — Clearance Tower
 
-**Concept:** Stop falling malicious strings by writing patterns while avoiding harmless strings mixed into the stream.
+**Concept:** Night shift as the security architect of a fictional intelligence agency's tower. Design an access-control policy, predict how a few requests will be decided, then watch a scripted day of work and attacks test it. Replaced the G-REGEX Regex Defender blueprint on 15 October 2026 at Russell's request; the original regex specification remains in Git history.
 
 **Difficulty:** ★★★
 
-**Required concepts:** Regex literals and metacharacters, escaping, character classes, alternation, case sensitivity, false positives and limits of signature-based detection.
+**Required concepts:** Authentication versus authorization, access matrices, ACLs and capabilities, Trojan horses, Bell–LaPadula labels and categories, role-based access control and separation of duties. Source: CS440 `07-access-control.pptx` slides 4–7, 13–25, 26–32 and 34–38.
 
 **Gameplay / interaction loop**
 
-1. Start a round with 20 server-selected strings: 12 malicious examples and eight harmless decoys.
-2. Spawn one string every two seconds; each takes ten seconds to reach the bottom.
-3. Type a pattern and inspect a non-scoring preview, then press Fire to apply it to currently active strings.
-4. Award 10 points per destroyed malicious string. Deduct 15 per destroyed harmless string and five per missed malicious string.
-5. End when all strings resolve or after 60 seconds. Clamp the final score to 0–120.
-6. Explain matches, misses and false positives. Examples such as `<script>` and `DROP TABLE` remain inert text.
+1. Choose any of six cases (two per act: discretionary, Bell–LaPadula, role-based); nothing is locked or timed.
+2. Read the dossier: the model's rules, the agents on shift and today's work.
+3. Set the policy: matrix rights (with access-list and capability views), file labels with categories, or roles and badges.
+4. Predict allow/deny for three requests before the day runs.
+5. Run the day: animated visits stamp Allowed/Blocked in the tower while a duty log explains each decision; play, pause, step or skip.
+6. Score out of 100: no leaks 40 (minus 20 per leak), work completed 30, least privilege 15 (minus 5 per unneeded right or separation-of-duties conflict) and predictions 15. Bell–LaPadula cases drop the privilege row and score predictions out of 30. Stars at 95/75/50. The debrief reviews each call with slide references; retry is unlimited.
 
 **Architectural blueprint**
 
-- Route/ID: `/games/regex-defender` / `regex-defender`.
-- Existing town preview: `shed` at `{ x: 720, y: 496 }` in the shared catalog. Reuse this entry/route when implementation is separately approved; gameplay remains unimplemented.
-- `RegexDefenderGame.vue`: owns the attempt.
-- `ThreatField.vue`: props `{ tokens, elapsedMs, reducedMotion }`; positions strings using `requestAnimationFrame` and CSS transforms.
-- `RegexInput.vue`: props `{ pattern, error, disabled }`; emits `update:pattern(value)` and `fire`.
-- `MatchPreview.vue`: props `{ matchingIds, error, pending }`.
-- `RegexHud.vue`: props `{ score, remainingMs, threatsRemaining }`.
-- `useRegexDefender.js`: owns pattern text, active tokens and the server snapshot. A computed value validates/compiles `new RegExp(pattern, "i")` inside `try/catch`; permit only the fixed `i` flag and at most 80 pattern characters.
-- Perform actual `.test()` calls in a Web Worker, never inside a main-thread computed loop. Debounce preview requests by 150ms, reject stale results and terminate/recreate a worker if evaluation exceeds 50ms after readiness.
-- Shared action `type: "fire-pattern"` accepts `{ pattern }`. The server derives active token IDs and scores matches itself; do not accept a browser-supplied hit list.
-- Server evaluation uses a bounded worker-thread pool with the same pattern rules, maximum string length of 120 and a 50ms evaluation deadline. Terminate timed-out workers; a timeout awards nothing.
-- Allow one pending fire request and at most two fires per second.
-- Mongoose `state`: `{ mode, seed, tokenSchedule: [{ id, text, classification, spawnAt, expiresAt, outcome }], shotsUsed }`. Keep classification private until feedback.
+- Route/ID: `/games/clearance-tower` / `clearance-tower`, reusing the former regex `shed` at `{ x: 720, y: 496 }`. `/games/red-blue` and `/games/regex-defender` redirect here.
+- `ClearanceTowerGame.vue`: owns the phase flow (cases → dossier → policy → predictions → day → debrief) and focus handoff.
+- `LevelSelect.vue({ levels, bestScores, pending })` emits `select(levelId)`, `reload`; `DossierBrief.vue({ level })` emits `begin`, `back`.
+- `AccessMatrix.vue({ agents, files, modelValue, view, disabled })` emits `update:modelValue`, `update:view`; `LabelBoard.vue({ files, clearances, categories, modelValue, disabled })` and `RoleDesigner.vue({ level, modelValue, disabled })` emit `update:modelValue`.
+- `PredictionPanel.vue({ prompts, modelValue, disabled })` emits `update:modelValue`; `TowerView.vue({ level, policy, currentEvent, shownEvents })`; `DayControls.vue({ playing, finished, position, total, speed })` emits `play`, `pause`, `step`, `skip`, `update:speed`; `EventLog.vue({ level, events })`; `MeterBoard.vue({ breakdown })`; `LevelDebrief.vue({ level, result, hasNext })` emits `retry`, `next`, `levels`.
+- `useClearanceTower.js` owns the attempt, policy draft, predictions, pending/error state and request cancellation; `useDayPlayback.js` owns the event index and interval timer, cleared on unmount.
+- Interim unsaved endpoints until an owner-approved saved-attempt adapter exists: `GET /api/games/clearance-tower/levels`, `POST .../runs` with `{ levelId }`, `POST .../runs/:runId/submit` with `{ actionId, policy, predictions }`. They use “runs”, like CLI, so they never shadow the shared `POST /api/games/:gameId/attempts` route. One submission per run; the same action ID replays its result. The day script, prediction answers and explanations stay on the server until submission.
+- Future Mongoose `state`: `{ levelId, policy, predictions, submittedAt }`.
 
-Cancel animation frames, timers and workers on departure. Reduced-motion mode uses a stationary list with countdowns; untimed practice removes falling deadlines. Explain that regex matching alone is not a general XSS or SQL-injection defense.
+The game follows the hub's light town palette and Pixelify Sans, scoped under `.clearance-game`. Reduced motion stops autoplay and animations, so players step through the duty log.
 
-**Acceptance:** Test invalid expressions, catastrophic-backtracking patterns, broad-pattern false positives, expired tokens, stale worker responses, forged hit requests and teardown.
+**Acceptance:** Known solutions score as specified; the Trojan horse leaks under discretionary control and is stopped by the star property; Bell–LaPadula allows integrity tampering; separation-of-duties conflicts and excess rights cost points; strict validation rejects unknown fields and IDs; no answers reach the browser before submission; keyboard, touch, reduced motion and 375–1440px layouts work.
+
+**Implemented in this version (15 October 2026, Russell):** playable and unsaved at `/games/clearance-tower`, pending review. See TASKS.md for the G-CLEAR record and module READMEs for the client/server flow.
 
 ### G-NEWS — Cyber News Central
 

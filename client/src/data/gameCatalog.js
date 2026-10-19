@@ -105,15 +105,20 @@ export const gameCatalog = defineGameCatalog([
     building: { type: 'office', x: 432, y: 520 },
   },
   {
-    id: 'regex-defender',
-    name: 'Regex Defender',
-    description: 'Catch malicious strings with patterns while keeping harmless messages safe.',
+    id: 'clearance-tower',
+    name: 'Clearance Tower',
+    description:
+      'Design who may see what in an intelligence tower, then watch a day test your policy.',
     difficulty: 3,
-    backgroundKnowledge: ['Regex syntax', 'Character classes', 'False positives'],
-    route: '/games/regex-defender',
-    isPreview: true,
-    duration: '1 min + debrief',
-    icon: 'trophy',
+    backgroundKnowledge: [
+      'Authentication vs authorization',
+      'Access matrices and ACLs',
+      'Security labels and roles',
+    ],
+    route: '/games/clearance-tower',
+    isPreview: false,
+    duration: '10 min',
+    icon: 'lock',
     building: { type: 'shed', x: 720, y: 496 },
   },
 ])

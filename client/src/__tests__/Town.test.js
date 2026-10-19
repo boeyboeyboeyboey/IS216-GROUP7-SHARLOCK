@@ -9,9 +9,9 @@ afterEach(() => vi.restoreAllMocks())
 describe('town registration contract', () => {
   it('registers the six planned features with distinct buildings and honest readiness', () => {
     expect(gameCatalog.map((game) => game.id).sort()).toEqual([
+      'clearance-tower',
       'cli-cyber-defender',
       'phishing-post-mortem',
-      'regex-defender',
       'social-engineering-simulator',
       'sql-injection-arcade',
       'threat-briefing',
@@ -22,6 +22,7 @@ describe('town registration contract', () => {
       'phishing-post-mortem',
       'threat-briefing',
       'social-engineering-simulator',
+      'clearance-tower',
     ])
     expect(
       gameCatalog.find((game) => game.id === 'social-engineering-simulator').building.type,

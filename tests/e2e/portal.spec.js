@@ -61,19 +61,28 @@ test('explores every building without prerequisites while showing account state'
       await expect(page).toHaveURL('/')
       continue
     }
+    if (game.id === 'clearance-tower') {
+      await card.getByRole('link', { name: 'Enter activity' }).click()
+      await expect(page).toHaveURL(new RegExp(`${game.route}$`))
+      await expect(page.getByRole('heading', { name: 'Clearance Tower', level: 1 })).toBeVisible()
+      await page.getByRole('link', { name: 'Back to town' }).click()
+      await expect(page).toHaveURL('/')
+      continue
+    }
     await card.getByRole('link', { name: 'View activity preview' }).click()
     await expect(page).toHaveURL(new RegExp(`${game.route}$`))
     await expect(page.getByRole('heading', { name: 'A new case is taking shape.' })).toBeVisible()
     await page.getByRole('link', { name: 'Keep exploring', exact: true }).click()
     await expect(page.locator('.town-player')).toContainText('Results are not saved')
   }
-  for (const [previous, current] of [
-    ['mini-ctf', 'sql-injection-arcade'],
-    ['red-blue', 'regex-defender'],
-  ]) {
+  await page.goto('/games/mini-ctf')
+  await expect(page).toHaveURL('/games/sql-injection-arcade')
+  await expect(page.getByRole('heading', { name: 'A new case is taking shape.' })).toBeVisible()
+  // the regex legacy urls now redirect to the playable clearance tower that replaced it
+  for (const previous of ['red-blue', 'regex-defender']) {
     await page.goto(`/games/${previous}`)
-    await expect(page).toHaveURL(`/games/${current}`)
-    await expect(page.getByRole('heading', { name: 'A new case is taking shape.' })).toBeVisible()
+    await expect(page).toHaveURL('/games/clearance-tower')
+    await expect(page.getByRole('heading', { name: 'Clearance Tower', level: 1 })).toBeVisible()
   }
   // the cli legacy url now redirects to the playable game, not a preview
   await page.goto('/games/integrity-detective')
@@ -138,8 +147,8 @@ test('keeps the camera bounded and supports keyboard panning', async ({ page }) 
   await map.focus()
   await page.keyboard.press('ArrowDown')
   await expect.poll(offset).toBeLessThan(-50)
-  await page.getByLabel('Jump to').selectOption('regex-defender')
-  await expect(page.getByRole('region', { name: 'Regex Defender', exact: true })).toBeVisible()
+  await page.getByLabel('Jump to').selectOption('clearance-tower')
+  await expect(page.getByRole('region', { name: 'Clearance Tower', exact: true })).toBeVisible()
   await expect.poll(offset).toBeLessThan(-100)
 })
 

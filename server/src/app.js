@@ -4,6 +4,7 @@ import { createNewsRouter } from './modules/news/router.js'
 import { createPhishingRouter } from './modules/games/phishing-post-mortem/router.js'
 import { createSocialEngineeringRouter } from './modules/games/social-engineering-simulator/router.js'
 import { createCliDefenderRouter } from './modules/games/cli-cyber-defender/router.js'
+import { createClearanceRouter } from './modules/games/clearance-tower/router.js'
 import { createAuthRouter } from './modules/auth/router.js'
 import { createCohortRouter } from './modules/cohorts/router.js'
 import { createAuditRouter } from './modules/audit/router.js'
@@ -26,6 +27,7 @@ export function createApp(
     phishing = {},
     socialEngineering = {},
     cliDefender = {},
+    clearanceTower = {},
   } = {},
 ) {
   const app = express()
@@ -89,6 +91,7 @@ export function createApp(
   app.use('/api', createPhishingRouter(phishing))
   app.use('/api', createSocialEngineeringRouter(socialEngineering))
   app.use('/api', createCliDefenderRouter(cliDefender))
+  app.use('/api', createClearanceRouter(clearanceTower))
   app.use(notFound)
   app.use(handleError)
   app.locals.disposeAuth = () => {
