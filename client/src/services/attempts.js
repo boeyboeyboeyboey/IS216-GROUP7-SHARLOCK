@@ -1,5 +1,6 @@
 import { api } from './api.js'
 import { requestCsrfToken } from '../features/auth/api.js'
+import { useAuthStore } from '../features/auth/store.js'
 
 // shared browser side of the saved-attempt contract in server/src/modules/attempts/README.md
 // games call these four requests instead of adding their own result endpoints
@@ -16,8 +17,9 @@ export function newActionId() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
-// the csrf token lasts for the session and /auth/csrf is rate limited per address,
-// so one token is reused and only refetched after the server rejects it
+// the csrf token lasts for the session and /auth/csrf is rate limited per address, so the token
+// the auth store already holds is reused; a token is fetched here only when none is held or
+// the server rejected the one sent
 let cachedToken = ''
 let pendingToken = null
 
@@ -26,8 +28,18 @@ export function forgetCsrfToken() {
   pendingToken = null
 }
 
+function storeToken() {
+  try {
+    return useAuthStore().csrfToken || ''
+  } catch {
+    // no active pinia, for example in an isolated test
+    return ''
+  }
+}
+
 function csrfToken({ refresh = false } = {}) {
-  if (!refresh && cachedToken) return Promise.resolve(cachedToken)
+  const known = cachedToken || storeToken()
+  if (!refresh && known) return Promise.resolve(known)
   if (pendingToken) return pendingToken
   const request = requestCsrfToken()
     .then((token) => {

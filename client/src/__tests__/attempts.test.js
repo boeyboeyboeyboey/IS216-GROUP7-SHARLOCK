@@ -3,10 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   api: { get: vi.fn(), post: vi.fn() },
   requestCsrfToken: vi.fn(),
+  auth: { csrfToken: null },
 }))
 
 vi.mock('../services/api.js', () => ({ api: mocks.api }))
 vi.mock('../features/auth/api.js', () => ({ requestCsrfToken: mocks.requestCsrfToken }))
+vi.mock('../features/auth/store.js', () => ({ useAuthStore: () => mocks.auth }))
 
 const {
   attemptErrorCode,
@@ -22,6 +24,7 @@ const {
 afterEach(() => {
   vi.clearAllMocks()
   forgetCsrfToken()
+  mocks.auth.csrfToken = null
 })
 
 describe('shared saved-attempt requests', () => {
@@ -40,6 +43,35 @@ describe('shared saved-attempt requests', () => {
     for (const [, , options] of mocks.api.post.mock.calls) {
       expect(options.headers).toEqual({ 'X-CSRF-Token': 'csrf-shared' })
     }
+  })
+
+  it('uses the token the auth store already holds without another csrf request', async () => {
+    mocks.auth.csrfToken = 'csrf-from-store'
+    mocks.api.post.mockResolvedValue({ data: {} })
+    await startAttempt('phishing-post-mortem')
+    await completeAttempt('a1', { actionId: 'id-2', expectedRevision: 1 })
+    expect(mocks.requestCsrfToken).not.toHaveBeenCalled()
+    for (const [, , options] of mocks.api.post.mock.calls) {
+      expect(options.headers).toEqual({ 'X-CSRF-Token': 'csrf-from-store' })
+    }
+  })
+
+  it('replaces a rejected store token and keeps using the fresh one', async () => {
+    mocks.auth.csrfToken = 'csrf-stale'
+    mocks.requestCsrfToken.mockResolvedValue('csrf-fresh')
+    mocks.api.post
+      .mockRejectedValueOnce({
+        response: { status: 403, data: { error: { code: 'CSRF_INVALID' } } },
+      })
+      .mockResolvedValue({ data: {} })
+    await startAttempt('phishing-post-mortem')
+    await completeAttempt('a1', { actionId: 'id-2', expectedRevision: 1 })
+    expect(mocks.requestCsrfToken).toHaveBeenCalledTimes(1)
+    expect(mocks.api.post.mock.calls.map(([, , options]) => options.headers)).toEqual([
+      { 'X-CSRF-Token': 'csrf-stale' },
+      { 'X-CSRF-Token': 'csrf-fresh' },
+      { 'X-CSRF-Token': 'csrf-fresh' },
+    ])
   })
 
   it('refreshes a rejected csrf token once and retries the same request', async () => {
