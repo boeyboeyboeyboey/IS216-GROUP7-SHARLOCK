@@ -1,4 +1,3 @@
-import { Types } from 'mongoose'
 import { test, expect } from './fixtures/auth.js'
 import { connectDatabase } from '../../server/src/config/database.js'
 import { assertSafeTestDatabaseUri } from '../../server/src/config/database-uri.js'
@@ -36,7 +35,8 @@ async function caseFor(page, started) {
   const snapshot = await (await started).json()
   const attempt = await database.db
     .collection('game_attempts')
-    .findOne({ _id: new Types.ObjectId(snapshot.attemptId) })
+    // mongoose is a server dependency, so its ObjectId comes from the connection's own instance
+    .findOne({ _id: new database.base.Types.ObjectId(snapshot.attemptId) })
   const active = { id: attempt.state.caseId, ...library.resolveCase(attempt.state) }
   await expect(page.locator('.sharmail-briefing h2')).toHaveText(active.content.title)
   return active
