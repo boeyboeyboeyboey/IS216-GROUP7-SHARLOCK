@@ -126,9 +126,12 @@
 
 .admin-workspace .admin-workspace__form input:focus-visible,
 .admin-workspace .admin-workspace__form select:focus-visible,
+.admin-workspace .admin-workspace__audit-filters input:focus-visible,
+.admin-workspace .admin-workspace__audit-filters select:focus-visible,
 .admin-workspace .admin-workspace__activation-url:focus-visible,
 .admin-workspace .admin-workspace__button:focus-visible,
 .admin-workspace .admin-workspace__text-button:focus-visible,
+.admin-workspace .admin-workspace__audit-details summary:focus-visible,
 .admin-workspace .admin-workspace__assignment input:focus-visible {
   outline: 3px solid var(--text-main);
   outline-offset: 3px;
@@ -202,6 +205,22 @@
   gap: 0.15rem;
 }
 
+.admin-workspace .admin-workspace__edit-form {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.admin-workspace .admin-workspace__list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .admin-workspace .admin-workspace__list li span,
 .admin-workspace .admin-workspace__instructor-identity span {
   overflow-wrap: anywhere;
@@ -267,6 +286,22 @@
   background: var(--surface);
 }
 
+.admin-workspace .admin-workspace__retained-assignments {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  gap: 0.35rem;
+  list-style: none;
+}
+
+.admin-workspace .admin-workspace__retained-assignments li {
+  display: grid;
+  min-width: 0;
+  padding: 0.55rem;
+  border: 1px solid var(--border-strong);
+  gap: 0.15rem;
+}
+
 .admin-workspace .admin-workspace__assignment input {
   width: 1.15rem;
   height: 1.15rem;
@@ -284,6 +319,136 @@
 
 .admin-workspace .admin-workspace__assignment-count {
   font-size: 0.9rem;
+}
+
+.admin-workspace .admin-workspace__audit-filters,
+.admin-workspace .admin-workspace__account-filters {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.admin-workspace .admin-workspace__audit-filters label,
+.admin-workspace .admin-workspace__account-filters label {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+
+.admin-workspace .admin-workspace__audit-filters small {
+  grid-column: 1 / -1;
+}
+
+.admin-workspace .admin-workspace__audit-filters input,
+.admin-workspace .admin-workspace__audit-filters select,
+.admin-workspace .admin-workspace__account-filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0.55rem 0.7rem;
+  border: 2px solid var(--border-strong);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text-main);
+}
+
+.admin-workspace .admin-workspace__account-table-wrap {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.admin-workspace .admin-workspace__account-table {
+  width: 100%;
+  min-width: 38rem;
+  border-collapse: collapse;
+}
+
+.admin-workspace .admin-workspace__account-table th,
+.admin-workspace .admin-workspace__account-table td {
+  padding: 0.65rem;
+  border-bottom: 1px solid var(--border-strong);
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-workspace .admin-workspace__account-table th {
+  font-weight: 700;
+}
+
+.admin-workspace .admin-workspace__account-table td .admin-workspace__alert {
+  margin: 0.35rem 0 0;
+}
+
+.admin-workspace .admin-workspace__audit-list {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  gap: 0.65rem;
+  list-style: none;
+}
+
+.admin-workspace .admin-workspace__audit-list > li {
+  display: grid;
+  min-width: 0;
+  padding: 0.85rem;
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+  gap: 0.65rem;
+}
+
+.admin-workspace .admin-workspace__audit-summary {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.admin-workspace .admin-workspace__audit-summary time {
+  text-align: right;
+}
+
+.admin-workspace .admin-workspace__audit-outcome {
+  width: fit-content;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--border-strong);
+  background: var(--accent-secondary);
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.admin-workspace .admin-workspace__audit-details summary {
+  width: fit-content;
+  min-height: 32px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.admin-workspace .admin-workspace__audit-details dl {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(6rem, auto) minmax(0, 1fr);
+  margin: 0.65rem 0 0;
+  gap: 0.35rem 0.75rem;
+}
+
+.admin-workspace .admin-workspace__audit-details dt {
+  font-weight: 700;
+}
+
+.admin-workspace .admin-workspace__audit-details dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-workspace .admin-workspace__audit-details code {
+  color: inherit;
+  overflow-wrap: anywhere;
 }
 
 .admin-workspace .admin-workspace__alert {
@@ -352,6 +517,20 @@
     flex-direction: column;
   }
 
+  .admin-workspace .admin-workspace__audit-filters,
+  .admin-workspace .admin-workspace__account-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-workspace .admin-workspace__audit-summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .admin-workspace .admin-workspace__audit-summary time {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+
   .admin-workspace .admin-workspace__list li {
     align-items: flex-start;
     flex-direction: column;
@@ -359,5 +538,15 @@
 
   .admin-workspace .admin-workspace__actions > * {
     flex: 1 1 auto;
+  }
+}
+
+@media (min-width: 1200px) {
+  .admin-workspace .admin-workspace__audit-filters {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .admin-workspace .admin-workspace__account-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
   }
 }

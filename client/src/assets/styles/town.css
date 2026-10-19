@@ -454,7 +454,7 @@
   box-shadow: 3px 3px 0 rgb(80 99 77 / 30%);
 }
 .building-hint {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 1px;
   line-height: 1;
   padding-top: 6px;
@@ -556,7 +556,7 @@
 }
 .game-preview-label {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   text-align: center;
   margin-top: 10px;
 }
@@ -647,7 +647,7 @@
     gap: 2px;
   }
   .town-eyebrow {
-    font-size: 10px;
+    font-size: 12px;
   }
   .map-toolbar {
     padding: 10px;

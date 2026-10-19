@@ -340,7 +340,7 @@ describe('auth forms and account summary', () => {
     await wrapper.get('#register-confirmation').setValue(password)
 
     expect(wrapper.get('#register-password-hint').text().replace(/\s+/g, ' ').trim()).toBe(
-      'Use 12–128 characters, including an uppercase letter and a special character. Spaces are allowed.',
+      'Use at least 12 characters, including an uppercase letter and a special character. Spaces are allowed.',
     )
 
     await wrapper.get('form').trigger('submit')

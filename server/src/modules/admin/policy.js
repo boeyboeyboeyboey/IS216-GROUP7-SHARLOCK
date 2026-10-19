@@ -7,6 +7,13 @@ const ADMIN_ERRORS = Object.freeze({
   ADMIN_NOT_FOUND: { status: 404, message: 'This account or class is unavailable.' },
   ADMIN_CONFLICT: { status: 409, message: 'This change conflicts with existing records.' },
   ADMIN_STALE_ASSIGNMENTS: { status: 409, message: 'Refresh assignments before saving again.' },
+  ADMIN_STALE_INSTITUTION: { status: 409, message: 'Refresh the institution before saving again.' },
+  ADMIN_STALE_COHORT: { status: 409, message: 'Refresh the class before saving again.' },
+  ADMIN_STALE_ACCOUNT: { status: 409, message: 'Refresh the account before saving again.' },
+  ADMIN_INSTRUCTOR_ACTIVATION_REQUIRED: {
+    status: 409,
+    message: 'Use the instructor activation flow to enable this account.',
+  },
   ADMIN_UNAVAILABLE: {
     status: 503,
     message: 'This change could not be completed. Try again later.',
@@ -25,6 +32,9 @@ const ERROR_FIELDS = new Set([
   'avatarId',
   'cohortIds',
   'expectedRevision',
+  'status',
+  'accountStatus',
+  'role',
   'page',
   'limit',
 ])
@@ -85,9 +95,13 @@ function parsePageValue(value, field, maximum) {
   return parsed
 }
 
-export function parseAdminListQuery(query, { institution = false } = {}) {
+export function parseAdminListQuery(query, { institution = false, users = false } = {}) {
   if (!isRecord(query)) invalid()
-  const fields = institution ? ['page', 'limit', 'institutionId'] : ['page', 'limit']
+  const fields = institution
+    ? ['page', 'limit', 'institutionId']
+    : users
+      ? ['page', 'limit', 'role', 'accountStatus']
+      : ['page', 'limit']
   if (Reflect.ownKeys(query).some((key) => typeof key !== 'string' || !fields.includes(key)))
     invalid()
   const result = {
@@ -97,7 +111,28 @@ export function parseAdminListQuery(query, { institution = false } = {}) {
   if (Object.hasOwn(query, 'institutionId')) {
     result.institutionId = parseAdminObjectId(query.institutionId, 'institutionId')
   }
+  if (Object.hasOwn(query, 'role')) {
+    if (!['student', 'instructor'].includes(query.role)) invalid({ role: 'Choose a supported role.' })
+    result.role = query.role
+  }
+  if (Object.hasOwn(query, 'accountStatus')) {
+    if (!['active', 'disabled'].includes(query.accountStatus)) {
+      invalid({ accountStatus: 'Choose an account status.' })
+    }
+    result.accountStatus = query.accountStatus
+  }
   return result
+}
+
+export function parseAccountStatusInput(input) {
+  exactObject(input, ['accountStatus', 'expectedRevision'])
+  if (!['active', 'disabled'].includes(input.accountStatus)) {
+    invalid({ accountStatus: 'Choose an account status.' })
+  }
+  return {
+    accountStatus: input.accountStatus,
+    expectedRevision: parseExpectedRevision(input.expectedRevision),
+  }
 }
 
 export function parseAdminObjectId(value, field = 'id') {
@@ -132,6 +167,52 @@ export function parseCohortInput(input) {
     institutionId: parseAdminObjectId(input.institutionId, 'institutionId'),
     name: parseText(input.name, 'name', 100),
     term: parseText(input.term, 'term', 50),
+  }
+}
+
+function parseStatus(value) {
+  if (!['active', 'inactive'].includes(value)) invalid({ status: 'Choose an available status.' })
+  return value
+}
+
+function parseExpectedRevision(value) {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    invalid({ expectedRevision: 'Refresh the record before saving.' })
+  }
+  return value
+}
+
+export function parseInstitutionUpdateInput(input) {
+  return parseUpdateFields(input, ['name', 'status'], {
+    name: (value) => parseText(value, 'name', 100),
+    status: parseStatus,
+  })
+}
+
+export function parseCohortUpdateInput(input) {
+  return parseUpdateFields(input, ['name', 'term', 'status'], {
+    name: (value) => parseText(value, 'name', 100),
+    term: (value) => parseText(value, 'term', 50),
+    status: parseStatus,
+  })
+}
+
+function parseUpdateFields(input, mutableFields, parsers) {
+  if (!isRecord(input)) invalid()
+  const fields = [...mutableFields, 'expectedRevision']
+  if (Reflect.ownKeys(input).some((key) => typeof key !== 'string' || !fields.includes(key)))
+    invalid()
+  if (!Object.hasOwn(input, 'expectedRevision')) {
+    invalid({ expectedRevision: 'Refresh the record before saving.' })
+  }
+  if (!mutableFields.some((field) => Object.hasOwn(input, field))) invalid()
+  return {
+    ...Object.fromEntries(
+      mutableFields
+        .filter((field) => Object.hasOwn(input, field))
+        .map((field) => [field, parsers[field](input[field])]),
+    ),
+    expectedRevision: parseExpectedRevision(input.expectedRevision),
   }
 }
 

@@ -1,7 +1,11 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import EnrollmentCodePanel from '../components/EnrollmentCodePanel.vue'
 import EnrollmentQueue from '../components/EnrollmentQueue.vue'
+import RecoveryIssueForm from '../../recovery/components/RecoveryIssueForm.vue'
+import RecoveryLinkDialog from '../../recovery/components/RecoveryLinkDialog.vue'
+import { useAuthStore } from '../../auth/store.js'
+import { issueInstructorRecovery, safeRecoveryError } from '../../recovery/api.js'
 import {
   getEnrollmentCode,
   issueValidatedEnrollmentCode,
@@ -12,7 +16,9 @@ import {
   updateMembership,
 } from '../api.js'
 import '../cohorts.css'
+import '../../recovery/recovery.css'
 
+const auth = useAuthStore()
 const cohorts = ref([])
 const selectedId = ref('')
 const memberships = ref([])
@@ -31,14 +37,104 @@ const error = ref('')
 const notice = ref('')
 const pendingIds = ref(Object.create(null))
 const membershipMutationPending = ref(false)
+const recoveryStudent = ref(null)
+const recoveryLink = ref(null)
+const recoveryIssueForm = ref(null)
+const recoveryPending = ref(false)
+const recoveryError = ref('')
+const canIssueRecovery = computed(() => {
+  const roles = auth.user?.globalRoles || []
+  return roles.includes('instructor') && !roles.includes('admin')
+})
 const workspaceBusy = computed(
-  () => loading.value || savingCode.value || membershipMutationPending.value,
+  () =>
+    loading.value || savingCode.value || membershipMutationPending.value || recoveryPending.value,
 )
 const currentCohort = computed(() =>
   cohorts.value.find((cohort) => cohort.cohortId === selectedId.value),
 )
 const controllers = new Set()
 let generation = 0
+let recoveryController = null
+
+function clearRecovery() {
+  recoveryController?.abort()
+  recoveryController = null
+  recoveryStudent.value = null
+  recoveryLink.value = null
+  recoveryError.value = ''
+  recoveryPending.value = false
+}
+
+watch(canIssueRecovery, (allowed) => {
+  if (!allowed) clearRecovery()
+})
+
+function selectRecoveryStudent(member) {
+  if (!canIssueRecovery.value || status.value !== 'active' || !member?.studentId) return
+  clearRecovery()
+  recoveryStudent.value = {
+    id: member.studentId,
+    username: member.username,
+    email: member.email,
+  }
+}
+
+async function issueRecoveryLink({ identityVerified }) {
+  if (
+    !identityVerified ||
+    !canIssueRecovery.value ||
+    status.value !== 'active' ||
+    !selectedId.value ||
+    !recoveryStudent.value ||
+    recoveryPending.value
+  )
+    return
+  const cohortId = selectedId.value
+  const studentId = recoveryStudent.value.id
+  const operation = generation
+  const controller = requestController()
+  recoveryController = controller
+  recoveryPending.value = true
+  recoveryError.value = ''
+  try {
+    const link = await issueInstructorRecovery(cohortId, studentId, controller.signal)
+    if (
+      controller.signal.aborted ||
+      operation !== generation ||
+      selectedId.value !== cohortId ||
+      recoveryStudent.value?.id !== studentId ||
+      status.value !== 'active'
+    )
+      return
+    recoveryPending.value = false
+    await nextTick()
+    if (
+      controller.signal.aborted ||
+      operation !== generation ||
+      selectedId.value !== cohortId ||
+      recoveryStudent.value?.id !== studentId ||
+      status.value !== 'active'
+    )
+      return
+    recoveryIssueForm.value?.focusSubmitButton()
+    recoveryLink.value = link
+  } catch (cause) {
+    if (!controller.signal.aborted && operation === generation) {
+      recoveryError.value = safeRecoveryError(cause).message
+    }
+  } finally {
+    controllers.delete(controller)
+    if (recoveryController === controller) {
+      recoveryController = null
+      recoveryPending.value = false
+    }
+  }
+}
+
+function closeRecoveryLink() {
+  recoveryLink.value = null
+}
 function statusLabel(value) {
   if (value === 'pending') return 'Requests'
   if (value === 'active') return 'Active'
@@ -56,6 +152,7 @@ function clearOneTimeCode() {
 }
 
 async function loadCohorts(nextPage = cohortPage.value) {
+  clearRecovery()
   const operation = ++generation
   const controller = requestController()
   cohortPage.value = nextPage
@@ -86,6 +183,7 @@ async function loadCohorts(nextPage = cohortPage.value) {
 
 async function loadSelected(nextPage = 1) {
   if (!selectedId.value) return
+  clearRecovery()
   const operation = ++generation
   const cohortId = selectedId.value
   const controller = requestController()
@@ -118,6 +216,7 @@ async function loadSelected(nextPage = 1) {
 }
 
 function selectCohort(id) {
+  clearRecovery()
   selectedId.value = id
   status.value = 'pending'
   notice.value = ''
@@ -126,6 +225,7 @@ function selectCohort(id) {
   void loadSelected(1)
 }
 function selectStatus(nextStatus) {
+  clearRecovery()
   status.value = nextStatus
   void loadSelected(1)
 }
@@ -210,6 +310,7 @@ onBeforeUnmount(() => {
   generation += 1
   controllers.forEach((controller) => controller.abort())
   clearOneTimeCode()
+  clearRecovery()
 })
 </script>
 
@@ -293,15 +394,26 @@ onBeforeUnmount(() => {
           :page="page"
           :total="total"
           :busy="workspaceBusy"
+          :recovery-allowed="canIssueRecovery"
           @approve="changeMembership($event, 'active')"
           @reject="changeMembership($event, 'removed')"
           @remove="changeMembership($event, 'removed')"
+          @recover="selectRecoveryStudent"
           @page="loadSelected"
+        />
+        <RecoveryIssueForm
+          v-if="recoveryStudent"
+          ref="recoveryIssueForm"
+          :eligible-student="recoveryStudent"
+          :pending="recoveryPending"
+          :error="recoveryError"
+          @issue="issueRecoveryLink"
         />
       </section>
       <p v-if="currentCohort" class="cohort-muted">
         {{ currentCohort.cohortName }} · {{ currentCohort.institutionName }}
       </p>
     </template>
+    <RecoveryLinkDialog v-if="recoveryLink" :link="recoveryLink" @close="closeRecoveryLink" />
   </section>
 </template>

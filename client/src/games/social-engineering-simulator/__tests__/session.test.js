@@ -21,7 +21,11 @@ const session = {
   gameId: 'social-engineering-simulator',
   rulesetVersion: '2026-10-11',
   persona: { id: 'it-helpdesk', displayName: 'Jordan Vale (IT Service Desk)' },
-  brief: { title: 'IT Service Desk is paging you', objective: 'Protect the code', turnBudget: 8 },
+  brief: {
+    title: 'IT Service Desk is paging you',
+    objective: 'A help-desk agent asks for the reset code.',
+    turnBudget: 8,
+  },
   openingMessage: 'Hi, this is Jordan.',
 }
 

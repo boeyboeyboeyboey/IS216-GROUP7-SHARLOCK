@@ -126,6 +126,7 @@ onBeforeUnmount(() => {
       id="portal-menu"
       ref="panel"
       class="portal-sidebar offcanvas-md offcanvas-start"
+      :class="{ 'fit-sidebar': route.meta.hideAccountSummary }"
       tabindex="-1"
       aria-labelledby="menu-title"
     >
@@ -137,6 +138,7 @@ onBeforeUnmount(() => {
       </div>
       <div class="offcanvas-body">
         <AccountSummary
+          v-if="!route.meta.hideAccountSummary"
           :status="auth.status"
           :user="auth.user"
           :logout-pending="auth.logoutPending"

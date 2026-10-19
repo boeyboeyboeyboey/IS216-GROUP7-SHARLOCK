@@ -6,8 +6,15 @@ const SAFE_MESSAGES = Object.freeze({
   ADMIN_CONFLICT: 'This change conflicts with existing records. Review the details and try again.',
   ADMIN_NOT_FOUND: 'The selected account or class is unavailable. Refresh the list and try again.',
   ADMIN_STALE_ASSIGNMENTS: 'Assignments changed elsewhere. Reload them before saving again.',
-  ADMIN_UNAVAILABLE: 'The workspace could not complete that change. Try again later.',
+  ADMIN_STALE_INSTITUTION:
+    'This institution changed elsewhere. Reload the list and review your changes.',
+  ADMIN_STALE_COHORT: 'This class changed elsewhere. Reload the list and review your changes.',
+  ADMIN_STALE_ACCOUNT:
+    'This account changed elsewhere. The list was refreshed; review its latest status.',
+  ADMIN_INSTRUCTOR_ACTIVATION_REQUIRED:
+    'Disabled instructors must receive a new activation link and complete activation before access is restored.',
   ADMIN_FORBIDDEN: 'You do not have permission to manage this workspace.',
+  ADMIN_UNAVAILABLE: 'The workspace could not complete that change. Try again later.',
   AUTHENTICATION_REQUIRED: 'Your session ended. Sign in again to continue.',
   CAPABILITY_FORBIDDEN: 'You do not have permission to manage this workspace.',
   FORBIDDEN: 'You do not have permission to manage this workspace.',
@@ -109,12 +116,54 @@ export function listInstructors(options) {
   return requestList('/admin/instructors', options)
 }
 
+export async function listAdminUsers({ page = 1, limit = 25, role, accountStatus, signal } = {}) {
+  try {
+    const params = { page, limit }
+    if (role) params.role = role
+    if (accountStatus) params.accountStatus = accountStatus
+    const response = await api.get('/admin/users', { params, signal })
+    return response.data
+  } catch (error) {
+    throw toSafeAdminError(error)
+  }
+}
+
+export async function listAuditEvents({ page = 1, limit = 25, eventType, from, to, signal } = {}) {
+  try {
+    const params = { page, limit }
+    if (eventType) params.eventType = eventType
+    if (from) params.from = from
+    if (to) params.to = to
+    const response = await api.get('/admin/audit-events', { params, signal })
+    return response.data
+  } catch (error) {
+    throw toSafeAdminError(error)
+  }
+}
+
 export function createInstitution(input, signal) {
   return requestMutation('post', '/admin/institutions', input, signal)
 }
 
 export function createCohort(input, signal) {
   return requestMutation('post', '/admin/cohorts', input, signal)
+}
+
+export function updateInstitution(institutionId, input, signal) {
+  return requestMutation(
+    'patch',
+    `/admin/institutions/${encodeURIComponent(institutionId)}`,
+    input,
+    signal,
+  )
+}
+
+export function updateCohort(cohortId, input, signal) {
+  return requestMutation('patch', `/admin/cohorts/${encodeURIComponent(cohortId)}`, input, signal)
+}
+
+export function updateAdminUser(userId, input, signal) {
+  return requestMutation('patch', `/admin/users/${encodeURIComponent(userId)}`, input, signal)
 }
 
 export async function createInstructor(input, signal) {

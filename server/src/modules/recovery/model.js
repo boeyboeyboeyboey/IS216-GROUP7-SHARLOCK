@@ -3,7 +3,12 @@ import { Schema } from 'mongoose'
 const passwordResetSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, required: true, immutable: true },
-    purpose: { type: String, enum: ['activation'], required: true, immutable: true },
+    purpose: {
+      type: String,
+      enum: ['activation', 'student-password-reset'],
+      required: true,
+      immutable: true,
+    },
     tokenHash: { type: String, required: true, match: /^[a-f0-9]{64}$/, immutable: true },
     authVersion: { type: Number, required: true, min: 1, immutable: true },
     initiatedBy: { type: Schema.Types.ObjectId, required: true, immutable: true },

@@ -44,6 +44,49 @@ function sessionNotFound() {
   return new LlmError('LLM_SESSION_NOT_FOUND', 'That simulation was not found or has ended.', 404)
 }
 
+function efficiencyPoints(turnsUsed, turnBudget) {
+  return turnsUsed <= turnBudget
+    ? WEIGHTS.efficiency
+    : Math.max(0, Math.round(WEIGHTS.efficiency * (1 - (turnsUsed - turnBudget) / turnBudget)))
+}
+
+// a genuine request: checking first and then helping earns full marks
+function scoreLegitimate({
+  leaked,
+  decision,
+  turnsUsed,
+  turnBudget,
+  verifierContacted,
+  verifierName,
+}) {
+  const checked = !leaked && verifierContacted
+  const sharedAfterChecking = checked && decision === 'share-code'
+  const compromised = leaked || (decision === 'share-code' && !verifierContacted)
+  const breakdown = [
+    {
+      key: 'noLeak',
+      label: 'Shared the code after checking',
+      points: sharedAfterChecking ? WEIGHTS.noLeak : 0,
+      max: WEIGHTS.noLeak,
+    },
+    {
+      key: 'verify',
+      label: verifierName ? `Checked with ${verifierName}` : 'Checked the request',
+      points: checked ? WEIGHTS.verify : 0,
+      max: WEIGHTS.verify,
+    },
+    {
+      key: 'efficiency',
+      label: 'Stayed within the turn budget',
+      points: efficiencyPoints(turnsUsed, turnBudget),
+      max: WEIGHTS.efficiency,
+    },
+  ]
+  const score = breakdown.reduce((total, item) => total + item.points, 0)
+  const outcome = compromised ? 'compromised' : sharedAfterChecking ? 'resisted' : 'partial'
+  return { score, outcome, breakdown }
+}
+
 function scoreOutcome({
   leaked,
   decision: chosen,
@@ -52,7 +95,18 @@ function scoreOutcome({
   verifierRequired = false,
   verifierContacted = false,
   verifierName,
+  legitimate = false,
 }) {
+  if (legitimate) {
+    return scoreLegitimate({
+      leaked,
+      decision: chosen,
+      turnsUsed,
+      turnBudget,
+      verifierContacted,
+      verifierName,
+    })
+  }
   const decision = chosen
   const compromised = leaked || decision === 'share-code'
   const noLeak = compromised ? 0 : WEIGHTS.noLeak
@@ -63,10 +117,7 @@ function scoreOutcome({
     ? !compromised && verifierContacted
     : decision === 'verify-independently'
   const verify = verified ? WEIGHTS.verify : 0
-  const efficiency =
-    turnsUsed <= turnBudget
-      ? WEIGHTS.efficiency
-      : Math.max(0, Math.round(WEIGHTS.efficiency * (1 - (turnsUsed - turnBudget) / turnBudget)))
+  const efficiency = efficiencyPoints(turnsUsed, turnBudget)
   const outcome = compromised ? 'compromised' : verified ? 'resisted' : 'partial'
   const breakdown = [
     {
@@ -94,10 +145,37 @@ function scoreOutcome({
   return { score, outcome, breakdown }
 }
 
+function buildLegitimateDebrief(scenario, { leaked, outcome, verifierName }) {
+  const summary =
+    outcome === 'resisted'
+      ? 'You checked the request with a real colleague and then helped. That is the right balance.'
+      : outcome === 'compromised'
+        ? 'This request was genuine, but you handed over the code before checking it. Checking first is what makes helping safe.'
+        : 'This request was genuine. Refusing every request is also a failure: checking first lets you help safely.'
+  return {
+    summary,
+    persona: scenario.displayName,
+    tactic: 'This was a genuine request, not an attack. The person was who they said they were.',
+    saferesponse:
+      'A reset code is a secret, but real colleagues do have real needs. Confirm the request through a separate channel, then help when it checks out.',
+    note: leaked
+      ? 'You typed the code into the chat, so this run counts as compromised.'
+      : outcome === 'partial'
+        ? verifierName
+          ? `You checked with ${verifierName}, but the check confirmed the request, so sharing the code was the right move.`
+          : 'You refused without checking. A quick check with a real colleague would have confirmed it.'
+        : outcome === 'compromised'
+          ? `You did not check with ${verifierName ?? 'a colleague'} first.`
+          : '',
+  }
+}
+
 function buildDebrief(
   scenario,
   { leaked, decision, outcome, unverifiedChoice = false, uncheckedRefusal = false, verifierName },
 ) {
+  if (scenario.legitimate)
+    return buildLegitimateDebrief(scenario, { leaked, outcome, verifierName })
   const summary =
     outcome === 'compromised'
       ? `The reset code was exposed. In a real incident, "${scenario.displayName}" could now reset the account and lock you out.`
@@ -163,7 +241,7 @@ export function createSocialEngineeringService({
         503,
       )
     }
-    const scenario = pickScenario(random)
+    const scenario = pickScenario(random, { withColleague: Boolean(verifierAdapter?.configured) })
     const view = publicBrief(scenario)
     const sessionId = runner.start()
     // the store has just swept expired transcripts; drop their metadata too
@@ -183,6 +261,7 @@ export function createSocialEngineeringService({
       verifierTurns: 0,
       verifierBusy: false,
       verifierContacted: false,
+      leakedToColleague: false,
       verifierRequired: Boolean(verifierAdapter?.configured),
       nudgesSent: 0,
       nudgesDelivered: [],
@@ -285,6 +364,7 @@ export function createSocialEngineeringService({
       // never forward the code to any model; the leak ends the run
       entry.verifierTurns += 1
       entry.leaked = true
+      entry.leakedToColleague = true
       entry.ended = true
       return {
         reply: null,
@@ -349,7 +429,8 @@ export function createSocialEngineeringService({
     return { message, nudgesLeft: MAX_NUDGES - entry.nudgesSent }
   }
 
-  function complete(sessionId, decision) {
+  function complete(sessionId, chosenDecision) {
+    let decision = chosenDecision
     pruneCompleted()
     const replay = completed.get(sessionId)
     if (replay) return replay.result
@@ -357,8 +438,13 @@ export function createSocialEngineeringService({
     const verifierName = entry.verifierSessionId
       ? verifierFor(entry.scenario.id)?.displayName
       : undefined
+    const legitimate = Boolean(entry.scenario.legitimate)
+    // a code typed to a genuine requester is a share decision, not a leak
+    const sharedWithRequester = legitimate && entry.leaked && !entry.leakedToColleague
+    if (sharedWithRequester) decision = 'share-code'
     const { score, outcome, breakdown } = scoreOutcome({
-      leaked: entry.leaked,
+      legitimate,
+      leaked: entry.leaked && !sharedWithRequester,
       decision,
       turnsUsed: entry.turnsUsed,
       turnBudget: entry.turnBudget,
@@ -369,7 +455,7 @@ export function createSocialEngineeringService({
     const unverifiedChoice =
       entry.verifierRequired && decision === 'verify-independently' && !entry.verifierContacted
     const debrief = buildDebrief(entry.scenario, {
-      leaked: entry.leaked,
+      leaked: entry.leaked && !sharedWithRequester,
       decision,
       outcome,
       unverifiedChoice,
@@ -386,6 +472,7 @@ export function createSocialEngineeringService({
       score,
       maxScore: MAX_SCORE,
       outcome,
+      legitimate,
       breakdown,
       debrief,
       saved: false,

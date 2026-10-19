@@ -39,6 +39,37 @@ function actorId(actor) {
   return new Types.ObjectId(actor.id)
 }
 
+function recoveryRevisionFilter(revision) {
+  return revision === 0
+    ? { $or: [{ recoveryRevision: 0 }, { recoveryRevision: { $exists: false } }] }
+    : { recoveryRevision: revision }
+}
+
+async function acquireRecoveryRevision(Model, record, filter, session) {
+  const revision = record.recoveryRevision ?? 0
+  if (!Number.isSafeInteger(revision) || revision < 0 || revision >= Number.MAX_SAFE_INTEGER) {
+    throw conflict()
+  }
+  const changed = await Model.updateOne(
+    {
+      $and: [{ _id: record._id, ...filter }, recoveryRevisionFilter(revision)],
+    },
+    { $set: { recoveryRevision: revision + 1 } },
+    { session, runValidators: true },
+  )
+  if (!changed.modifiedCount) throw notFound()
+}
+
+async function acquireActiveClassGuards(Cohort, Institution, cohort, institution, session) {
+  await acquireRecoveryRevision(Institution, institution, { status: 'active' }, session)
+  await acquireRecoveryRevision(
+    Cohort,
+    cohort,
+    { status: 'active', institutionId: institution._id },
+    session,
+  )
+}
+
 async function loadParents(database, cohortIds) {
   if (!cohortIds.length) return { cohorts: new Map(), institutions: new Map() }
 
@@ -170,13 +201,17 @@ export function createCohortService(
 
   async function assertManagedCohort(actor, cohortId, session) {
     const current = await currentActor(actor, session)
-    const cohort = await Cohort.findOne({ _id: cohortId, status: 'active' }).session(session).lean()
+    const cohort = await Cohort.findOne({ _id: cohortId, status: 'active' })
+      .select('_id institutionId +recoveryRevision')
+      .session(session)
+      .lean()
     if (!cohort) throw notFound()
     const institution = await Institution.findOne({ _id: cohort.institutionId, status: 'active' })
       .session(session)
-      .select('_id')
+      .select('_id recoveryRevision')
       .lean()
     if (!institution) throw notFound()
+    await acquireActiveClassGuards(Cohort, Institution, cohort, institution, session)
     if (current.globalRoles.includes('admin')) return { current, cohort }
     if (!current.globalRoles.includes('instructor')) throw notFound()
     const assignment = await InstructorAssignment.exists({
@@ -300,15 +335,18 @@ export function createCohortService(
       if (!code)
         throw new CohortError('COHORT_CODE_UNAVAILABLE', 'This class code is unavailable.', 404)
       const cohort = await Cohort.findOne({ _id: code.cohortId, status: 'active' })
+        .select('_id institutionId name +recoveryRevision')
         .session(session)
         .lean()
       const institution =
         cohort &&
-        (await Institution.findOne({ _id: cohort.institutionId, status: 'active' })
+          (await Institution.findOne({ _id: cohort.institutionId, status: 'active' })
+            .select('_id name +recoveryRevision')
           .session(session)
           .lean())
       if (!cohort || !institution)
         throw new CohortError('COHORT_CODE_UNAVAILABLE', 'This class code is unavailable.', 404)
+      await acquireActiveClassGuards(Cohort, Institution, cohort, institution, session)
       const claimed = await EnrollmentCode.updateOne(
         {
           _id: code._id,
@@ -406,6 +444,26 @@ export function createCohortService(
       { $match: { cohortId: new Types.ObjectId(parsedId), status } },
       {
         $lookup: {
+          from: 'cohorts',
+          localField: 'cohortId',
+          foreignField: '_id',
+          pipeline: [{ $match: { status: 'active' } }, { $project: { institutionId: 1 } }],
+          as: 'cohort',
+        },
+      },
+      { $unwind: '$cohort' },
+      {
+        $lookup: {
+          from: 'institutions',
+          localField: 'cohort.institutionId',
+          foreignField: '_id',
+          pipeline: [{ $match: { status: 'active' } }, { $project: { _id: 1 } }],
+          as: 'institution',
+        },
+      },
+      { $unwind: '$institution' },
+      {
+        $lookup: {
           from: 'users',
           localField: 'userId',
           foreignField: '_id',
@@ -423,6 +481,7 @@ export function createCohortService(
             {
               $project: {
                 _id: 1,
+                'user._id': 1,
                 status: 1,
                 decision: 1,
                 revision: 1,
@@ -440,6 +499,7 @@ export function createCohortService(
     return {
       memberships: result.rows.map((row) => ({
         id: idString(row._id),
+        studentId: idString(row.user._id),
         username: row.user.username,
         email: row.user.emailNormalized,
         avatarId: row.user.avatarId,

@@ -76,7 +76,7 @@ onMounted(start)
 <template>
   <div class="soc-game" :class="{ 'is-fitted': fitsViewport, 'is-wide': inConversation }">
     <div class="soc-intro">
-      <RouterLink to="/" class="soc-back">Back to town</RouterLink>
+      <RouterLink to="/" class="soc-back back-link">Back to town</RouterLink>
       <h1 tabindex="-1">LLM Social Engineering Simulator</h1>
       <p class="soc-strap">
         A fictional colleague will pressure you to hand over a synthetic reset code. Hold the line

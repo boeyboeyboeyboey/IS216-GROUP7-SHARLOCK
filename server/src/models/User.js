@@ -25,6 +25,15 @@ const userSchema = new Schema(
       default: 'active',
     },
     authVersion: { type: Number, required: true, min: 1, default: 1 },
+    recoveryRevision: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+      max: Number.MAX_SAFE_INTEGER,
+      validate: Number.isSafeInteger,
+      select: false,
+    },
     classOnboardingCompletedAt: { type: Date, default: null },
     instructorAssignmentRevision: {
       type: Number,

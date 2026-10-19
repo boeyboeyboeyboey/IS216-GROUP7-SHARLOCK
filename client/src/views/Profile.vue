@@ -220,8 +220,7 @@ async function retrySession() {
         </button>
       </div>
       <p class="preview-notice">
-        Results are not saved. Your account and avatar are saved, but game progress, scores and
-        achievements are not recorded yet.
+        Your account and avatar are saved. Game results are not saved yet.
       </p>
       <TrophyCase />
     </template>

@@ -64,7 +64,12 @@ function submit() {
       avatarId: input.avatarId,
     })
   } catch (error) {
-    localErrors.value = error.fieldErrors || Object.create(null)
+    const fieldErrors = error.fieldErrors || Object.create(null)
+    localErrors.value = { ...fieldErrors }
+    if (fieldErrors.password) {
+      localErrors.value.password =
+        'That password could not be accepted. Please choose a different password.'
+    }
     focusSummary()
   }
 }
@@ -175,8 +180,8 @@ defineExpose({ clearSecrets })
         </button>
       </div>
       <small id="register-password-hint">
-        Use 12–128 characters, including an uppercase letter and a special character. Spaces are
-        allowed.
+        Use at least 12 characters, including an uppercase letter and a special character. Spaces
+        are allowed.
       </small>
       <p v-if="passwordError" id="register-password-error" class="auth-field-error">
         {{ passwordError }}

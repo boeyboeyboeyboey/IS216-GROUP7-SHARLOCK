@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  api: { get: vi.fn(), post: vi.fn(), put: vi.fn() },
+  api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn() },
   requestCsrfToken: vi.fn(),
 }))
 
@@ -12,9 +12,14 @@ import {
   createCohort,
   createInstitution,
   createInstructor,
+  listAdminUsers,
+  listAuditEvents,
   listCohorts,
   listInstitutions,
   reissueInstructorActivation,
+  updateCohort,
+  updateInstitution,
+  updateAdminUser,
   updateInstructorAssignments,
 } from '../api.js'
 
@@ -36,6 +41,133 @@ describe('admin workspace API', () => {
     expect(mocks.api.get).toHaveBeenNthCalledWith(2, '/admin/cohorts', {
       params: { page: 2, limit: 50, institutionId: '0123456789abcdef01234567' },
       signal: undefined,
+    })
+  })
+
+  it('uses the audit read endpoint with bounded paging and approved filters', async () => {
+    const signal = new AbortController().signal
+    mocks.api.get.mockResolvedValue({ data: { events: [], page: 2, total: 0 } })
+
+    await listAuditEvents({
+      eventType: 'admin.cohort.create',
+      from: '2026-10-01T00:00:00.000Z',
+      to: '2026-10-17T12:00:00.000Z',
+      page: 2,
+      limit: 25,
+      signal,
+    })
+
+    expect(mocks.api.get).toHaveBeenCalledWith('/admin/audit-events', {
+      params: {
+        page: 2,
+        limit: 25,
+        eventType: 'admin.cohort.create',
+        from: '2026-10-01T00:00:00.000Z',
+        to: '2026-10-17T12:00:00.000Z',
+      },
+      signal,
+    })
+    expect(mocks.requestCsrfToken).not.toHaveBeenCalled()
+  })
+
+  it('omits unspecified audit dates so the server uses its current retention window', async () => {
+    mocks.api.get.mockResolvedValue({ data: { events: [], page: 1, total: 0 } })
+
+    await listAuditEvents({ eventType: 'admin.user.disable', page: 1, limit: 25 })
+
+    expect(mocks.api.get).toHaveBeenCalledWith('/admin/audit-events', {
+      params: { page: 1, limit: 25, eventType: 'admin.user.disable' },
+      signal: undefined,
+    })
+  })
+
+  it('uses role and account status filters on the minimal account list', async () => {
+    const signal = new AbortController().signal
+    mocks.api.get.mockResolvedValue({ data: { users: [], page: 2, total: 0 } })
+
+    await listAdminUsers({
+      page: 2,
+      limit: 25,
+      role: 'instructor',
+      accountStatus: 'disabled',
+      signal,
+    })
+
+    expect(mocks.api.get).toHaveBeenCalledWith('/admin/users', {
+      params: { page: 2, limit: 25, role: 'instructor', accountStatus: 'disabled' },
+      signal,
+    })
+    expect(mocks.requestCsrfToken).not.toHaveBeenCalled()
+  })
+
+  it('sends the revisioned account status patch with a fresh CSRF token', async () => {
+    const signal = new AbortController().signal
+    mocks.requestCsrfToken.mockResolvedValue('csrf-account')
+    mocks.api.patch.mockResolvedValue({ data: { user: { id: 'user-id', revision: 5 } } })
+
+    const result = await updateAdminUser(
+      'user/id',
+      { accountStatus: 'disabled', expectedRevision: 4 },
+      signal,
+    )
+
+    expect(result.user.revision).toBe(5)
+    expect(mocks.api.patch).toHaveBeenCalledWith(
+      '/admin/users/user%2Fid',
+      { accountStatus: 'disabled', expectedRevision: 4 },
+      { signal, headers: { 'X-CSRF-Token': 'csrf-account' } },
+    )
+  })
+
+  it('maps audit API failures to a safe local message', async () => {
+    mocks.api.get.mockRejectedValueOnce({
+      response: {
+        status: 500,
+        data: { error: { code: 'REQUEST_FAILED', message: 'private server detail' } },
+      },
+    })
+
+    await expect(listAuditEvents()).rejects.toMatchObject({
+      name: 'AdminApiError',
+      message: 'Sharlock is temporarily unavailable. Try again shortly.',
+    })
+  })
+
+  it('maps account-control failures without exposing backend details', async () => {
+    mocks.requestCsrfToken.mockResolvedValue('csrf-account')
+    mocks.api.patch
+      .mockRejectedValueOnce({
+        response: {
+          status: 409,
+          data: { error: { code: 'ADMIN_STALE_ACCOUNT', message: 'private backend detail' } },
+        },
+      })
+      .mockRejectedValueOnce({
+        response: {
+          status: 409,
+          data: {
+            error: {
+              code: 'ADMIN_INSTRUCTOR_ACTIVATION_REQUIRED',
+              message: 'private backend detail',
+            },
+          },
+        },
+      })
+
+    await expect(
+      updateAdminUser('student-id', { accountStatus: 'disabled', expectedRevision: 1 }),
+    ).rejects.toMatchObject({
+      code: 'ADMIN_STALE_ACCOUNT',
+      status: 409,
+      message: 'This account changed elsewhere. The list was refreshed; review its latest status.',
+    })
+    await expect(
+      updateAdminUser('instructor-id', { accountStatus: 'active', expectedRevision: 1 }),
+    ).rejects.toMatchObject({
+      code: 'ADMIN_INSTRUCTOR_ACTIVATION_REQUIRED',
+      status: 409,
+      message:
+        'Disabled instructors must receive a new activation link and complete activation before access is restored.',
     })
   })
 
@@ -113,6 +245,83 @@ describe('admin workspace API', () => {
       `${window.location.origin}/activate-account#token=${'A'.repeat(43)}`,
     )
     expect(created.activationUrl).not.toContain('?')
+  })
+
+  it('uses revisioned allowlisted PATCH payloads for institutions and classes', async () => {
+    const signal = new AbortController().signal
+    mocks.requestCsrfToken
+      .mockResolvedValueOnce('csrf-institution')
+      .mockResolvedValueOnce('csrf-class')
+    mocks.api.patch
+      .mockResolvedValueOnce({ data: { institution: { id: 'institution-id', revision: 1 } } })
+      .mockResolvedValueOnce({ data: { cohort: { id: 'cohort-id', revision: 2 } } })
+
+    const institutionResult = await updateInstitution(
+      'institution/id',
+      { name: 'Renamed Academy', status: 'inactive', expectedRevision: 0 },
+      signal,
+    )
+    const cohortResult = await updateCohort(
+      'class/id',
+      { name: 'Green Class', term: '2026 Term 4', status: 'active', expectedRevision: 1 },
+      signal,
+    )
+
+    expect(institutionResult.institution.revision).toBe(1)
+    expect(cohortResult.cohort.revision).toBe(2)
+    expect(mocks.api.patch).toHaveBeenNthCalledWith(
+      1,
+      '/admin/institutions/institution%2Fid',
+      { name: 'Renamed Academy', status: 'inactive', expectedRevision: 0 },
+      { signal, headers: { 'X-CSRF-Token': 'csrf-institution' } },
+    )
+    expect(mocks.api.patch).toHaveBeenNthCalledWith(
+      2,
+      '/admin/cohorts/class%2Fid',
+      { name: 'Green Class', term: '2026 Term 4', status: 'active', expectedRevision: 1 },
+      { signal, headers: { 'X-CSRF-Token': 'csrf-class' } },
+    )
+  })
+
+  it('maps stale institution and class responses to safe reload guidance', async () => {
+    mocks.requestCsrfToken.mockResolvedValue('csrf')
+    mocks.api.patch
+      .mockRejectedValueOnce({
+        response: {
+          status: 409,
+          data: { error: { code: 'ADMIN_STALE_INSTITUTION', message: 'private backend detail' } },
+        },
+      })
+      .mockRejectedValueOnce({
+        response: {
+          status: 409,
+          data: { error: { code: 'ADMIN_STALE_COHORT', message: 'private backend detail' } },
+        },
+      })
+
+    await expect(
+      updateInstitution('institution-id', {
+        name: 'Changed',
+        status: 'active',
+        expectedRevision: 0,
+      }),
+    ).rejects.toMatchObject({
+      code: 'ADMIN_STALE_INSTITUTION',
+      status: 409,
+      message: 'This institution changed elsewhere. Reload the list and review your changes.',
+    })
+    await expect(
+      updateCohort('cohort-id', {
+        name: 'Changed',
+        term: '2026 T4',
+        status: 'active',
+        expectedRevision: 0,
+      }),
+    ).rejects.toMatchObject({
+      code: 'ADMIN_STALE_COHORT',
+      status: 409,
+      message: 'This class changed elsewhere. Reload the list and review your changes.',
+    })
   })
 
   it('rejects unsafe returned activation URLs and maps server errors without raw text', async () => {

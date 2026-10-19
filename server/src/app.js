@@ -11,6 +11,7 @@ import { createAuditRouter } from './modules/audit/router.js'
 import { createAdminRouter } from './modules/admin/router.js'
 import { createAttemptRouter } from './modules/attempts/router.js'
 import { createProfileRouter } from './modules/profile/router.js'
+import { createRecoveryRouter } from './modules/recovery/router.js'
 import { createHealthRouter } from './routes/health.js'
 import { handleError, notFound } from './middleware/errors.js'
 
@@ -49,6 +50,16 @@ export function createApp(
     requireMutation: authRuntime.requireMutation,
   })
   app.use('/api', adminRouter)
+  app.use(
+    '/api',
+    createRecoveryRouter(database, {
+      now: authRuntime.now,
+      clientOrigin: authRuntime.clientOrigin,
+      requireSession: authRuntime.requireSession,
+      requireMutation: authRuntime.requireMutation,
+      ...authRuntime.recoveryLimits,
+    }),
+  )
   const cohortRouter = createCohortRouter(database, {
     ...cohorts,
     now: cohorts.now ?? authRuntime.now,

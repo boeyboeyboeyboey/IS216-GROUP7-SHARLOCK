@@ -34,7 +34,7 @@ const colleagueInitials = computed(() =>
     </div>
     <h3 id="soc-decisions-heading">How do you want to end this?</h3>
     <p v-if="!hideVerify" class="soc-decisions-hint">
-      You can decide at any point. Protecting the code and verifying the request is the safe play.
+      You can decide at any point. Check who is really asking before you decide.
     </p>
     <div v-if="hideVerify && colleagueName" class="soc-colleague-card">
       <span class="soc-colleague-avatar" aria-hidden="true">{{ colleagueInitials }}</span>

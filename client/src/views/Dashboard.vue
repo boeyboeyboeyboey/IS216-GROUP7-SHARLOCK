@@ -65,10 +65,7 @@ function closeNewspaper() {
       :sound-suspended="route.name === 'news'"
       @activate="router.push($event)"
     />
-    <p class="town-footnote">
-      <PixelIcon name="star" :size="16" /> Explore at your own pace. Your account is saved; game
-      results and learning progress are not saved yet.
-    </p>
+    <p class="town-footnote"><PixelIcon name="star" :size="16" /> Explore at your own pace.</p>
     <RouterView @request-close="closeNewspaper" />
   </div>
 </template>

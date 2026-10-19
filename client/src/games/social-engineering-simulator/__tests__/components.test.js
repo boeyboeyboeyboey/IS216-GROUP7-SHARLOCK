@@ -21,7 +21,11 @@ vi.mock('../simulator.js', async (original) => ({
 
 describe('scenario brief', () => {
   const props = {
-    brief: { title: 'IT Service Desk is paging you', objective: 'Protect the code', turnBudget: 8 },
+    brief: {
+      title: 'IT Service Desk is paging you',
+      objective: 'A help-desk agent asks for the reset code.',
+      turnBudget: 8,
+    },
     persona: { id: 'it-helpdesk', displayName: 'Jordan Vale (IT Service Desk)' },
   }
 
@@ -99,12 +103,12 @@ describe('decision bar', () => {
     expect(wrapper.emitted('decide')[0]).toEqual(['verify-independently'])
   })
 
-  it('puts the unsafe-choice warning on its own line under the description', () => {
+  it('gives no hint about which choice is right', () => {
     const wrapper = mount(DecisionBar, { props: { disabled: false } })
     const danger = wrapper.get('.soc-button-danger')
     expect(danger.get('.soc-decision-desc').text()).toBe('Hand over the reset code.')
-    expect(danger.get('.soc-decision-note').text()).toBe('(this is the unsafe choice)')
-    expect(wrapper.findAll('.soc-decision-note')).toHaveLength(1)
+    expect(wrapper.findAll('.soc-decision-note')).toHaveLength(0)
+    expect(wrapper.text()).not.toMatch(/unsafe/i)
   })
 
   it('disables every choice when asked', () => {
@@ -142,6 +146,23 @@ describe('debrief panel', () => {
     expect(wrapper.text()).toContain('not saved')
     await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('restart')).toHaveLength(1)
+  })
+
+  it.each([
+    [false, 'resisted', 'Resisted'],
+    [false, 'partial', 'Partly safe'],
+    [false, 'compromised', 'Compromised'],
+    [true, 'resisted', 'Handled correctly'],
+    [true, 'partial', 'Over-cautious'],
+    [true, 'compromised', 'Shared too soon'],
+  ])('labels legitimate=%s %s as %s', (legitimate, outcome, label) => {
+    const wrapper = mount(DebriefPanel, { props: { result: { ...result, legitimate, outcome } } })
+    expect(wrapper.get('.soc-debrief-eyebrow').text()).toContain(label)
+  })
+
+  it('treats a result without a legitimate flag as an attack', () => {
+    const wrapper = mount(DebriefPanel, { props: { result } })
+    expect(wrapper.get('.soc-debrief-eyebrow').text()).toContain('Partly safe')
   })
 })
 
@@ -204,9 +225,8 @@ describe('decision bar in colleague mode', () => {
     expect(wrapper.findAll('button').every((b) => b.attributes('disabled') === undefined)).toBe(
       true,
     )
-    expect(wrapper.text()).toContain(
-      'Protecting the code and verifying the request is the safe play.',
-    )
+    expect(wrapper.text()).toContain('Check who is really asking before you decide.')
+    expect(wrapper.text()).not.toMatch(/safe play|protecting/i)
     expect(wrapper.text()).not.toContain('Check this request with')
   })
 

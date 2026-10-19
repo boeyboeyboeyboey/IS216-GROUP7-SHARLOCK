@@ -13,9 +13,29 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock('../api.js', () => mocks)
 
+const authMocks = vi.hoisted(() => ({
+  auth: { user: { globalRoles: ['instructor'] } },
+}))
+vi.mock('../../auth/store.js', () => ({ useAuthStore: () => authMocks.auth }))
+
+const recoveryMocks = vi.hoisted(() => ({
+  issueInstructorRecovery: vi.fn(),
+  safeRecoveryError: (error) => error,
+}))
+vi.mock('../../recovery/api.js', () => recoveryMocks)
+
+const activeStudent = {
+  id: 'membership-1',
+  studentId: '111111111111111111111111',
+  username: 'Casey_Student',
+  email: 'casey@example.test',
+  revision: 1,
+}
+
 describe('instructor class management', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    authMocks.auth.user.globalRoles = ['instructor']
     mocks.listManagedCohorts.mockResolvedValue({
       cohorts: [
         { cohortId: 'class-a', cohortName: 'Blue Class', institutionName: 'Academy' },
@@ -23,7 +43,10 @@ describe('instructor class management', () => {
       ],
       total: 2,
     })
-    mocks.listCohortMemberships.mockResolvedValue({ memberships: [], total: 0 })
+    mocks.listCohortMemberships.mockImplementation(async (_cohortId, { status }) => ({
+      memberships: status === 'active' ? [activeStudent] : [],
+      total: status === 'active' ? 1 : 0,
+    }))
     mocks.getEnrollmentCode.mockResolvedValue({ code: null, revision: 0 })
     mocks.issueValidatedEnrollmentCode.mockResolvedValue({
       id: 'code-a',
@@ -31,6 +54,10 @@ describe('instructor class management', () => {
       expiresAt: '2099-01-01T00:00:00.000Z',
       rawCode: 'ABCDEFGHJKLMPQRS',
       code: { id: 'code-a', expiresAt: '2099-01-01T00:00:00.000Z', revokedAt: null },
+    })
+    recoveryMocks.issueInstructorRecovery.mockResolvedValue({
+      resetUrl: `http://localhost:5174/reset-password#token=${'R'.repeat(43)}`,
+      expiresAt: '2099-01-01T00:00:00.000Z',
     })
   })
 
@@ -70,6 +97,50 @@ describe('instructor class management', () => {
     })
     await flushPromises()
     expect(wrapper.text()).toContain('ABCD-EFGH-JKLM-PQRS')
+    wrapper.unmount()
+  })
+
+  it('allows a pure instructor to issue a link for an active student in the selected class', async () => {
+    const wrapper = mount(ClassManagementPage)
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Active')
+      .trigger('click')
+    await flushPromises()
+    await wrapper
+      .get(`button[aria-label="Prepare password reset link for ${activeStudent.username}"]`)
+      .trigger('click')
+    await wrapper.get('.recovery-issue-form input[type="checkbox"]').setValue(true)
+    await wrapper.get('.recovery-issue-form').trigger('submit')
+    await flushPromises()
+
+    expect(recoveryMocks.issueInstructorRecovery).toHaveBeenCalledWith(
+      'class-a',
+      activeStudent.studentId,
+      expect.any(AbortSignal),
+    )
+    expect(wrapper.get('dialog').text()).toContain('Deliver this reset link privately')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Close and clear link')
+      .trigger('click')
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('hides roster recovery actions from any admin-role account', async () => {
+    authMocks.auth.user.globalRoles = ['instructor', 'admin']
+    const wrapper = mount(ClassManagementPage)
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Active')
+      .trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('button[aria-label^="Prepare password reset link"]').exists()).toBe(false)
+    expect(recoveryMocks.issueInstructorRecovery).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 })

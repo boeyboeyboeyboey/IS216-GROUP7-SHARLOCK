@@ -14,7 +14,68 @@ async function signIn(context, origin, identity) {
   expect(response.ok()).toBe(true)
 }
 
-test('admin creates, activates, and assigns an instructor to a class', async ({
+async function findAccountRow(page, role, status, username) {
+  const panel = page.locator('section[aria-labelledby="account-controls-title"]')
+  await panel.getByLabel('Role').selectOption(role)
+  await panel.getByLabel('Status').selectOption(status)
+  let pageNumber = 1
+  const waitForAccountResponse = () =>
+    page.waitForResponse((response) => {
+      const url = new URL(response.url())
+      return (
+        url.pathname === '/api/admin/users' &&
+        url.searchParams.get('role') === role &&
+        url.searchParams.get('accountStatus') === status &&
+        url.searchParams.get('page') === String(pageNumber)
+      )
+    })
+  const waitForLoadedState = async () => {
+    await expect
+      .poll(async () => {
+        const applyFilters = panel.getByRole('button', { name: 'Apply filters' })
+        if (!(await applyFilters.isEnabled())) return false
+        if (await panel.getByText('Loading accounts…', { exact: true }).count()) return false
+        const table = panel.locator('.admin-workspace__account-table')
+        if (await table.count()) return (await table.getAttribute('aria-busy')) === 'false'
+        return true
+      })
+      .toBe(true)
+  }
+
+  const responsePromise = waitForAccountResponse()
+  await panel.getByRole('button', { name: 'Apply filters' }).click()
+  expect((await responsePromise).ok()).toBe(true)
+  await waitForLoadedState()
+
+  while (true) {
+    const usernameCell = panel.getByText(username, { exact: true })
+    if (await usernameCell.count()) return usernameCell.locator('xpath=ancestor::tr')
+
+    const next = panel.getByRole('button', { name: 'Next accounts' })
+    if (!(await next.count()) || !(await next.isEnabled())) break
+    pageNumber += 1
+    const nextResponse = waitForAccountResponse()
+    await next.click()
+    expect((await nextResponse).ok()).toBe(true)
+    await waitForLoadedState()
+    await expect(panel.getByText(new RegExp(`^Page ${pageNumber} of `))).toBeVisible()
+  }
+  throw new Error(`The account list did not contain ${username}.`)
+}
+
+function institutionRow(page, name) {
+  return page
+    .getByRole('button', { name: `Edit ${name}`, exact: true })
+    .locator('xpath=ancestor::li')
+}
+
+function cohortRow(page, name) {
+  return page
+    .getByRole('button', { name: `Edit ${name}`, exact: true })
+    .locator('xpath=ancestor::li')
+}
+
+test('admin manages institutions, assignments, audit history, and account access', async ({
   browser,
   page,
   studentIdentity,
@@ -40,6 +101,7 @@ test('admin creates, activates, and assigns an instructor to a class', async ({
   }
   let activationContext
   let studentContext
+  let freshStudentContext
 
   try {
     await page.goto('/admin')
@@ -67,8 +129,14 @@ test('admin creates, activates, and assigns an instructor to a class', async ({
     await page.getByLabel('Instructor username').fill(instructor.username)
     await page.getByRole('button', { name: 'Create instructor and activation link' }).click()
 
-    const linkField = page.getByLabel('Activation link')
+    const linkField = page.getByLabel('Activation link', { exact: true })
     await expect(linkField).toBeVisible()
+    await expect
+      .poll(async () => {
+        const value = await linkField.inputValue()
+        return /^https?:\/\/[^/]+\/activate-account#token=[A-Za-z\d_-]{43}$/.test(value)
+      })
+      .toBe(true)
     const activationUrl = await linkField.inputValue()
     const activation = new URL(activationUrl)
     expect(activation.origin).toBe(origin)
@@ -130,8 +198,180 @@ test('admin creates, activates, and assigns an instructor to a class', async ({
       })
       .toContain(createdCohort.id)
 
+    const institutionList = await page
+      .context()
+      .request.get(`${origin}/api/admin/institutions?limit=50`, { headers: { Origin: origin } })
+    expect(institutionList.ok()).toBe(true)
+    const createdInstitution = (await institutionList.json()).institutions.find(
+      (candidate) => candidate.slug === institutionSlug,
+    )
+    expect(createdInstitution?.id).toMatch(/^[a-f\d]{24}$/i)
+
+    const renamedInstitution = `${institutionName} Renamed`
+    await page.getByRole('button', { name: `Edit ${institutionName}`, exact: true }).click()
+    await page
+      .locator(`#admin-institution-edit-name-${createdInstitution.id}`)
+      .fill(renamedInstitution)
+    await page.getByRole('button', { name: 'Save institution' }).click()
+    await expect(
+      institutionRow(page, renamedInstitution).getByText(renamedInstitution, { exact: true }),
+    ).toBeVisible()
+
+    const renamedCohort = `${cohortName} Renamed`
+    const renamedTerm = `${term} Updated`
+    await page.getByRole('button', { name: `Edit ${cohortName}`, exact: true }).click()
+    await page.locator(`#admin-cohort-edit-name-${createdCohort.id}`).fill(renamedCohort)
+    await page.locator(`#admin-cohort-edit-term-${createdCohort.id}`).fill(renamedTerm)
+    await page.locator(`#admin-cohort-edit-status-${createdCohort.id}`).selectOption('inactive')
+    await page.getByRole('button', { name: 'Save class' }).click()
+    await expect(
+      cohortRow(page, renamedCohort).getByText(renamedCohort, { exact: true }),
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Refresh instructors' }).click()
+    const retainedInstructor = page.getByRole('article', {
+      name: instructor.username,
+      exact: true,
+    })
+    await expect(retainedInstructor.getByText('Inactive; retained assignment')).toBeVisible()
+    await retainedInstructor.getByRole('button', { name: 'Save assignments' }).click()
+    await expect
+      .poll(async () => {
+        const response = await activationContext.request.get(
+          `${origin}/api/me/teaching-assignments?limit=50`,
+          { headers: { Origin: origin } },
+        )
+        if (!response.ok()) return []
+        const result = await response.json()
+        return result.assignments.map(({ cohortId }) => cohortId)
+      })
+      .toContain(createdCohort.id)
+
+    await page.getByRole('button', { name: `Edit ${renamedInstitution}`, exact: true }).click()
+    await page
+      .locator(`#admin-institution-edit-status-${createdInstitution.id}`)
+      .selectOption('inactive')
+    await page.getByRole('button', { name: 'Save institution' }).click()
+    await expect(
+      institutionRow(page, renamedInstitution).getByText(`${institutionSlug} · Inactive`, {
+        exact: true,
+      }),
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: `Edit ${renamedInstitution}`, exact: true }).click()
+    await page
+      .locator(`#admin-institution-edit-status-${createdInstitution.id}`)
+      .selectOption('active')
+    await page.getByRole('button', { name: 'Save institution' }).click()
+    await expect(
+      cohortRow(page, renamedCohort).getByText(
+        `${renamedInstitution} · ${renamedTerm} · Inactive`,
+        { exact: true },
+      ),
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: `Edit ${renamedCohort}`, exact: true }).click()
+    await page.locator(`#admin-cohort-edit-status-${createdCohort.id}`).selectOption('active')
+    await page.getByRole('button', { name: 'Save class' }).click()
+
+    await page.getByRole('button', { name: 'Refresh instructors' }).click()
+    const updatedInstructor = page.getByRole('article', {
+      name: instructor.username,
+      exact: true,
+    })
+    await expect(
+      updatedInstructor.getByRole('checkbox', {
+        name: `${renamedCohort}, ${renamedInstitution}, ${renamedTerm}`,
+      }),
+    ).toBeChecked()
+    await expect(updatedInstructor.getByText('Inactive; retained assignment')).toHaveCount(0)
+
+    const auditPanel = page.locator('section[aria-labelledby="audit-events-title"]')
+    await auditPanel.getByLabel('Event type').selectOption('admin.cohort.update')
+    await auditPanel.getByRole('button', { name: 'Apply filters' }).click()
+    await expect(
+      auditPanel
+        .locator('.admin-workspace__audit-list')
+        .getByText('Class updated', { exact: true })
+        .first(),
+    ).toBeVisible()
+    await auditPanel.getByLabel('Event type').selectOption('admin.institution.update')
+    await auditPanel.getByRole('button', { name: 'Apply filters' }).click()
+    await expect(
+      auditPanel
+        .locator('.admin-workspace__audit-list')
+        .getByText('Institution updated', { exact: true })
+        .first(),
+    ).toBeVisible()
+
     studentContext = await browser.newContext(isolatedContext)
     await signIn(studentContext, origin, studentIdentity)
+    const oldStudentSession = await studentContext.request.get(`${origin}/api/auth/me`, {
+      headers: { Origin: origin },
+    })
+    expect(oldStudentSession.ok()).toBe(true)
+
+    const studentRow = await findAccountRow(page, 'student', 'active', studentIdentity.username)
+    page.once('dialog', (dialog) => dialog.accept())
+    await studentRow.getByRole('button', { name: 'Disable account' }).click()
+    await expect
+      .poll(async () =>
+        (
+          await studentContext.request.get(`${origin}/api/auth/me`, {
+            headers: { Origin: origin },
+          })
+        ).status(),
+      )
+      .toBe(401)
+
+    const studentAuditPanel = page.locator('section[aria-labelledby="audit-events-title"]')
+    await studentAuditPanel.getByLabel('Event type').selectOption('admin.user.disable')
+    await studentAuditPanel.getByRole('button', { name: 'Apply filters' }).click()
+    await expect(
+      studentAuditPanel
+        .locator('.admin-workspace__audit-list')
+        .getByText('Account disabled', { exact: true })
+        .first(),
+    ).toBeVisible()
+
+    const disabledStudentRow = await findAccountRow(
+      page,
+      'student',
+      'disabled',
+      studentIdentity.username,
+    )
+    await disabledStudentRow.getByRole('button', { name: 'Enable account' }).click()
+    freshStudentContext = await browser.newContext(isolatedContext)
+    await signIn(freshStudentContext, origin, studentIdentity)
+    const freshStudentSession = await freshStudentContext.request.get(`${origin}/api/auth/me`, {
+      headers: { Origin: origin },
+    })
+    expect(freshStudentSession.ok()).toBe(true)
+
+    const activeInstructorRow = await findAccountRow(
+      page,
+      'instructor',
+      'active',
+      instructor.username,
+    )
+    page.once('dialog', (dialog) => dialog.accept())
+    await activeInstructorRow.getByRole('button', { name: 'Disable account' }).click()
+    const disabledInstructorRow = await findAccountRow(
+      page,
+      'instructor',
+      'disabled',
+      instructor.username,
+    )
+    await expect(disabledInstructorRow.getByRole('button', { name: 'Enable account' })).toHaveCount(
+      0,
+    )
+    await disabledInstructorRow.getByRole('button', { name: 'Reissue activation link' }).click()
+    await expect(page.getByLabel('Activation link', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Close and clear link' }).click()
+
+    await studentContext.close()
+    studentContext = freshStudentContext
+    freshStudentContext = undefined
     const studentPage = await studentContext.newPage()
     await studentPage.goto(`${origin}/admin`)
     await expect(studentPage).toHaveURL(`${origin}/forbidden`)
@@ -141,5 +381,6 @@ test('admin creates, activates, and assigns an instructor to a class', async ({
   } finally {
     await activationContext?.close()
     await studentContext?.close()
+    await freshStudentContext?.close()
   }
 })

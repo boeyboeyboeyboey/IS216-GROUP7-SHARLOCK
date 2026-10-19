@@ -8,12 +8,14 @@ import {
 
 describe('social-engineering scenarios', () => {
   it('ships the four starting personas with a private code and system prompt', () => {
-    expect(SCENARIOS.map((scenario) => scenario.id)).toEqual([
-      'it-helpdesk',
-      'panicked-coworker',
-      'exec-assistant',
-      'vendor-support',
-    ])
+    expect(SCENARIOS.map((scenario) => scenario.id)).toEqual(
+      expect.arrayContaining([
+        'it-helpdesk',
+        'panicked-coworker',
+        'exec-assistant',
+        'vendor-support',
+      ]),
+    )
     for (const scenario of SCENARIOS) {
       expect(scenario.code).toMatch(/^SYNTH-RESET-\d{4}$/)
       expect(scenario.systemPrompt).toContain('fictional')
@@ -53,5 +55,56 @@ describe('social-engineering scenarios', () => {
     expect(stage(5)).toBe('escalation')
     expect(stage(7)).toBe('last attempt')
     expect(promptForTurn(scenario, 4, 8)).not.toContain(scenario.code)
+  })
+
+  it('picks the group first and then a scenario inside it', () => {
+    const draws = (...values) => {
+      const queue = [...values]
+      return () => queue.shift() ?? 0
+    }
+    expect(pickScenario(draws(0.1, 0)).legitimate).toBe(true)
+    expect(pickScenario(draws(0.9, 0)).legitimate).toBe(false)
+    expect(pickScenario(draws(0.9, 0.999)).id).toBe(
+      SCENARIOS.filter((scenario) => !scenario.legitimate).at(-1).id,
+    )
+  })
+
+  it('never picks a legitimate scenario without a colleague', () => {
+    for (const value of [0, 0.1, 0.34, 0.9]) {
+      expect(pickScenario(() => value, { withColleague: false }).legitimate).toBe(false)
+    }
+  })
+
+  it('keeps briefs, titles and openings free of answer-revealing words', () => {
+    for (const scenario of SCENARIOS) {
+      const text = [scenario.brief.title, scenario.brief.objective, scenario.opening].join(' ')
+      expect(text).not.toMatch(/unsafe|protect|safe|legitimate|verify independently/i)
+    }
+  })
+
+  it('keeps legitimacy and technique out of the public brief', () => {
+    for (const scenario of SCENARIOS) {
+      const view = publicBrief(scenario)
+      expect(Object.keys(view)).not.toContain('legitimate')
+      expect(Object.keys(view)).not.toContain('tactic')
+      expect(JSON.stringify(view)).not.toContain(scenario.tactic)
+    }
+  })
+
+  it('uses unique codes and ids across scenarios', () => {
+    expect(new Set(SCENARIOS.map((scenario) => scenario.code)).size).toBe(SCENARIOS.length)
+    expect(new Set(SCENARIOS.map((scenario) => scenario.id)).size).toBe(SCENARIOS.length)
+  })
+
+  it('lets a legitimate persona press with true facts while accepting a check', () => {
+    const legit = SCENARIOS.find((scenario) => scenario.legitimate)
+    const stage = (turn) => promptForTurn(legit, turn, 8)
+    expect(stage(0)).toMatch(/STAGE: opening\./)
+    expect(stage(5)).toMatch(/STAGE: escalation\./)
+    expect(stage(7)).toMatch(/STAGE: last attempt\./)
+    expect(legit.systemPrompt).toMatch(/real deadline/)
+    expect(legit.systemPrompt).toMatch(/that is fine/)
+    expect(legit.systemPrompt).not.toMatch(/guilt|authority/i)
+    expect(legit.systemPrompt).toContain('Apply the described workplace pressure')
   })
 })

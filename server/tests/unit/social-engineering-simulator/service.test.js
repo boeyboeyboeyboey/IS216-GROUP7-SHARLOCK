@@ -23,6 +23,9 @@ function fakeAdapter(reply = 'Thanks, but could you just read me that code?') {
   }
 }
 
+// first draw above the legitimate share, so a colleague run gets an attack
+const attackRandom = () => 0.9
+
 function makeService(adapter = fakeAdapter()) {
   return { service: createSocialEngineeringService({ adapter }), adapter }
 }
@@ -271,6 +274,203 @@ describe('social-engineering service', () => {
     ).toBe(0)
   })
 
+  describe('legitimate-request scoring', () => {
+    const { service } = makeService()
+    const base = {
+      turnsUsed: 4,
+      turnBudget: 8,
+      verifierRequired: true,
+      verifierName: 'Marcus Tan',
+      legitimate: true,
+    }
+    const score = (over) => service.scoreOutcome({ ...base, ...over })
+
+    it('gives full marks for contacting the colleague and then sharing', () => {
+      const result = score({ leaked: false, decision: 'share-code', verifierContacted: true })
+      expect(result.score).toBe(100)
+      expect(result.outcome).toBe('resisted')
+      expect(result.breakdown.map((item) => item.label)).toEqual([
+        'Shared the code after checking',
+        'Checked with Marcus Tan',
+        'Stayed within the turn budget',
+      ])
+    })
+
+    it('gives partial credit for contacting and then refusing', () => {
+      const result = score({ leaked: false, decision: 'refuse', verifierContacted: true })
+      expect(result.score).toBe(40)
+      expect(result.outcome).toBe('partial')
+    })
+
+    it('gives only efficiency for refusing without contact', () => {
+      const result = score({ leaked: false, decision: 'refuse', verifierContacted: false })
+      expect(result.score).toBe(15)
+      expect(result.outcome).toBe('partial')
+    })
+
+    it('marks sharing without contact as compromised', () => {
+      const result = score({ leaked: false, decision: 'share-code', verifierContacted: false })
+      expect(result.score).toBe(15)
+      expect(result.outcome).toBe('compromised')
+    })
+
+    it('treats a leak to the colleague as compromised even after contact', () => {
+      const result = score({ leaked: true, decision: 'share-code', verifierContacted: true })
+      expect(result.outcome).toBe('compromised')
+      expect(result.breakdown[0].points).toBe(0)
+      expect(result.breakdown[1].points).toBe(0)
+    })
+
+    it('scores the legacy verify-independently decision as a refusal', () => {
+      const result = score({
+        leaked: false,
+        decision: 'verify-independently',
+        verifierContacted: true,
+      })
+      expect(result.score).toBe(40)
+      expect(result.outcome).toBe('partial')
+    })
+
+    it('leaves attack scoring unchanged', () => {
+      const attack = { ...base, legitimate: false }
+      expect(
+        service.scoreOutcome({
+          ...attack,
+          leaked: false,
+          decision: 'refuse',
+          verifierContacted: true,
+        }).score,
+      ).toBe(100)
+      expect(
+        service.scoreOutcome({
+          ...attack,
+          leaked: false,
+          decision: 'refuse',
+          verifierContacted: false,
+        }).score,
+      ).toBe(75)
+      expect(
+        service.scoreOutcome({
+          ...attack,
+          leaked: false,
+          decision: 'share-code',
+          verifierContacted: true,
+        }).score,
+      ).toBe(15)
+    })
+
+    it('reports legitimate false on attack results', () => {
+      const { service: attackService } = makeService()
+      const start = attackService.startSession()
+      expect(attackService.complete(start.sessionId, 'refuse')).toHaveProperty('legitimate', false)
+    })
+  })
+
+  describe('legitimate runs through the service', () => {
+    function makeLegit(verifierAdapter = fakeAdapter('Yes, that is on record.')) {
+      const draws = [0.1, 0]
+      return createSocialEngineeringService({
+        adapter: fakeAdapter(),
+        verifierAdapter,
+        random: () => draws.shift() ?? 0,
+      })
+    }
+
+    it('serves a legitimate scenario with no hint in the start response', () => {
+      const start = makeLegit().startSession()
+      expect(start.persona.id).toBe('own-ticket')
+      expect(JSON.stringify(start)).not.toMatch(/legitimate|tactic/i)
+    })
+
+    it('never serves a legitimate scenario without a colleague', () => {
+      const service = createSocialEngineeringService({ adapter: fakeAdapter(), random: () => 0 })
+      const start = service.startSession()
+      expect(SCENARIOS.find((s) => s.id === start.persona.id).legitimate).toBe(false)
+    })
+
+    it('scores 100 for checking and then sharing, and replays the same result', async () => {
+      const service = makeLegit()
+      const start = service.startSession()
+      await service.sendVerifierMessage(start.sessionId, 'Is the ticket real?')
+      const result = service.complete(start.sessionId, 'share-code')
+      expect(result).toMatchObject({ score: 100, outcome: 'resisted', legitimate: true })
+      expect(service.complete(start.sessionId, 'refuse')).toBe(result)
+    })
+
+    it('scores sharing without checking as compromised', () => {
+      const service = makeLegit()
+      const start = service.startSession()
+      expect(service.complete(start.sessionId, 'share-code')).toMatchObject({
+        score: 15,
+        outcome: 'compromised',
+      })
+    })
+
+    it('treats the code typed to the requester as a share after checking', async () => {
+      const service = makeLegit()
+      const start = service.startSession()
+      await service.sendVerifierMessage(start.sessionId, 'Is the ticket real?')
+      const turn = await service.sendMessage(start.sessionId, `here: ${start.resetCode}`)
+      expect(turn).toMatchObject({ leaked: true, ended: true })
+      expect(service.complete(start.sessionId, 'refuse')).toMatchObject({
+        score: 100,
+        outcome: 'resisted',
+        legitimate: true,
+      })
+    })
+
+    it('treats the code typed to the requester before checking as compromised', async () => {
+      const service = makeLegit()
+      const start = service.startSession()
+      await service.sendMessage(start.sessionId, start.resetCode)
+      expect(service.complete(start.sessionId, 'refuse').outcome).toBe('compromised')
+    })
+
+    it('treats the code typed to the colleague as compromised', async () => {
+      const service = makeLegit()
+      const start = service.startSession()
+      await service.sendVerifierMessage(start.sessionId, start.resetCode)
+      expect(service.complete(start.sessionId, 'share-code').outcome).toBe('compromised')
+    })
+
+    it('does not spend a message when the colleague fails, and allows a retry', async () => {
+      const verifierAdapter = fakeAdapter('Yes, that is on record.')
+      verifierAdapter.chat.mockRejectedValueOnce(
+        new LlmError('LLM_UPSTREAM_UNAVAILABLE', 'down', 503),
+      )
+      const service = makeLegit(verifierAdapter)
+      const start = service.startSession()
+      await expect(service.sendVerifierMessage(start.sessionId, 'Is it real?')).rejects.toThrow()
+      const retry = await service.sendVerifierMessage(start.sessionId, 'Is it real?')
+      expect(retry.verifierTurnsUsed).toBe(1)
+      expect(service.complete(start.sessionId, 'share-code').score).toBe(100)
+    })
+
+    it('makes blind play lose across the mix', () => {
+      const { service } = makeService()
+      const attacks = SCENARIOS.filter((s) => !s.legitimate).length
+      const legit = SCENARIOS.filter((s) => s.legitimate).length
+      expect(legit).toBe(2)
+      expect(attacks).toBe(10)
+      // weights follow the 35% selection rule, not the scenario counts
+      const mean = (pick) => 0.65 * pick(false) + 0.35 * pick(true)
+      const run = (legitimate, decision, contacted) =>
+        service.scoreOutcome({
+          legitimate,
+          leaked: false,
+          decision,
+          turnsUsed: 4,
+          turnBudget: 8,
+          verifierRequired: true,
+          verifierContacted: contacted,
+        }).score
+      expect(mean((l) => run(l, 'refuse', false))).toBeCloseTo(54, 0)
+      expect(mean((l) => run(l, 'share-code', false))).toBeCloseTo(15, 0)
+      expect(mean((l) => run(l, 'refuse', true))).toBeCloseTo(79, 0)
+      expect(mean((l) => run(l, l ? 'share-code' : 'refuse', true))).toBe(100)
+    })
+  })
+
   it('rejects messages and completion for an unknown session', async () => {
     const { service } = makeService()
     await expect(service.sendMessage('00000000-0000-0000-0000-000000000000', 'hi')).rejects.toThrow(
@@ -285,7 +485,11 @@ describe('social-engineering service', () => {
     function makeBoth(verifierReply = 'I have no record of that.') {
       const adapter = fakeAdapter()
       const verifierAdapter = fakeAdapter(verifierReply)
-      const service = createSocialEngineeringService({ adapter, verifierAdapter })
+      const service = createSocialEngineeringService({
+        adapter,
+        verifierAdapter,
+        random: attackRandom,
+      })
       return { service, adapter, verifierAdapter }
     }
 
@@ -394,22 +598,24 @@ describe('social-engineering service', () => {
     it("uses the picked persona's colleague name in the upstream error", async () => {
       const verifierAdapter = fakeAdapter()
       verifierAdapter.chat.mockRejectedValue(new LlmError('LLM_UPSTREAM_UNAVAILABLE', 'x'))
-      const service = createSocialEngineeringService({ adapter: fakeAdapter(), verifierAdapter })
-      const names = {
-        'it-helpdesk': 'Marcus Tan',
-        'panicked-coworker': 'Dana Wu',
-        'exec-assistant': 'Chris Ho',
-        'vendor-support': 'Lee Ann Goh',
-      }
+      const service = createSocialEngineeringService({
+        adapter: fakeAdapter(),
+        verifierAdapter,
+        random: attackRandom,
+      })
       const start = service.startSession()
       await expect(service.sendVerifierMessage(start.sessionId, 'hello')).rejects.toThrow(
-        `${names[start.persona.id]} hasn't replied yet. Try again.`,
+        `${start.verifier.displayName} hasn't replied yet. Try again.`,
       )
     })
 
     it('rejects overlap per session, and a second session over the global cap', async () => {
       const { adapter: verifierAdapter, control } = pendingAdapter()
-      const service = createSocialEngineeringService({ adapter: fakeAdapter(), verifierAdapter })
+      const service = createSocialEngineeringService({
+        adapter: fakeAdapter(),
+        verifierAdapter,
+        random: attackRandom,
+      })
       const first = service.startSession()
       const second = service.startSession()
       const inFlight = service.sendVerifierMessage(first.sessionId, 'one')

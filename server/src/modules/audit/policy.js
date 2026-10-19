@@ -15,10 +15,14 @@ const queryFields = ['eventType', 'from', 'to', 'page', 'limit']
 export const auditEventTypes = Object.freeze([
   'admin.bootstrap',
   'admin.institution.create',
+  'admin.institution.update',
   'admin.cohort.create',
+  'admin.cohort.update',
   'admin.instructor.provision',
   'admin.instructor.activation.issue',
   'admin.instructor.assignments.update',
+  'admin.user.disable',
+  'admin.user.enable',
   'account.instructor.activate',
   'cohort.code.issue',
   'cohort.code.revoke',
@@ -27,6 +31,9 @@ export const auditEventTypes = Object.freeze([
   'cohort.membership.decline',
   'cohort.membership.remove',
   'cohort.onboarding.complete',
+  'admin.student.recovery.issue',
+  'cohort.student.recovery.issue',
+  'account.student.password_reset',
 ])
 
 export class AuditError extends Error {

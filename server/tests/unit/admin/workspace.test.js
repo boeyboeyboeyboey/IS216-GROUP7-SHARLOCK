@@ -4,10 +4,13 @@ import {
   assertEmptyAdminBody,
   assertEmptyAdminQuery,
   parseAdminListQuery,
+  parseAccountStatusInput,
   parseAdminObjectId,
   parseAssignmentsInput,
   parseCohortInput,
+  parseCohortUpdateInput,
   parseInstitutionInput,
+  parseInstitutionUpdateInput,
   parseInstructorInput,
 } from '../../../src/modules/admin/policy.js'
 
@@ -23,6 +26,32 @@ describe('admin workspace policy', () => {
       limit: 20,
       institutionId: firstId,
     })
+  })
+
+  it('parses bounded account-list filters and exact status-transition inputs', () => {
+    expect(
+      parseAdminListQuery({ role: 'student', accountStatus: 'disabled' }, { users: true }),
+    ).toEqual({
+      page: 1,
+      limit: 20,
+      role: 'student',
+      accountStatus: 'disabled',
+    })
+    expect(parseAccountStatusInput({ accountStatus: 'disabled', expectedRevision: 3 })).toEqual({
+      accountStatus: 'disabled',
+      expectedRevision: 3,
+    })
+    expect(() => parseAdminListQuery({ role: 'admin' }, { users: true })).toThrow(AdminError)
+    expect(() => parseAdminListQuery({ accountStatus: ['active'] }, { users: true })).toThrow(
+      AdminError,
+    )
+    expect(() => parseAdminListQuery({ role: 'student' })).toThrow(AdminError)
+    expect(() =>
+      parseAccountStatusInput({ accountStatus: 'active', expectedRevision: 1, role: 'student' }),
+    ).toThrow(AdminError)
+    expect(() =>
+      parseAccountStatusInput({ accountStatus: 'pending', expectedRevision: 1 }),
+    ).toThrow(AdminError)
   })
 
   it.each([
@@ -67,6 +96,36 @@ describe('admin workspace policy', () => {
       parseCohortInput({ institutionId: firstId, name: 'Class', term: 'Term', status: 'inactive' }),
     ).toThrow(AdminError)
     expect(() => parseCohortInput({ institutionId: 'bad', name: 'Class', term: 'Term' })).toThrow(
+      AdminError,
+    )
+  })
+
+  it('accepts only supplied mutable institution and cohort patch fields with a revision', () => {
+    expect(parseInstitutionUpdateInput({ name: ' Campus ', expectedRevision: 0 })).toEqual({
+      name: 'Campus',
+      expectedRevision: 0,
+    })
+    expect(parseInstitutionUpdateInput({ status: 'inactive', expectedRevision: 4 })).toEqual({
+      status: 'inactive',
+      expectedRevision: 4,
+    })
+    expect(
+      parseCohortUpdateInput({ term: '2026 T2', expectedRevision: 2 }),
+    ).toEqual({ term: '2026 T2', expectedRevision: 2 })
+    expect(
+      parseCohortUpdateInput({
+        name: 'WAD2',
+        term: '2026 T2',
+        status: 'active',
+        expectedRevision: 2,
+      }),
+    ).toEqual({ name: 'WAD2', term: '2026 T2', status: 'active', expectedRevision: 2 })
+    expect(() => parseInstitutionUpdateInput({ expectedRevision: 0 })).toThrow(AdminError)
+    expect(() => parseInstitutionUpdateInput({ name: 'Campus' })).toThrow(AdminError)
+    expect(() => parseCohortUpdateInput({ slug: 'changed', expectedRevision: 1 })).toThrow(
+      AdminError,
+    )
+    expect(() => parseCohortUpdateInput({ status: 'pending', expectedRevision: 1 })).toThrow(
       AdminError,
     )
   })

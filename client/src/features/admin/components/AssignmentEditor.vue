@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
   instructor: { type: Object, required: true },
@@ -11,6 +11,17 @@ const props = defineProps({
 })
 const emit = defineEmits(['save', 'reload', 'cohort-page'])
 const draftIds = ref([])
+const displayedCohorts = computed(() => props.cohorts.filter(cohortIsEligible))
+const retainedAssignments = computed(() => {
+  const assigned = Array.isArray(props.instructor.assignedCohorts)
+    ? props.instructor.assignedCohorts
+    : props.cohorts.filter((cohort) => props.instructor.cohortIds?.includes(cohort.id))
+  return assigned.filter((cohort) => !cohortIsEligible(cohort))
+})
+
+function cohortIsEligible(cohort) {
+  return cohort.status === 'active' && cohort.institutionStatus === 'active'
+}
 
 function resetDraft() {
   draftIds.value = Array.isArray(props.instructor.cohortIds) ? [...props.instructor.cohortIds] : []
@@ -70,14 +81,19 @@ function statusLabel(status) {
       class="admin-workspace__assignment-list"
       :disabled="pending || instructor.accountStatus !== 'active'"
     >
-      <legend>Active classes</legend>
-      <p v-if="cohorts.length === 0" class="admin-workspace__empty">
-        No active classes are available on this page.
+      <legend>Available and retained classes</legend>
+      <p v-if="displayedCohorts.length === 0" class="admin-workspace__empty">
+        No active classes or retained assignments are available on this page.
       </p>
-      <label v-for="cohort in cohorts" :key="cohort.id" class="admin-workspace__assignment">
+      <label
+        v-for="cohort in displayedCohorts"
+        :key="cohort.id"
+        class="admin-workspace__assignment"
+      >
         <input
           type="checkbox"
           :checked="draftIds.includes(cohort.id)"
+          :disabled="!cohortIsEligible(cohort)"
           :aria-label="`${cohort.name}, ${cohort.institutionName}, ${cohort.term}`"
           @change="setSelected(cohort.id, $event.target.checked)"
         />
@@ -87,6 +103,14 @@ function statusLabel(status) {
         </span>
       </label>
     </fieldset>
+
+    <ul v-if="retainedAssignments.length" class="admin-workspace__retained-assignments">
+      <li v-for="cohort in retainedAssignments" :key="cohort.id">
+        <strong>{{ cohort.name }}</strong>
+        <span>{{ cohort.institutionName }} · {{ cohort.term }}</span>
+        <small>Inactive; retained assignment</small>
+      </li>
+    </ul>
 
     <div class="admin-workspace__pagination" aria-label="Assignment class pages">
       <button

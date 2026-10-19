@@ -150,6 +150,34 @@
   border-top: 2px solid var(--border-strong);
 }
 
+/* laptop-height windows: the classes page fits without page scroll; a long class list scrolls inside itself */
+@media (min-width: 768px) and (min-height: 600px) {
+  .cohort-page {
+    padding-block: 0.5rem;
+  }
+
+  .cohort-page h1 {
+    margin-bottom: 0;
+  }
+
+  .cohort-intro {
+    max-width: none;
+    margin: 0.5rem 0 0.75rem;
+  }
+
+  .cohort-panel,
+  .cohort-form {
+    gap: 0.6rem;
+    margin: 0.75rem 0;
+    padding: 1rem 1.3rem;
+  }
+
+  .cohort-list {
+    max-height: clamp(8rem, 26dvh, 20rem);
+    overflow-y: auto;
+  }
+}
+
 @media (max-width: 575.98px) {
   .cohort-page {
     padding-inline: 1rem;

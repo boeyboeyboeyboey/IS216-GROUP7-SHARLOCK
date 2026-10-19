@@ -14,6 +14,23 @@ const institutionSchema = new Schema(
       unique: true,
     },
     status: { type: String, enum: ['active', 'inactive'], default: 'active', required: true },
+    adminRevision: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+      max: Number.MAX_SAFE_INTEGER,
+      validate: Number.isSafeInteger,
+    },
+    recoveryRevision: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+      max: Number.MAX_SAFE_INTEGER,
+      validate: Number.isSafeInteger,
+      select: false,
+    },
   },
   {
     timestamps: true,

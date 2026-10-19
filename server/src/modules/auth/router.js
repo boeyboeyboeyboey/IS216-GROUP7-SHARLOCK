@@ -11,6 +11,8 @@ import {
 import { createAuthService } from './service.js'
 import { createProtectedSessionAccess, loadSessionActor } from './access.js'
 import { createActivationRouter } from '../recovery/router.js'
+import { createRecoveryService } from '../recovery/service.js'
+import { parseStudentPasswordResetInput, StudentRecoveryError } from '../recovery/policy.js'
 import { CohortError, hashEnrollmentCode } from '../cohorts/policy.js'
 import {
   capturePendingInvitation,
@@ -41,7 +43,11 @@ function sendUser(response, user, csrfToken) {
 }
 
 function requestError(error, _request, response, next) {
-  if (!(error instanceof AuthError) && !(error instanceof CohortError)) {
+  if (
+    !(error instanceof AuthError) &&
+    !(error instanceof CohortError) &&
+    !(error instanceof StudentRecoveryError)
+  ) {
     next(error)
     return
   }
@@ -65,6 +71,10 @@ export function createAuthRouter(database, settings) {
   const sessionRuntime = createAuthSessionMiddleware(database, settings)
   const authSettings = sessionRuntime.settings
   const authService = createAuthService(database, { now: authSettings.now })
+  const recoveryService = createRecoveryService(database, {
+    now: authSettings.now,
+    clientOrigin: authSettings.clientOrigin,
+  })
   const rateLimits = createRateLimits({ secret: authSettings.sessionSecret, now: authSettings.now })
   const csrf = createCsrfTools()
   const requireOrigin = requireExpectedOrigin(authSettings.clientOrigin)
@@ -112,6 +122,7 @@ export function createAuthRouter(database, settings) {
           '/login',
           '/logout',
           '/activate-account',
+          '/reset-password',
           '/class-invitation',
           '/class-invitation/clear',
         ].includes(request.path)
@@ -258,6 +269,38 @@ export function createAuthRouter(database, settings) {
   })
 
   router.post(
+    '/reset-password',
+    requireOrigin,
+    csrf.protect,
+    (request, _response, next) => {
+      try {
+        parseEmptyQuery(request.query)
+        parseStudentPasswordResetInput(request.body)
+        next()
+      } catch (error) {
+        next(error)
+      }
+    },
+    rateLimits.passwordReset,
+    async (request, response, next) => {
+      try {
+        if (request.session?.userId) throw new StudentRecoveryError()
+        await recoveryService.resetStudentPassword(request.body)
+        response.status(204).end()
+      } catch (error) {
+        if (error instanceof StudentRecoveryError) {
+          response.status(error.status).json({
+            error: { code: error.code, message: error.message },
+            requestId: response.locals.requestId,
+          })
+          return
+        }
+        next(error)
+      }
+    },
+  )
+
+  router.post(
     '/class-invitation',
     rateLimits.classInvitation,
     requireOrigin,
@@ -314,6 +357,11 @@ export function createAuthRouter(database, settings) {
     requireMutation: [requireOrigin, csrf.protect],
     clientOrigin: authSettings.clientOrigin,
     now: authSettings.now,
+    recoveryLimits: {
+      recoveryIssueStaff: rateLimits.recoveryIssueStaff,
+      recoveryLookup: rateLimits.recoveryLookup,
+      consumeStudentIssueLimit: rateLimits.consumeStudentIssueLimit,
+    },
     dispose: rateLimits.dispose,
   })
 }

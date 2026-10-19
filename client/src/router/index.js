@@ -1,7 +1,57 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { reactive, readonly } from 'vue'
 import Dashboard from '../views/Dashboard.vue'
 import Profile from '../views/Profile.vue'
 import ComingSoon from '../views/ComingSoon.vue'
+
+const RESET_PASSWORD_PATH = '/reset-password'
+const RESET_TOKEN_PATTERN = /^[A-Za-z\d_-]{43}$/
+const resetLinkCapture = reactive({ status: 'missing', token: '' })
+export const resetLinkCaptureState = readonly(resetLinkCapture)
+
+function captureHashToken(hash) {
+  const match = /^#token=([A-Za-z\d_-]{43})$/.exec(hash)
+  if (match && RESET_TOKEN_PATTERN.test(match[1])) {
+    resetLinkCapture.status = 'ready'
+    resetLinkCapture.token = match[1]
+    return
+  }
+  resetLinkCapture.status = 'invalid'
+  resetLinkCapture.token = ''
+}
+
+function captureInitialResetLink() {
+  if (
+    typeof window === 'undefined' ||
+    window.location.pathname.replace(/\/+$/, '') !== RESET_PASSWORD_PATH
+  )
+    return
+
+  const hasQueryToken = [...new URLSearchParams(window.location.search).keys()].some(
+    (key) => key.toLowerCase() === 'token',
+  )
+  if (hasQueryToken) {
+    resetLinkCapture.status = 'invalid'
+    resetLinkCapture.token = ''
+  } else if (window.location.hash) {
+    captureHashToken(window.location.hash)
+  }
+
+  if (hasQueryToken || window.location.hash) {
+    window.history.replaceState(window.history.state, '', RESET_PASSWORD_PATH)
+  }
+}
+
+captureInitialResetLink()
+
+export function getResetLinkCapture() {
+  return { ...resetLinkCapture }
+}
+
+export function clearResetLinkCapture() {
+  resetLinkCapture.status = 'missing'
+  resetLinkCapture.token = ''
+}
 
 export const routes = [
   {
@@ -22,7 +72,7 @@ export const routes = [
   {
     path: '/profile',
     component: Profile,
-    meta: { title: 'Detective profile', accountAware: true },
+    meta: { title: 'Detective profile', accountAware: true, hideAccountSummary: true },
   },
   {
     path: '/progress',
@@ -43,6 +93,11 @@ export const routes = [
     path: '/activate-account',
     component: () => import('../features/activation/pages/ActivationPage.vue'),
     meta: { title: 'Activate instructor account' },
+  },
+  {
+    path: RESET_PASSWORD_PATH,
+    component: () => import('../features/recovery/pages/ResetPasswordPage.vue'),
+    meta: { title: 'Reset student password' },
   },
   {
     path: '/join-class',
@@ -138,6 +193,22 @@ const router = createRouter({
   routes,
   scrollBehavior: (to, from, savedPosition) =>
     to.meta.theme === 'town' && from.meta.theme === 'town' ? false : savedPosition || { top: 0 },
+})
+router.beforeEach((to, from) => {
+  if (to.path === RESET_PASSWORD_PATH) {
+    if (Object.keys(to.query).some((key) => key.toLowerCase() === 'token')) {
+      resetLinkCapture.status = 'invalid'
+      resetLinkCapture.token = ''
+      return { path: RESET_PASSWORD_PATH, replace: true }
+    }
+    if (to.hash) {
+      captureHashToken(to.hash)
+      return { path: RESET_PASSWORD_PATH, replace: true }
+    }
+    return true
+  }
+  if (from.path === RESET_PASSWORD_PATH) clearResetLinkCapture()
+  return true
 })
 router.afterEach((to) => {
   document.title = `${to.meta.title || 'Explore'} · Sharlock`
