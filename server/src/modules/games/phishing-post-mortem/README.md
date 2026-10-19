@@ -1,6 +1,6 @@
 # Phishing Post-Mortem - server module
 
-Owns the authored G-PHISH cases, their private answer keys and the scoring rules. Since G-PHISH-02 every case is a saved attempt in the shared attempt service; this module adds no routes or collections of its own.
+Owns the G-PHISH cases (two authored, plus a seeded generator), their private answer keys and the scoring rules. Since G-PHISH-02 every case is a saved attempt in the shared attempt service; this module adds no routes or collections of its own.
 
 ## Request and data flow
 
@@ -11,11 +11,12 @@ client/src/games/phishing-post-mortem/phishing.js
   -> server/src/modules/attempts/service.js  owner check, revisions, receipts, one game_attempts document
   -> ruleset.js   this game's registry entry (createState, validateAction, applyAction, summarize...)
   -> service.js   createCaseLibrary: opens a case, shuffles the inbox, scores and builds the debrief
+  -> generator/   rebuilds a generated case from (seed, template, generator version)
   -> cases/*.public.json             public content
   -> cases/answers/*.answers.json    patient zero, correct clues and notes - server only
 ```
 
-`server/src/server.js` registers `createPhishingRuleset()` in the one attempt registry it passes to both `initializeAttemptStorage` and `createApp`.
+`server/src/server.js` registers `createPhishingRulesets()` (phish-1 and phish-2) in the one attempt registry it passes to both `initializeAttemptStorage` and `createApp`.
 
 ## Saved play
 
@@ -28,18 +29,38 @@ Paths are relative to `/api` and follow the [attempt contract](../../attempts/RE
 | Save result  | `POST /attempts/:id/complete`                                                                  | 200 immutable snapshot with `feedback`, `topicOutcomes`, `publicState.outcome/debrief` |
 | Read it back | `GET /attempts/:id`                                                                            | The same completed snapshot, only for its owner                                        |
 
-Ruleset `phishing-post-mortem@phish-1`: standard, untimed, not competitive, `maxScore` 100, `maxActions` 1. Scoring is unchanged: 60 points for naming Patient Zero and 20 for each correct supporting clue, with clues counting only behind a correct accusation.
+Current ruleset `phishing-post-mortem@phish-2`: standard, untimed, not competitive, `maxScore` 100, `maxActions` 1. `phish-1` (authored cases only) stays registered with `current: false`, so attempts started before G-PHISH-03 can still be finished; completed results never need an adapter. Scoring is unchanged: 60 points for naming Patient Zero and 20 for each correct supporting clue, with clues counting only behind a correct accusation.
 
-Private state is `{ caseId, datasetVersion, emailOrder, selectedEmailId, evidenceIds, submittedAt }` under a strict schema. `serializePublicState` builds the public case explicitly and adds the outcome and debrief only once the attempt is completed.
+phish-2 private state is `{ source, caseId, datasetVersion, seed, templateId, generatorVersion, emailOrder, selectedEmailId, evidenceIds, submittedAt }` under a strict schema; a generated case is stored as its seed and template, never as content (phish-1 state has no `source` and always names an authored case). `serializePublicState` builds the public case explicitly and adds the outcome and debrief only once the attempt is completed.
 
 Game errors use the shared attempt error shape: `ATTEMPT_INVALID_REQUEST` (400, malformed verdict), `PHISH_UNKNOWN_SELECTION` (400, a message or clue outside this case), `PHISH_DATASET_CHANGED` (409, the case file changed after the attempt opened), `PHISH_CASE_UNAVAILABLE` (409), `PHISH_VERDICT_RECORDED` (409). A second verdict is refused by the action limit (`ATTEMPT_ACTION_LIMIT`) and a retried verdict with the same `actionId` replays its first response.
 
 ## Limits
 
 - Results save to the player's personal record only. The game offers no class chooser, ranking, profile history or instructor view yet.
-- A new attempt picks a case at random, so with two cases replay can open the same case again.
+- Each new attempt draws evenly from the 2 authored cases and the 5 generator templates, so a generated case is new almost every time.
 - A case opened and never finished stays `active` in the player's record; it holds no score.
 - The earlier unauthenticated `/games/phishing-post-mortem/case` and `/verdict` routes were removed. Runs played through them were never stored, so there is nothing to migrate.
+
+## Generated cases
+
+`generator/` builds a case in exactly the authored format from a 32-bit seed and one of five templates. The same seed, template and `GENERATOR_VERSION` always give the same case, which is why only those three values are stored.
+
+| Template         | Patient Zero                                  | What the logs show next                                               |
+| ---------------- | --------------------------------------------- | --------------------------------------------------------------------- |
+| `sso-reverify`   | "Re-verify your SSO access" from the IT desk  | credentials, overnight sign-in, mailbox rule, payroll change          |
+| `vendor-invoice` | invoice link from a lookalike supplier domain | credentials, sign-in, payment request to a new account                |
+| `shared-file`    | fake file-share notification                  | credentials, sign-in, bulk download, unusual transfer                 |
+| `hr-payslip`     | payslip notice from the People team           | credentials, sign-in, salary account changed, hiding rule             |
+| `mfa-alert`      | "secure your account" security alert          | password and MFA approval relayed, sign-in within minutes, new device |
+
+Per case the generator randomises the company, vendor and people (`pools.js`), the domain trick (`tricks.js`: r-n for m, vv for w, 1 for l, an extra word, or the name in front of someone else's domain), three decoys from four archetypes (clicked without credentials, arrived after the sign-in, blocked by the web filter, never clicked), the ordinary mail, the times and the four distractor clues. One genuine message always shares Patient Zero's display name.
+
+Rules for changing it:
+
+- Never change what a released `GENERATOR_VERSION` produces: active attempts rebuild their case from it. Add a new version (and a new ruleset version) instead.
+- Use only the seeded `rng` in the generator, never `Math.random` or the clock.
+- Keep every host on `.example` and no real brand anywhere. `server/tests/unit/phishing-post-mortem/generator.test.js` builds 500 cases and checks the authored-case rules, that exactly one message fits the evidence, determinism, and that every template and trick is used.
 
 ## Authoring a case
 

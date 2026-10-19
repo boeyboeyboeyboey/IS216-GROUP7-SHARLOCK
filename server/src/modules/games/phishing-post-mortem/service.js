@@ -8,8 +8,15 @@ import {
   datasetChanged,
   unknownSelection,
 } from './policy.js'
+import { GENERATOR_VERSION, TEMPLATE_IDS, generateCase } from './generator/index.js'
 
 export const CASE_IDS = ['case-01', 'case-02']
+// each new case is drawn evenly from the authored cases and the generator templates
+export const CASE_SOURCES = [
+  ...CASE_IDS.map((caseId) => ({ source: 'authored', caseId })),
+  ...TEMPLATE_IDS.map((templateId) => ({ source: 'generated', templateId })),
+]
+const GENERATED_CACHE_LIMIT = 100
 
 function load(relativePath) {
   return JSON.parse(readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), 'utf8'))
@@ -42,7 +49,7 @@ function publicEmail(email) {
   }
 }
 
-// authored cases and their private answer keys; the saved-attempt ruleset is the only caller
+// authored and generated cases with their private answer keys; the saved-attempt ruleset is the only caller
 export function createCaseLibrary({ random = Math.random } = {}) {
   const cases = new Map(
     CASE_IDS.map((caseId) => [
@@ -54,15 +61,50 @@ export function createCaseLibrary({ random = Math.random } = {}) {
     ]),
   )
 
-  function requireCase(caseId) {
-    const entry = cases.get(caseId)
+  const generated = new Map()
+
+  // a generated case is rebuilt from its stored seed, so a small cache saves repeat work per attempt
+  function generatedCase({ seed, templateId, generatorVersion }) {
+    if (generatorVersion !== GENERATOR_VERSION) throw caseUnavailable()
+    const key = `${templateId}:${seed}`
+    const cached = generated.get(key)
+    if (cached) return cached
+    const built = generateCase({ seed, templateId })
+    if (!built) throw caseUnavailable()
+    const entry = { content: built.content, answers: built.answers }
+    generated.set(key, entry)
+    if (generated.size > GENERATED_CACHE_LIMIT) generated.delete(generated.keys().next().value)
+    return entry
+  }
+
+  // phish-1 state has no source field and always names an authored case
+  function resolveCase(state) {
+    if (state.source === 'generated') return generatedCase(state)
+    const entry = cases.get(state.caseId)
     if (!entry) throw caseUnavailable()
     return entry
   }
 
   function openCase() {
-    const { content } = requireCase(CASE_IDS[Math.floor(random() * CASE_IDS.length)])
+    const choice = CASE_SOURCES[Math.floor(random() * CASE_SOURCES.length)]
+    const identity =
+      choice.source === 'authored'
+        ? {
+            source: 'authored',
+            caseId: choice.caseId,
+            seed: null,
+            templateId: null,
+            generatorVersion: null,
+          }
+        : {
+            source: 'generated',
+            seed: Math.floor(random() * 0x100000000),
+            templateId: choice.templateId,
+            generatorVersion: GENERATOR_VERSION,
+          }
+    const { content } = resolveCase(identity)
     return {
+      ...identity,
       caseId: content.caseId,
       datasetVersion: content.datasetVersion,
       emailOrder: shuffle(
@@ -72,8 +114,9 @@ export function createCaseLibrary({ random = Math.random } = {}) {
     }
   }
 
-  function publicCase({ caseId, emailOrder }) {
-    const { content } = requireCase(caseId)
+  function publicCase(state) {
+    const { content } = resolveCase(state)
+    const { emailOrder } = state
     const emailsById = new Map(content.emails.map((email) => [email.id, email]))
     const ordered = emailOrder.map((id) => emailsById.get(id)).filter(Boolean)
     // an edited case keeps its stored order but must still show every current message
@@ -100,16 +143,17 @@ export function createCaseLibrary({ random = Math.random } = {}) {
     }
   }
 
-  function assertSelection({ caseId, datasetVersion }, { selectedEmailId, evidenceIds }) {
-    const { content } = requireCase(caseId)
-    if (datasetVersion !== content.datasetVersion) throw datasetChanged()
+  function assertSelection(state, { selectedEmailId, evidenceIds }) {
+    const { content } = resolveCase(state)
+    if (state.datasetVersion !== content.datasetVersion) throw datasetChanged()
     const optionIds = new Set(content.evidenceOptions.map((option) => option.id))
     if (!content.emails.some((email) => email.id === selectedEmailId)) throw unknownSelection()
     if (evidenceIds.some((id) => !optionIds.has(id))) throw unknownSelection()
   }
 
-  function scoreVerdict({ caseId, selectedEmailId, evidenceIds }) {
-    const { answers } = requireCase(caseId)
+  function scoreVerdict(state) {
+    const { selectedEmailId, evidenceIds } = state
+    const { answers } = resolveCase(state)
     const emailCorrect = selectedEmailId === answers.patientZeroId
     const selected = new Set(evidenceIds)
     const correctEvidenceIds = answers.evidenceIds.filter((id) => selected.has(id))
@@ -137,8 +181,9 @@ export function createCaseLibrary({ random = Math.random } = {}) {
     }
   }
 
-  function debrief({ caseId, evidenceIds }) {
-    const { content, answers } = requireCase(caseId)
+  function debrief(state) {
+    const { evidenceIds } = state
+    const { content, answers } = resolveCase(state)
     const emailsById = new Map(content.emails.map((email) => [email.id, email]))
     const selected = new Set(evidenceIds)
     const patientZero = emailsById.get(answers.patientZeroId)
@@ -167,5 +212,5 @@ export function createCaseLibrary({ random = Math.random } = {}) {
     }
   }
 
-  return { openCase, publicCase, assertSelection, scoreVerdict, debrief }
+  return { openCase, resolveCase, publicCase, assertSelection, scoreVerdict, debrief }
 }

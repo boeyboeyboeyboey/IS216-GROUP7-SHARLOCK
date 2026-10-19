@@ -1,7 +1,9 @@
 import { AttemptError } from '../../attempts/policy.js'
 
 export const GAME_ID = 'phishing-post-mortem'
-export const RULESET_VERSION = 'phish-1'
+export const RULESET_VERSION = 'phish-2'
+// kept registered so phish-1 attempts saved before generated cases can still be finished
+export const LEGACY_RULESET_VERSION = 'phish-1'
 export const MAX_SCORE = 100
 export const EMAIL_POINTS = 60
 export const EVIDENCE_POINTS = 20

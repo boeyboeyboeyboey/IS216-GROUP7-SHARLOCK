@@ -86,9 +86,26 @@ describe('case delivery', () => {
     }
   })
 
-  it('opens each authored case from the injected random source', () => {
-    expect(library(() => 0).openCase().caseId).toBe('case-01')
-    expect(library(() => 0.99).openCase().caseId).toBe('case-02')
+  it('draws authored and generated cases from the injected random source', () => {
+    expect(library(() => 0).openCase()).toMatchObject({ source: 'authored', caseId: 'case-01' })
+    expect(library(() => 0.2).openCase()).toMatchObject({ source: 'authored', caseId: 'case-02' })
+    expect(library(() => 0.99).openCase()).toMatchObject({
+      source: 'generated',
+      templateId: 'mfa-alert',
+      generatorVersion: 'gen-1',
+    })
+  })
+
+  it('refuses a generated case from an unknown generator version', () => {
+    expect(() =>
+      library().publicCase({
+        source: 'generated',
+        seed: 1,
+        templateId: 'sso-reverify',
+        generatorVersion: 'gen-0',
+        emailOrder: [],
+      }),
+    ).toThrow(expect.objectContaining({ code: 'PHISH_CASE_UNAVAILABLE' }))
   })
 
   it('varies the inbox order without losing or inventing messages', () => {

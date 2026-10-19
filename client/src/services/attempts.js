@@ -2,14 +2,14 @@ import { api } from './api.js'
 import { requestCsrfToken } from '../features/auth/api.js'
 import { useAuthStore } from '../features/auth/store.js'
 
-// shared browser side of the saved-attempt contract in server/src/modules/attempts/README.md
+// shared browser side of the saved-attempt contract described in the attempts module readme
 // games call these four requests instead of adding their own result endpoints
 
 const TIMEOUT_MS = 15000
 
 export function newActionId() {
   if (typeof globalThis.crypto.randomUUID === 'function') return globalThis.crypto.randomUUID()
-  // randomUUID needs a secure page, so a dev server opened by lan ip builds a v4 uuid by hand
+  // the built-in uuid needs a secure page, so a dev server opened by lan ip builds a v4 uuid by hand
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16))
   bytes[6] = (bytes[6] & 0x0f) | 0x40
   bytes[8] = (bytes[8] & 0x3f) | 0x80
@@ -85,7 +85,7 @@ export async function readAttempt(attemptId, { signal } = {}) {
   return data
 }
 
-// retry a lost response with the same actionId and expectedRevision so the server replays it
+// retry a lost response with the same action id and expected revision so the server replays it
 export function sendAttemptAction(attemptId, action, { signal } = {}) {
   const { actionId, expectedRevision, type, payload } = action
   return post(

@@ -7,7 +7,8 @@ import { assertSafeTestDatabaseUri } from '../../../src/config/database-uri.js'
 import { loadEnvironment } from '../../../src/config/env.js'
 import { createAttemptRegistry } from '../../../src/modules/attempts/registry.js'
 import { initializeAttemptStorage } from '../../../src/modules/attempts/storage.js'
-import { createPhishingRuleset } from '../../../src/modules/games/phishing-post-mortem/ruleset.js'
+import { generateCase } from '../../../src/modules/games/phishing-post-mortem/generator/index.js'
+import { createPhishingRulesets } from '../../../src/modules/games/phishing-post-mortem/ruleset.js'
 import { readAnswers, readCase } from '../../unit/phishing-post-mortem/fixtures.js'
 import {
   createTestApp,
@@ -17,7 +18,9 @@ import {
 } from '../auth/helpers.js'
 
 const GAME = 'phishing-post-mortem'
-// random() of zero always opens case-01, so the answer key below is known
+// random() of zero opens case-01, so the answer key below is known; a test can raise it
+// to draw a generated case instead
+let nextRandom = 0
 const answers = readAnswers('case-01')
 const content = readCase('case-01')
 const decoyId = content.emails.find((email) => email.id !== answers.patientZeroId).id
@@ -80,11 +83,12 @@ beforeAll(async () => {
   assertSafeTestDatabaseUri(config.databaseUri, process.env.MONGO_URI)
   database = await connectDatabase(config.databaseUri)
   authOptions = await initializeTestAuth(database, config)
-  registry = createAttemptRegistry([createPhishingRuleset({ random: () => 0 })])
+  registry = createAttemptRegistry(createPhishingRulesets({ random: () => nextRandom }))
   await initializeAttemptStorage(database, registry)
 })
 
 beforeEach(() => {
+  nextRandom = 0
   owned.users.clear()
   owned.attempts.clear()
   app = createTestApp(database, authOptions, { attempts: { registry } })
@@ -133,7 +137,7 @@ describe('saved phishing attempts', () => {
     const started = await startCase(student)
     expect(started).toMatchObject({
       gameId: GAME,
-      rulesetVersion: 'phish-1',
+      rulesetVersion: 'phish-2',
       context: { kind: 'personal', cohortId: null },
       mode: 'standard',
       status: 'active',
@@ -251,6 +255,34 @@ describe('saved phishing attempts', () => {
       score: 100,
     }).expect(400)
     expect(shaped.body.error.code).toBe('ATTEMPT_INVALID_REQUEST')
+  })
+
+  it('saves a generated case whose answer is rebuilt from its stored seed', async () => {
+    nextRandom = 0.99
+    const student = await createStudent()
+    const started = await startCase(student)
+    const stored = await database.db
+      .collection('game_attempts')
+      .findOne({ _id: new Types.ObjectId(started.attemptId) })
+    expect(stored.state).toMatchObject({ source: 'generated', templateId: 'mfa-alert' })
+    expect(JSON.stringify(stored.state)).not.toMatch(/bodyText|patientZero/)
+    expect(started.publicState.emails).toHaveLength(20)
+
+    const { answers } = generateCase({
+      seed: stored.state.seed,
+      templateId: stored.state.templateId,
+    })
+    await verdict(student, started.attemptId, {
+      selectedEmailId: answers.patientZeroId,
+      evidenceIds: [...answers.evidenceIds],
+    }).expect(200)
+    const finished = await complete(student, started.attemptId).expect(200)
+    expect(finished.body).toMatchObject({
+      status: 'completed',
+      score: 100,
+      rulesetVersion: 'phish-2',
+    })
+    expect(finished.body.publicState.debrief.patientZero.id).toBe(answers.patientZeroId)
   })
 
   it("never shows one player another player's case or result", async () => {

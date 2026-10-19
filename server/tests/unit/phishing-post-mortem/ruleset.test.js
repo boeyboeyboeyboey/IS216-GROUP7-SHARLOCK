@@ -4,7 +4,11 @@ import { getRulesetModel } from '../../../src/modules/attempts/model.js'
 import { AttemptError } from '../../../src/modules/attempts/policy.js'
 import { createAttemptRegistry } from '../../../src/modules/attempts/registry.js'
 import { parseVerdictAction } from '../../../src/modules/games/phishing-post-mortem/policy.js'
-import { createPhishingRuleset } from '../../../src/modules/games/phishing-post-mortem/ruleset.js'
+import {
+  createPhishingRuleset,
+  createPhishingRulesets,
+} from '../../../src/modules/games/phishing-post-mortem/ruleset.js'
+import { generateCase } from '../../../src/modules/games/phishing-post-mortem/generator/index.js'
 import { readAnswers, readCase } from './fixtures.js'
 
 const now = new Date('2026-10-19T12:00:00Z')
@@ -38,7 +42,7 @@ const correctVerdict = {
 describe('phishing saved-attempt ruleset', () => {
   it('registers as the current untimed standard ruleset', () => {
     const ruleset = entry()
-    expect(ruleset.storageKey).toBe('phishing-post-mortem@phish-1')
+    expect(ruleset.storageKey).toBe('phishing-post-mortem@phish-2')
     expect(ruleset.maxScore).toBe(100)
     expect(ruleset.maxActions).toBe(1)
     expect(ruleset.competitive).toBe(false)
@@ -47,6 +51,63 @@ describe('phishing saved-attempt ruleset', () => {
     expect(created.deadlineAt).toBeNull()
     expect(created.state.selectedEmailId).toBeNull()
     expect(created.state.emailOrder).toHaveLength(20)
+    expect(created.state).toMatchObject({ source: 'authored', caseId: 'case-01', seed: null })
+  })
+
+  it('opens generated cases as a seed and template, never as stored content', () => {
+    const ruleset = entry(() => 0.99)
+    const { state } = startedState(ruleset)
+    expect(state).toMatchObject({
+      source: 'generated',
+      templateId: 'mfa-alert',
+      generatorVersion: 'gen-1',
+    })
+    expect(Number.isInteger(state.seed)).toBe(true)
+    expect(JSON.stringify(state)).not.toMatch(/bodyText|patientZero|evidenceNotes/)
+    const shown = ruleset.serializePublicState(state, meta())
+    expect(shown.emails).toHaveLength(20)
+    expect(shown.emails.map((email) => email.id)).toEqual(state.emailOrder)
+    expect(JSON.stringify(shown)).not.toMatch(/patientZero|evidenceNotes|debrief/)
+  })
+
+  it('scores a generated case against the answer rebuilt from its seed', () => {
+    const ruleset = entry(() => 0.5)
+    const { state } = startedState(ruleset)
+    expect(state.source).toBe('generated')
+    const rebuilt = generateCase({ seed: state.seed, templateId: state.templateId })
+    const verdict = {
+      selectedEmailId: rebuilt.answers.patientZeroId,
+      evidenceIds: [...rebuilt.answers.evidenceIds],
+    }
+    const submitted = ruleset.applyAction(
+      state,
+      { type: 'submit-verdict', payload: verdict },
+      meta(),
+    )
+    expect(ruleset.summarize(submitted, meta()).score).toBe(100)
+    const finished = ruleset.serializePublicState(submitted, meta('completed'))
+    expect(finished.debrief.patientZero.id).toBe(rebuilt.answers.patientZeroId)
+  })
+
+  it('keeps phish-1 registered so earlier attempts can still be finished', () => {
+    const registry = createAttemptRegistry(createPhishingRulesets({ random: () => 0 }))
+    expect(registry.getCurrent('phishing-post-mortem').rulesetVersion).toBe('phish-2')
+    const legacy = registry.get('phishing-post-mortem', 'phish-1')
+    expect(legacy.current).toBe(false)
+    const state = {
+      caseId: 'case-01',
+      datasetVersion: content.datasetVersion,
+      emailOrder: content.emails.map((email) => email.id),
+      selectedEmailId: null,
+      evidenceIds: [],
+      submittedAt: null,
+    }
+    const submitted = legacy.applyAction(
+      state,
+      { type: 'submit-verdict', payload: correctVerdict },
+      meta(),
+    )
+    expect(legacy.summarize(submitted, meta()).score).toBe(100)
   })
 
   it('serializes the case without any answer key before completion', () => {
@@ -146,8 +207,8 @@ describe('saved phishing state document', () => {
     new Attempt({
       playerId: new Types.ObjectId(),
       gameId: 'phishing-post-mortem',
-      rulesetVersion: 'phish-1',
-      rulesetKey: 'phishing-post-mortem@phish-1',
+      rulesetVersion: 'phish-2',
+      rulesetKey: 'phishing-post-mortem@phish-2',
       context: { kind: 'personal', cohortId: null },
       mode: 'standard',
       competitiveEligible: false,

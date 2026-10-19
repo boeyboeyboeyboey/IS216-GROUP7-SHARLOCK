@@ -1,15 +1,21 @@
+import { Types } from 'mongoose'
 import { test, expect } from './fixtures/auth.js'
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { connectDatabase } from '../../server/src/config/database.js'
+import { assertSafeTestDatabaseUri } from '../../server/src/config/database-uri.js'
+import { createCaseLibrary } from '../../server/src/modules/games/phishing-post-mortem/service.js'
 
-const MODULE = '../../server/src/modules/games/phishing-post-mortem'
-const load = (relativePath) =>
-  JSON.parse(readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), 'utf8'))
-const CASES = ['case-01', 'case-02'].map((id) => ({
-  id,
-  content: load(`${MODULE}/cases/${id}.public.json`),
-  answers: load(`${MODULE}/cases/answers/${id}.answers.json`),
-}))
+// cases can be authored or generated, so the answer is rebuilt from the attempt's stored state
+const library = createCaseLibrary()
+let database
+
+test.beforeAll(async () => {
+  assertSafeTestDatabaseUri(process.env.TEST_MONGODB_URI)
+  database = await connectDatabase(process.env.TEST_MONGODB_URI)
+})
+
+test.afterAll(async () => {
+  await database?.close()
+})
 
 test.beforeEach(async ({ page }) => {
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
@@ -17,13 +23,30 @@ test.beforeEach(async ({ page }) => {
   )
 })
 
+function caseStarted(page) {
+  return page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/games/phishing-post-mortem/attempts') &&
+      response.request().method() === 'POST' &&
+      response.status() === 201,
+  )
+}
+
+async function caseFor(page, started) {
+  const snapshot = await (await started).json()
+  const attempt = await database.db
+    .collection('game_attempts')
+    .findOne({ _id: new Types.ObjectId(snapshot.attemptId) })
+  const active = { id: attempt.state.caseId, ...library.resolveCase(attempt.state) }
+  await expect(page.locator('.sharmail-briefing h2')).toHaveText(active.content.title)
+  return active
+}
+
 async function openCase(page) {
+  const started = caseStarted(page)
   await page.goto('/games/phishing-post-mortem')
   await expect(page.getByRole('heading', { name: 'The Phishing Post-Mortem' })).toBeVisible()
-  const title = await page.locator('.sharmail-briefing h2').textContent()
-  const active = CASES.find((entry) => entry.content.title === title.trim())
-  expect(active, 'served case should be one of the authored cases').toBeTruthy()
-  return active
+  return caseFor(page, started)
 }
 
 // the clue checkboxes live in a panel opened from the docked verdict bar
@@ -147,17 +170,12 @@ test('replay opens a fresh saved case', async ({ page }, testInfo) => {
   await page.getByRole('button', { name: 'Submit final verdict' }).click()
   await expect(page.getByRole('heading', { name: '100 / 100 points' })).toBeVisible()
 
-  const started = page.waitForResponse(
-    (response) =>
-      response.url().includes('/api/games/phishing-post-mortem/attempts') &&
-      response.status() === 201,
-  )
+  const started = caseStarted(page)
   await page.getByRole('button', { name: 'Open a new case' }).click()
-  const next = await (await started).json()
-  expect(next).toMatchObject({ status: 'active', revision: 0, persisted: true })
+  const next = await caseFor(page, started)
+  expect(next.content.emails).toHaveLength(20)
   await expect(page.getByRole('heading', { name: '100 / 100 points' })).toHaveCount(0)
-  const title = (await page.locator('.sharmail-briefing h2').textContent()).trim()
-  expect(CASES.some((entry) => entry.content.title === title)).toBe(true)
+  await expect(page.getByRole('button', { name: 'Submit final verdict' })).toBeVisible()
 })
 
 test('the inbox panes follow the responsive layout and return focus to the message row', async ({
