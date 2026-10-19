@@ -12,16 +12,61 @@ const {
   attemptErrorCode,
   attemptErrorMessage,
   completeAttempt,
+  forgetCsrfToken,
   newActionId,
   readAttempt,
   sendAttemptAction,
   startAttempt,
 } = await import('../services/attempts.js')
 
-afterEach(() => vi.clearAllMocks())
+afterEach(() => {
+  vi.clearAllMocks()
+  forgetCsrfToken()
+})
 
 describe('shared saved-attempt requests', () => {
-  it('starts a personal attempt with a fresh csrf token', async () => {
+  it('reuses one csrf token across saved-attempt requests', async () => {
+    mocks.requestCsrfToken.mockResolvedValue('csrf-shared')
+    mocks.api.post.mockResolvedValue({ data: {} })
+    await startAttempt('phishing-post-mortem')
+    await sendAttemptAction('a1', {
+      actionId: 'id-1',
+      expectedRevision: 0,
+      type: 'submit-verdict',
+      payload: {},
+    })
+    await completeAttempt('a1', { actionId: 'id-2', expectedRevision: 1 })
+    expect(mocks.requestCsrfToken).toHaveBeenCalledTimes(1)
+    for (const [, , options] of mocks.api.post.mock.calls) {
+      expect(options.headers).toEqual({ 'X-CSRF-Token': 'csrf-shared' })
+    }
+  })
+
+  it('refreshes a rejected csrf token once and retries the same request', async () => {
+    mocks.requestCsrfToken.mockResolvedValueOnce('csrf-old').mockResolvedValueOnce('csrf-new')
+    mocks.api.post
+      .mockRejectedValueOnce({
+        response: { status: 403, data: { error: { code: 'CSRF_INVALID' } } },
+      })
+      .mockResolvedValueOnce({ data: { attemptId: 'a2' } })
+    await expect(startAttempt('phishing-post-mortem')).resolves.toEqual({ attemptId: 'a2' })
+    expect(mocks.api.post).toHaveBeenCalledTimes(2)
+    expect(mocks.api.post.mock.calls[0][1]).toEqual(mocks.api.post.mock.calls[1][1])
+    expect(mocks.api.post.mock.calls[1][2].headers).toEqual({ 'X-CSRF-Token': 'csrf-new' })
+  })
+
+  it('does not retry other rejections', async () => {
+    mocks.requestCsrfToken.mockResolvedValue('csrf-1')
+    const closed = { response: { status: 409, data: { error: { code: 'ATTEMPT_CLOSED' } } } }
+    mocks.api.post.mockRejectedValueOnce(closed)
+    await expect(completeAttempt('a1', { actionId: 'id', expectedRevision: 2 })).rejects.toBe(
+      closed,
+    )
+    expect(mocks.api.post).toHaveBeenCalledTimes(1)
+    expect(mocks.requestCsrfToken).toHaveBeenCalledTimes(1)
+  })
+
+  it('starts a personal attempt with a csrf token', async () => {
     mocks.requestCsrfToken.mockResolvedValue('csrf-1')
     mocks.api.post.mockResolvedValue({ data: { attemptId: 'a1' } })
     await expect(startAttempt('phishing-post-mortem')).resolves.toEqual({ attemptId: 'a1' })

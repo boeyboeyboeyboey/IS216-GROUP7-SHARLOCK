@@ -16,15 +16,49 @@ export function newActionId() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
-async function post(path, body, signal) {
-  const csrfToken = await requestCsrfToken()
+// the csrf token lasts for the session and /auth/csrf is rate limited per address,
+// so one token is reused and only refetched after the server rejects it
+let cachedToken = ''
+let pendingToken = null
+
+export function forgetCsrfToken() {
+  cachedToken = ''
+  pendingToken = null
+}
+
+function csrfToken({ refresh = false } = {}) {
+  if (!refresh && cachedToken) return Promise.resolve(cachedToken)
+  if (pendingToken) return pendingToken
+  const request = requestCsrfToken()
+    .then((token) => {
+      if (pendingToken === request) cachedToken = token
+      return token
+    })
+    .finally(() => {
+      if (pendingToken === request) pendingToken = null
+    })
+  pendingToken = request
+  return request
+}
+
+async function send(path, body, signal, token) {
   signal?.throwIfAborted()
   const { data } = await api.post(path, body, {
     signal,
     timeout: TIMEOUT_MS,
-    headers: { 'X-CSRF-Token': csrfToken },
+    headers: { 'X-CSRF-Token': token },
   })
   return data
+}
+
+async function post(path, body, signal) {
+  try {
+    return await send(path, body, signal, await csrfToken())
+  } catch (error) {
+    // a csrf rejection happens before the server handles the request, so one retry is safe
+    if (attemptErrorCode(error) !== 'CSRF_INVALID') throw error
+    return send(path, body, signal, await csrfToken({ refresh: true }))
+  }
 }
 
 export function startAttempt(gameId, { context = { kind: 'personal' }, signal } = {}) {
