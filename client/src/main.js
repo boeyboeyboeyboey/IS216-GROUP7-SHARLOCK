@@ -8,7 +8,7 @@ import router from './router/index.js'
 import { api } from './services/api.js'
 import { useAuthStore } from './features/auth/store.js'
 import { createAccountGuard, installBrowserAccountAccess } from './features/auth/guards.js'
-import { installTownWipe } from './features/auth/pixel-wipe.js'
+import { installPageWipes } from './features/auth/pixel-wipe.js'
 import {
   captureInvitationCodeFromLocation,
   clearPendingInvitation,
@@ -25,7 +25,7 @@ router.beforeEach(createAccountGuard(auth, { resolveDestination: resolveEnrollme
 router.afterEach((to) => {
   if (!['/join-class', '/login', '/register'].includes(to.path)) clearPendingInvitation()
 })
-installTownWipe(router)
+installPageWipes(router)
 const removeAccountAccess = installBrowserAccountAccess(api, {
   checkSession: () => auth.restoreSession({ force: true }),
   onExpired: () => {

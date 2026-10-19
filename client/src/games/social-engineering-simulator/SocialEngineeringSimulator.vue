@@ -75,8 +75,10 @@ onMounted(start)
 
 <template>
   <div class="soc-game" :class="{ 'is-fitted': fitsViewport, 'is-wide': inConversation }">
+    <!-- the back link is a direct child of the page so it can sit at the top left of the whole
+         content area, while the title and everything below it stay in the centred column -->
+    <RouterLink to="/" class="soc-back back-link">Back to town</RouterLink>
     <div class="soc-intro">
-      <RouterLink to="/" class="soc-back back-link">Back to town</RouterLink>
       <h1 tabindex="-1">LLM Social Engineering Simulator</h1>
       <p class="soc-strap">
         A fictional colleague will pressure you to hand over a synthetic reset code. Hold the line

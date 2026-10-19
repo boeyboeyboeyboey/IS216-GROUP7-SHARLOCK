@@ -1,5 +1,6 @@
-/* 8-bit screen wipe into town. Blocks switch on or off in single hard steps, never fade, and the
-   overlay blocks clicks while it plays so nothing is activated under it. */
+/* 8-bit screen wipes between the main tabs (town, profile, progress, classes, leaderboard). Blocks
+   switch on or off in single hard steps, never fade; each tab sets its own pattern timing and block
+   colour, and the overlay blocks clicks while it plays so nothing is activated under it. */
 .pixel-wipe {
   position: fixed;
   inset: 0;
@@ -17,8 +18,9 @@
   grid-template-rows: repeat(var(--wipe-rows), 1fr);
 }
 
+/* each tab sets its own block colour through --wipe-color (see WIPE_SECTIONS) */
 .pixel-wipe__cell {
-  background: var(--border-strong);
+  background: var(--wipe-color, var(--border-strong));
   opacity: 0;
 }
 
@@ -35,8 +37,12 @@
 
 .pixel-wipe__label {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
   margin: 0;
-  padding: 0.8rem 1.3rem;
+  padding: 1.3rem 2.1rem;
   border: 3px solid var(--text-main);
   background: var(--surface);
   box-shadow: 4px 4px 0 var(--text-main);
@@ -46,6 +52,25 @@
   font-weight: 700;
   text-align: center;
   opacity: 0;
+}
+
+.pixel-wipe__label p {
+  margin: 0;
+}
+
+/* the emoji is a 32 x 32 canvas redrawn as hard-edged pixels and scaled up three times */
+.pixel-wipe__emoji {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+  animation: pixel-wipe-bob 0.5s steps(1, end) infinite;
+}
+
+/* a two-frame hop, in whole pixels, so it moves like a sprite and never glides */
+@keyframes pixel-wipe-bob {
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .pixel-wipe--cover .pixel-wipe__label {
@@ -66,6 +91,113 @@
 @keyframes pixel-wipe-off {
   to {
     opacity: 0;
+  }
+}
+
+/* Game doors: two pixel-art door leaves in the game's colour. They slide shut to cover the screen,
+   the card is held on them like a sign, then they swing open onto the game. Every edge is hard and
+   every move is stepped, so it reads as 8-bit frames rather than a smooth animation. */
+.pixel-doors {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  perspective: 1600px;
+}
+
+.pixel-door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: calc(50% + 1px);
+  /* vertical planks: hard-edged, fully solid seams every 56px (a see-through seam would let the
+     page show through the closed doors) */
+  background: repeating-linear-gradient(
+    90deg,
+    var(--wipe-color) 0 52px,
+    color-mix(in srgb, var(--wipe-color) 68%, black) 52px 56px
+  );
+  /* a dark frame with a lighter inner edge */
+  box-shadow:
+    inset 0 0 0 14px rgb(0 0 0 / 55%),
+    inset 0 0 0 18px rgb(255 255 255 / 14%);
+}
+
+.pixel-door--left {
+  left: 0;
+  transform-origin: left center;
+}
+
+.pixel-door--right {
+  right: 0;
+  transform-origin: right center;
+}
+
+/* the raised panel in each leaf */
+.pixel-door::before {
+  content: '';
+  position: absolute;
+  inset: 14% 14% 12%;
+  border: 8px solid rgb(0 0 0 / 38%);
+  box-shadow: inset 0 0 0 6px rgb(255 255 255 / 10%);
+}
+
+/* the brass handle, near the seam where the leaves meet */
+.pixel-door::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  border: 4px solid rgb(0 0 0 / 70%);
+  background: #e0b040;
+}
+
+.pixel-door--left::after {
+  right: 36px;
+}
+
+.pixel-door--right::after {
+  left: 36px;
+}
+
+.pixel-wipe--cover .pixel-door--left {
+  animation: pixel-door-shut-left var(--door-ms) steps(7, end) both;
+}
+
+.pixel-wipe--cover .pixel-door--right {
+  animation: pixel-door-shut-right var(--door-ms) steps(7, end) both;
+}
+
+/* swinging open: each leaf turns about its outer edge, away from the viewer */
+.pixel-wipe--reveal .pixel-door--left {
+  animation: pixel-door-open-left var(--door-ms) steps(9, end) both;
+}
+
+.pixel-wipe--reveal .pixel-door--right {
+  animation: pixel-door-open-right var(--door-ms) steps(9, end) both;
+}
+
+@keyframes pixel-door-shut-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes pixel-door-shut-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pixel-door-open-left {
+  to {
+    transform: rotateY(82deg);
+  }
+}
+
+@keyframes pixel-door-open-right {
+  to {
+    transform: rotateY(-82deg);
   }
 }
 
