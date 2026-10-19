@@ -2,7 +2,6 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../auth/store.js'
-import { enterTown } from '../../auth/pixel-wipe.js'
 import JoinCohortForm from '../components/JoinCohortForm.vue'
 import {
   clearClassInvitation,
@@ -71,7 +70,7 @@ async function sendInvitation() {
     const result = await joinClass(getInvitationJoinInput(), controller.signal)
     clearHeldInvitation()
     const state = result?.membership?.status === 'active' ? 'active' : 'pending'
-    await enterTown(router, { path: '/', query: { classRequest: state } })
+    await router.replace({ path: '/', query: { classRequest: state } })
   } catch (cause) {
     if (!controller.signal.aborted) error.value = safeError(cause).message
   } finally {
@@ -95,9 +94,7 @@ async function submitCode(code) {
     const result = await joinClass({ code }, controller.signal)
     clearHeldInvitation()
     const state = result?.membership?.status === 'active' ? 'active' : 'pending'
-    const town = { path: '/', query: { classRequest: state } }
-    // the wipe belongs to arriving after sign-up, not to joining a class later from inside the app
-    await (onboarding.value ? enterTown(router, town) : router.replace(town))
+    await router.replace({ path: '/', query: { classRequest: state } })
   } catch (cause) {
     if (!controller.signal.aborted) error.value = safeError(cause).message
   } finally {
@@ -113,7 +110,7 @@ async function skipOnboarding() {
     if (hasInvitation.value) await clearClassInvitation(controller.signal)
     clearHeldInvitation()
     await completeOnboarding(controller.signal)
-    await enterTown(router, '/')
+    await router.replace('/')
   } catch (cause) {
     if (!controller.signal.aborted) error.value = safeError(cause).message
   } finally {
