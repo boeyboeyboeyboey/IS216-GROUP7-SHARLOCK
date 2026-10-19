@@ -7,7 +7,6 @@ import RegisterForm from '../components/RegisterForm.vue'
 import VerifyEmailPanel from '../components/VerifyEmailPanel.vue'
 import AuthSteps from '../components/AuthSteps.vue'
 import { resolveEnrollmentDestination } from '../../cohorts/journey.js'
-import { enterTown } from '../pixel-wipe.js'
 import '../auth.css'
 
 const router = useRouter()
@@ -35,7 +34,7 @@ async function continueAfterSignIn() {
       signal: controller.signal,
       afterAccountAccess: true,
     })
-    if (!controller.signal.aborted) await enterTown(router, destination)
+    if (!controller.signal.aborted) await router.replace(destination)
   } catch {
     if (!controller.signal.aborted) {
       continuationError.value = 'Your account is ready. Class setup is unavailable. Try Continue again.'

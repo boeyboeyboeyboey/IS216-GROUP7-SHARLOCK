@@ -1,101 +1,120 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { enterTown, playPixelWipe, WIPE_PHASE_MS, wipe } from '../pixel-wipe.js'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { installTownWipe, WIPE_PHASE_MS, wipe } from '../pixel-wipe.js'
 
-function stubMotion({ reduced = false } = {}) {
-  vi.stubGlobal('matchMedia', () => ({ matches: reduced }))
-  vi.stubGlobal('requestAnimationFrame', (callback) => setTimeout(callback, 0))
+const page = { render: () => null }
+
+// a router shaped like the app's: town with the newspaper dialog as a child, plus other pages
+function createTestRouter({ signedOut = false, laterGuard } = {}) {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      {
+        path: '/',
+        name: 'town',
+        component: page,
+        children: [{ path: '/games/threat-briefing', name: 'news', component: page }],
+      },
+      { path: '/login', name: 'login', component: page },
+      { path: '/about', name: 'about', component: page },
+    ],
+  })
+  // the account guard runs first and may redirect a signed-out visitor away from town
+  router.beforeEach((to) => (signedOut && to.name === 'town' ? { path: '/login' } : true))
+  installTownWipe(router)
+  if (laterGuard) router.beforeResolve(laterGuard)
+  return router
 }
 
-beforeEach(() => {
-  vi.useFakeTimers()
-  stubMotion()
-})
+// every phase the overlay goes through while `action` runs
+async function phasesDuring(action) {
+  const seen = [wipe.phase]
+  const watch = setInterval(() => {
+    if (seen.at(-1) !== wipe.phase) seen.push(wipe.phase)
+  }, 5)
+  await action()
+  await vi.waitFor(() => expect(wipe.phase).toBe('idle'), { timeout: WIPE_PHASE_MS * 3 })
+  clearInterval(watch)
+  if (seen.at(-1) !== wipe.phase) seen.push(wipe.phase)
+  return seen
+}
 
 afterEach(() => {
-  vi.useRealTimers()
   vi.unstubAllGlobals()
   wipe.phase = 'idle'
 })
 
-describe('playPixelWipe', () => {
-  it('covers the screen, navigates underneath, then reveals and returns to idle', async () => {
-    const navigate = vi.fn().mockResolvedValue('arrived')
-    const run = playPixelWipe(navigate)
-
-    expect(wipe.phase).toBe('cover')
-    expect(navigate).not.toHaveBeenCalled()
-
-    await vi.advanceTimersByTimeAsync(WIPE_PHASE_MS)
-    expect(navigate).toHaveBeenCalledTimes(1)
-
-    // the new page gets two frames to paint before the blocks clear
-    await vi.advanceTimersByTimeAsync(10)
-    expect(wipe.phase).toBe('reveal')
-
-    await vi.advanceTimersByTimeAsync(WIPE_PHASE_MS)
-    await expect(run).resolves.toBe('arrived')
-    expect(wipe.phase).toBe('idle')
+describe('installTownWipe', () => {
+  it('stays out of the way on the first page load', async () => {
+    const router = createTestRouter()
+    expect(await phasesDuring(() => router.push('/'))).toEqual(['idle'])
   })
 
-  it('skips the animation entirely for reduced motion', async () => {
-    stubMotion({ reduced: true })
-    const navigate = vi.fn().mockResolvedValue('arrived')
+  it('covers, navigates underneath, then reveals whenever town is reached from another page', async () => {
+    const router = createTestRouter()
+    await router.push('/login')
 
-    await expect(playPixelWipe(navigate)).resolves.toBe('arrived')
-    expect(navigate).toHaveBeenCalledTimes(1)
-    expect(wipe.phase).toBe('idle')
+    const started = Date.now()
+    let navigatedAt = 0
+    router.afterEach(() => {
+      navigatedAt ||= Date.now() - started
+    })
+    const phases = await phasesDuring(() => router.push('/'))
+
+    expect(phases).toEqual(['idle', 'cover', 'reveal', 'idle'])
+    expect(router.currentRoute.value.name).toBe('town')
+    // the route only changes once the screen is covered
+    expect(navigatedAt).toBeGreaterThanOrEqual(WIPE_PHASE_MS - 5)
   })
 
-  it('never leaves the overlay on screen when navigation fails', async () => {
-    const run = playPixelWipe(vi.fn().mockRejectedValue(new Error('navigation failed')))
-    const settled = expect(run).rejects.toThrow('navigation failed')
-    await vi.advanceTimersByTimeAsync(WIPE_PHASE_MS)
-    await settled
-    expect(wipe.phase).toBe('idle')
-
-    // and a later sign-in can play it again
-    const again = playPixelWipe(vi.fn().mockResolvedValue('ok'))
-    expect(wipe.phase).toBe('cover')
-    await vi.advanceTimersByTimeAsync(WIPE_PHASE_MS + 10 + WIPE_PHASE_MS)
-    await expect(again).resolves.toBe('ok')
+  it('plays again each time Town map is clicked from elsewhere', async () => {
+    const router = createTestRouter()
+    await router.push('/about')
+    expect(await phasesDuring(() => router.push('/'))).toContain('cover')
+    await router.push('/about')
+    expect(await phasesDuring(() => router.push('/'))).toContain('cover')
   })
 
-  it('does not start a second wipe while one is playing', async () => {
-    const first = playPixelWipe(vi.fn().mockResolvedValue('first'))
-    const secondNavigate = vi.fn().mockResolvedValue('second')
+  it('does not play for moves inside town, including the newspaper dialog', async () => {
+    const router = createTestRouter()
+    await router.push('/about')
+    await phasesDuring(() => router.push('/'))
 
-    await expect(playPixelWipe(secondNavigate)).resolves.toBe('second')
-    expect(secondNavigate).toHaveBeenCalledTimes(1)
-    expect(wipe.phase).toBe('cover')
+    expect(await phasesDuring(() => router.push('/games/threat-briefing'))).toEqual(['idle'])
+    expect(await phasesDuring(() => router.push('/'))).toEqual(['idle'])
+  })
 
-    await vi.advanceTimersByTimeAsync(WIPE_PHASE_MS + 10 + WIPE_PHASE_MS)
-    await first
+  it('does not play when leaving town or going between other pages', async () => {
+    const router = createTestRouter()
+    await router.push('/about')
+    expect(await phasesDuring(() => router.push('/login'))).toEqual(['idle'])
+  })
+
+  it('does not play when a signed-out visitor is redirected to sign-in', async () => {
+    const router = createTestRouter({ signedOut: true })
+    await router.push('/about')
+    expect(await phasesDuring(() => router.push('/'))).toEqual(['idle'])
+    expect(router.currentRoute.value.name).toBe('login')
+  })
+
+  it('is skipped for reduced motion', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }))
+    const router = createTestRouter()
+    await router.push('/login')
+    expect(await phasesDuring(() => router.push('/'))).toEqual(['idle'])
+    expect(router.currentRoute.value.name).toBe('town')
+  })
+
+  it('never leaves the overlay up when a later guard throws', async () => {
+    const router = createTestRouter({
+      laterGuard: (to) => {
+        if (to.name === 'town') throw new Error('guard failed')
+        return true
+      },
+    })
+    await router.push('/login')
+    const phases = await phasesDuring(() => router.push('/').catch(() => {}))
+    expect(phases).toContain('cover')
     expect(wipe.phase).toBe('idle')
   })
-})
-
-describe('enterTown', () => {
-  const router = () => ({ replace: vi.fn().mockResolvedValue(undefined) })
-
-  it.each(['/', { path: '/' }, { path: '/', query: { classRequest: 'pending' } }, '/?x=1'])(
-    'plays the wipe when the destination is the town page (%j)',
-    async (destination) => {
-      const target = router()
-      const run = enterTown(target, destination)
-      expect(wipe.phase).toBe('cover')
-      await vi.advanceTimersByTimeAsync(WIPE_PHASE_MS + 10 + WIPE_PHASE_MS)
-      await run
-      expect(target.replace).toHaveBeenCalledWith(destination)
-    },
-  )
-
-  it.each(['/join-class?onboarding=1', '/join-class', { path: '/classes' }])(
-    'goes straight to other pages without a wipe (%j)',
-    async (destination) => {
-      const target = router()
-      await enterTown(target, destination)
-      expect(wipe.phase).toBe('idle')
-      expect(target.replace).toHaveBeenCalledWith(destination)
-    },
-  )
 })
