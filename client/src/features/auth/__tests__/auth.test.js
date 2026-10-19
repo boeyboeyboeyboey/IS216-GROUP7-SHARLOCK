@@ -476,6 +476,15 @@ describe('auth forms and account summary', () => {
     wrapper.unmount()
   })
 
+  it('keeps the sidebar account copy off the sign-in and registration pages', async () => {
+    // those pages show account problems in their own card; the duplicate in the sidebar made it
+    // taller than the window, which adds a scrollbar that takes 18px of its 236px
+    const { routes } = await import('../../../router/index.js')
+    for (const path of ['/login', '/register']) {
+      expect(routes.find((route) => route.path === path).meta.hideAccountSummary).toBe(true)
+    }
+  })
+
   it('warns after a field is left and clears the warning as soon as it is valid', async () => {
     const wrapper = mount(RegisterForm)
     const email = wrapper.get('#register-email')
