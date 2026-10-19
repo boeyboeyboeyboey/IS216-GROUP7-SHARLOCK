@@ -638,7 +638,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-:where(.phish-game) .sharmail-debrief-unsaved {
+:where(.phish-game) .sharmail-debrief-saved {
   margin: 0.75rem 0 0;
   font-size: 0.85rem;
   color: var(--game-muted);

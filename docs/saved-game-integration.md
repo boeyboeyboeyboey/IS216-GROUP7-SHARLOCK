@@ -2,16 +2,16 @@
 
 This guide helps a game owner and their teammate or agent plan one real game's connection to Sharlock Hub's shared saved-attempt foundation. It is a start-here guide and planning worksheet; it is not an approval to migrate a game, register a production adapter, or change shared infrastructure.
 
-## Readiness as of 16 October 2026
+## Readiness as of 19 October 2026
 
-| Piece                                                                | Current state                         | What this means for a game owner                                                                                      |
-| -------------------------------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Accounts, classes and server permissions                             | Published; task records remain Review | Read the current task board before relying on this snapshot                                                           |
-| GAME-01-A server attempt/result foundation                           | Implemented; Review                   | Verify the current live branch/checkout and task board for integration/publication status                             |
-| PRO-01 profile editing                                               | Implemented; Review                   | Verify the current live branch/checkout and task board; profile editing adds no game persistence or shared game UI    |
-| Scored game adapters                                                 | Normal startup registers none         | Phishing Post-Mortem, CLI Cyber Defender and Social Engineering Simulator retain their existing interim unsaved flows |
-| Shared client attempt wrapper, context chooser and saved-result view | Not implemented                       | Missing shared pieces need a separately approved prerequisite plan                                                    |
-| Server context resolution                                            | Implemented                           | It validates requested personal or cohort context; it does not provide the missing browser flow                       |
+| Piece                                                                | Current state                         | What this means for a game owner                                                                                          |
+| -------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Accounts, classes and server permissions                             | Published; task records remain Review | Read the current task board before relying on this snapshot                                                               |
+| GAME-01-A server attempt/result foundation                           | Implemented; Review                   | Verify the current live branch/checkout and task board for integration/publication status                                 |
+| PRO-01 profile editing                                               | Implemented; Review                   | Verify the current live branch/checkout and task board; profile editing adds no game persistence or shared game UI        |
+| Scored game adapters                                                 | Phishing registered (G-PHISH-02)      | Phishing Post-Mortem saves personal results; CLI Cyber Defender and Social Engineering Simulator keep their unsaved flows |
+| Shared client attempt wrapper, context chooser and saved-result view | Wrapper only (G-PHISH-02)             | Reuse `client/src/services/attempts.js`; a context chooser and saved-result view still need an approved plan              |
+| Server context resolution                                            | Implemented                           | It validates requested personal or cohort context; it does not provide the missing browser flow                           |
 
 These are separate readiness facts. A completed server foundation does not make a game saved, and a playable game does not imply that its owner approved a migration. Check [TASKS.md](../TASKS.md) for current branch, publication, task status, approval, and contributor evidence before proposing work.
 
@@ -19,7 +19,7 @@ These are separate readiness facts. A completed server foundation does not make 
 
 1. Read the [team kickoff prompt](../README.md#1-teammate-agent-kickoff-prompt), [engineering guardrails](../agents.md), [shared game blueprint](../README.md#shared-implementation-blueprint), and the relevant game task in [TASKS.md](../TASKS.md). Follow the feature-selection and explicit-approval workflow there.
 2. Read the [saved-attempt contract](../server/src/modules/attempts/README.md). It owns the route payloads, authorization behavior, adapter callbacks, request limits, and saved snapshot shape. This guide intentionally does not copy that contract.
-3. Read the chosen game's existing module notes and ask its actual owner to confirm the starting behavior and desired changes. Existing notes include [Phishing migration](../server/src/modules/games/phishing-post-mortem/README.md), [CLI migration](../server/src/modules/games/cli-cyber-defender/README.md), and [Social migration](../server/src/modules/games/social-engineering-simulator/README.md).
+3. Read the chosen game's existing module notes and ask its actual owner to confirm the starting behavior and desired changes. Existing notes include the completed [Phishing integration](../server/src/modules/games/phishing-post-mortem/README.md) (a worked example of a registered ruleset and its browser flow), [CLI migration](../server/src/modules/games/cli-cyber-defender/README.md), and [Social migration](../server/src/modules/games/social-engineering-simulator/README.md).
 4. Search the task board, local files, branches, available worktrees, and pull requests for collisions and active claims before planning a new scope. Report what was unavailable; a clean local checkout cannot prove that no teammate has unpublished work.
 
 The existing per-game notes are useful migration context, not current approval. Preserve their owners' changes and follow the collision stop rule in `agents.md` if any matching feature work or claim exists.

@@ -73,7 +73,7 @@ test('explores every building without prerequisites while showing account state'
     await expect(page).toHaveURL(new RegExp(`${game.route}$`))
     await expect(page.getByRole('heading', { name: 'A new case is taking shape.' })).toBeVisible()
     await page.getByRole('link', { name: 'Keep exploring', exact: true }).click()
-    await expect(page.locator('.town-player')).toContainText('Results are not saved')
+    await expect(page.locator('.town-player')).toContainText('Phishing results saved')
   }
   await page.goto('/games/mini-ctf')
   await expect(page).toHaveURL('/games/sql-injection-arcade')
@@ -196,7 +196,7 @@ test('navigates to the profile and handles mobile focus and dismissal', async ({
     await opener.click()
     const drawer = page.getByRole('dialog', { name: 'Your detective desk' })
     await expect(drawer).toBeVisible()
-    await expect(drawer.getByText('Results are not saved')).toBeVisible()
+    await expect(drawer.getByText('Phishing results saved')).toBeVisible()
     await expect.poll(() => drawer.evaluate((el) => el.contains(document.activeElement))).toBe(true)
     await page.keyboard.press('Escape')
     await expect(drawer).toBeHidden()

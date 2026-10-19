@@ -18,9 +18,8 @@ defineEmits(['replay'])
         {{ result.score }} / {{ result.maxScore }} points
       </h2>
       <p>{{ result.feedback.summary }}</p>
-      <p class="sharmail-debrief-unsaved">
-        Not saved. Sign-in and saved results are a separate piece of work, so this score is for this
-        sitting only.
+      <p v-if="result.persisted" class="sharmail-debrief-saved" role="status">
+        Result saved to your account.
       </p>
     </header>
 
@@ -65,8 +64,6 @@ defineEmits(['replay'])
       </li>
     </ul>
 
-    <button type="button" class="sharmail-submit" @click="$emit('replay')">
-      Investigate the other case
-    </button>
+    <button type="button" class="sharmail-submit" @click="$emit('replay')">Open a new case</button>
   </section>
 </template>

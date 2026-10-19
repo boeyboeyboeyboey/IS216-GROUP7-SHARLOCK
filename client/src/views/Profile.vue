@@ -220,7 +220,8 @@ async function retrySession() {
         </button>
       </div>
       <p class="preview-notice">
-        Your account and avatar are saved. Game results are not saved yet.
+        Your account and avatar are saved. Phishing Post-Mortem results save to your account; other
+        games are not saved yet.
       </p>
       <TrophyCase />
     </template>

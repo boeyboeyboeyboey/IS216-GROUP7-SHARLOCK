@@ -1,26 +1,41 @@
-import { api } from '../../services/api.js'
+import {
+  attemptErrorCode,
+  attemptErrorMessage,
+  completeAttempt,
+  newActionId,
+  readAttempt,
+  sendAttemptAction,
+  startAttempt,
+} from '../../services/attempts.js'
 
-const BASE = '/games/phishing-post-mortem'
+export const GAME_ID = 'phishing-post-mortem'
+const VERDICT_ACTION = 'submit-verdict'
 
-export function fetchCase(after, signal) {
-  return api
-    .get(`${BASE}/case`, { params: after ? { after } : {}, signal, timeout: 15000 })
-    .then(({ data }) => data)
+// every case is a saved attempt in the player's personal record
+export function openSavedCase(signal) {
+  return startAttempt(GAME_ID, { context: { kind: 'personal' }, signal })
 }
 
-export function submitVerdict(payload, signal) {
-  return api.post(`${BASE}/verdict`, payload, { signal, timeout: 15000 }).then(({ data }) => data)
+export function rereadSavedCase(attemptId, signal) {
+  return readAttempt(attemptId, { signal })
 }
 
-export function newActionId() {
-  const uuid = globalThis.crypto?.randomUUID?.()
-  if (uuid) return uuid
-  return `act-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+export function recordVerdict(attemptId, { actionId, expectedRevision, verdict }, signal) {
+  return sendAttemptAction(
+    attemptId,
+    { actionId, expectedRevision, type: VERDICT_ACTION, payload: verdict },
+    { signal },
+  )
 }
+
+export function saveResult(attemptId, { actionId, expectedRevision }, signal) {
+  return completeAttempt(attemptId, { actionId, expectedRevision }, { signal })
+}
+
+export { attemptErrorCode, newActionId }
 
 export function phishingErrorMessage(error, fallback) {
-  const message = error?.response?.data?.error?.message
-  return typeof message === 'string' && message ? message : fallback
+  return attemptErrorMessage(error, fallback)
 }
 
 export function mailTime(value) {

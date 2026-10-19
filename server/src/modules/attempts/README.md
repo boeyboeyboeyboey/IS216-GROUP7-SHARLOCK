@@ -1,10 +1,10 @@
 # Shared saved attempts and results
 
-GAME-01-A is the server foundation for saved gameplay. It is not a migration of Phishing, CLI or Social. Normal startup registers no scored adapters, so those existing games still use their unsaved endpoints and labels. The sample game used by integration tests lives only under `server/tests/integration/attempts/`; no HTTP field, environment switch or startup import enables it in the normal app.
+GAME-01-A is the server foundation for saved gameplay. Normal startup registers one scored adapter: Phishing Post-Mortem (G-PHISH-02, `server/src/modules/games/phishing-post-mortem/ruleset.js`), added to the registry in `server/src/server.js`. CLI, Social and Clearance Tower still use their unsaved endpoints and labels. The sample game used by integration tests lives only under `server/tests/integration/attempts/`; no HTTP field, environment switch or startup import enables it in the normal app.
 
 ## Request and storage flow
 
-Future owner-agreed game UI → existing credentialed Axios client → the four routes below → existing session/origin/CSRF checks → shared current account/context permissions → registered server ruleset → one `game_attempts` document. This slice adds no client wrapper, context chooser, result screen, points, awards, rankings or teaching dashboard.
+Owner-agreed game UI → `client/src/services/attempts.js` (shared request wrapper over the credentialed Axios client, adds the csrf header) → the four routes below → existing session/origin/CSRF checks → shared current account/context permissions → registered server ruleset → one `game_attempts` document. GAME-01-A added no client wrapper; G-PHISH-02 added the small shared request wrapper above. There is still no context chooser, result screen, points, awards, rankings or teaching dashboard.
 
 `app.js` mounts only these handlers using its single auth runtime. `server.js` initializes the named collection and indexes additively, without seeding or rewriting existing records. The service uses the passed Mongoose connection. Writes affect one attempt document, so state, score, revision, action receipt and completed result are atomic without a multi-document transaction or replica-set prerequisite.
 

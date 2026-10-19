@@ -47,7 +47,7 @@ function closeNewspaper() {
         <img :src="avatar.path" width="80" height="80" :alt="avatar.label" class="avatar-image" />
         <span
           ><strong>{{ auth.user?.username }}</strong
-          ><span>Results are not saved</span></span
+          ><span>Phishing results saved</span></span
         >
       </RouterLink>
     </section>

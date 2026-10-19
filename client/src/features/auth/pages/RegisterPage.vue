@@ -93,7 +93,7 @@ async function createAccount(payload) {
     <aside class="auth-aside">
       <PixelIcon name="shield" :size="30" aria-hidden="true" />
       <h2>Start with your own detective</h2>
-      <p>Registration signs you in automatically. Join a class or skip ahead to personal play. Game results are not saved yet.</p>
+      <p>Registration signs you in automatically. Join a class or skip ahead to personal play. Phishing Post-Mortem results save to your account; other games are not saved yet.</p>
       <RouterLink to="/about" class="auth-aside__link">
         About Sharlock <PixelIcon name="arrow" :size="16" aria-hidden="true" />
       </RouterLink>

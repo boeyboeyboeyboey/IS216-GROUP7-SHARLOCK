@@ -55,11 +55,21 @@ test('solves a case end to end and scores the full hundred', async ({ page }, te
     const option = active.content.evidenceOptions.find((entry) => entry.id === evidenceId)
     await page.getByRole('checkbox', { name: option.label }).check()
   }
+  const savedResponse = page.waitForResponse(
+    (response) => /\/api\/attempts\/[^/]+\/complete$/.test(response.url()) && response.ok(),
+  )
   await page.getByRole('button', { name: 'Submit final verdict' }).click()
 
+  const saved = await (await savedResponse).json()
+  expect(saved).toMatchObject({ status: 'completed', persisted: true, score: 100 })
   await expect(page.getByRole('heading', { name: '100 / 100 points' })).toBeVisible()
   await expect(page.getByText('Verdict upheld')).toBeVisible()
-  await expect(page.getByText('Not saved.', { exact: false })).toBeVisible()
+  await expect(page.getByText('Result saved to your account.')).toBeVisible()
+
+  // the saved result can be read back from the server after the page is done with it
+  const reread = await page.request.get(`/api/attempts/${saved.attemptId}`)
+  expect(reread.ok()).toBe(true)
+  expect((await reread.json()).score).toBe(100)
   await expect(page.getByText(active.answers.chain[0], { exact: false })).toBeVisible()
 
   // finished cases stay readable: reopen Patient Zero from the inbox, then return to the debrief
@@ -92,7 +102,7 @@ test('a wrong verdict scores nothing and still reveals the chain', async ({ page
 test('never sends the answer key to the browser before a verdict', async ({ page }) => {
   const payloads = []
   page.on('response', async (response) => {
-    if (response.url().includes('/api/games/phishing-post-mortem/case'))
+    if (response.url().includes('/api/games/phishing-post-mortem/attempts'))
       payloads.push(await response.text())
   })
   const active = await openCase(page)
@@ -120,7 +130,7 @@ test('link destinations are inert and only shown on request', async ({ page }, t
   await expect(page.locator('.sharmail-links a')).toHaveCount(0)
 })
 
-test('replay hands over the other case', async ({ page }, testInfo) => {
+test('replay opens a fresh saved case', async ({ page }, testInfo) => {
   const isMobile = testInfo.project.name === 'mobile-chromium'
   const active = await openCase(page)
   const patientZero = active.content.emails.find(
@@ -137,9 +147,17 @@ test('replay hands over the other case', async ({ page }, testInfo) => {
   await page.getByRole('button', { name: 'Submit final verdict' }).click()
   await expect(page.getByRole('heading', { name: '100 / 100 points' })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Investigate the other case' }).click()
-  const other = CASES.find((entry) => entry.id !== active.id)
-  await expect(page.locator('.sharmail-briefing h2')).toHaveText(other.content.title)
+  const started = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/games/phishing-post-mortem/attempts') &&
+      response.status() === 201,
+  )
+  await page.getByRole('button', { name: 'Open a new case' }).click()
+  const next = await (await started).json()
+  expect(next).toMatchObject({ status: 'active', revision: 0, persisted: true })
+  await expect(page.getByRole('heading', { name: '100 / 100 points' })).toHaveCount(0)
+  const title = (await page.locator('.sharmail-briefing h2').textContent()).trim()
+  expect(CASES.some((entry) => entry.content.title === title)).toBe(true)
 })
 
 test('the inbox panes follow the responsive layout and return focus to the message row', async ({
@@ -196,7 +214,7 @@ test('recovers from a rejected verdict without losing the case', async ({ page }
   )
   let rejectFirstSubmission = true
 
-  await page.route('**/api/games/phishing-post-mortem/verdict', async (route) => {
+  await page.route('**/api/attempts/*/actions', async (route) => {
     if (rejectFirstSubmission) {
       rejectFirstSubmission = false
       await route.fulfill({

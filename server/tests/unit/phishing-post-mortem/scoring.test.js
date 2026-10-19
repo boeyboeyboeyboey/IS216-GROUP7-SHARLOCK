@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   CASE_IDS,
-  createPhishingService,
+  createCaseLibrary,
 } from '../../../src/modules/games/phishing-post-mortem/service.js'
 import { readAnswers, readCase } from './fixtures.js'
 
-const service = (random = () => 0) => createPhishingService({ random })
-const action = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+const library = (random = () => 0) => createCaseLibrary({ random })
 
 describe.each(CASE_IDS)('scoring %s', (caseId) => {
   const content = readCase(caseId)
@@ -16,13 +15,7 @@ describe.each(CASE_IDS)('scoring %s', (caseId) => {
     .map((option) => option.id)
     .filter((id) => !answers.evidenceIds.includes(id))
   const verdict = (selectedEmailId, evidenceIds) =>
-    service().scoreVerdict({
-      caseId,
-      datasetVersion: content.datasetVersion,
-      actionId: action,
-      selectedEmailId,
-      evidenceIds,
-    })
+    library().scoreVerdict({ caseId, selectedEmailId, evidenceIds })
 
   it('awards 60 for the email and 20 for each supporting clue', () => {
     expect(verdict(answers.patientZeroId, answers.evidenceIds).score).toBe(100)
@@ -33,7 +26,7 @@ describe.each(CASE_IDS)('scoring %s', (caseId) => {
   it('scores nothing when the accused email is wrong, even with both correct clues', () => {
     const result = verdict(wrongEmail, answers.evidenceIds)
     expect(result.score).toBe(0)
-    expect(result.result.emailCorrect).toBe(false)
+    expect(result.emailCorrect).toBe(false)
     expect(result.topicOutcomes.every((topic) => !topic.achieved)).toBe(true)
   })
 
@@ -41,44 +34,51 @@ describe.each(CASE_IDS)('scoring %s', (caseId) => {
     const result = verdict(answers.patientZeroId, answers.evidenceIds)
     expect(result.topicOutcomes).toHaveLength(3)
     expect(result.topicOutcomes.every((topic) => topic.achieved)).toBe(true)
-    expect(result.status).toBe('completed')
-    expect(result.persisted).toBe(false)
-    expect(result.actionId).toBe(action)
-    expect(result.rulesetVersion).toBe('phish-1')
+    expect(result.feedback.verdictCode).toBe('PHISH_VERDICT_CORRECT')
   })
 
   it('always teaches the chain, including after a wrong verdict', () => {
-    const result = verdict(wrongEmail, distractors.slice(0, 2))
-    expect(result.debrief.patientZero.id).toBe(answers.patientZeroId)
-    expect(result.debrief.chain.length).toBeGreaterThanOrEqual(5)
-    expect(result.debrief.evidence.filter((item) => item.correct)).toHaveLength(2)
-    expect(result.debrief.decoys.every((decoy) => decoy.subject)).toBe(true)
+    const debrief = library().debrief({ caseId, evidenceIds: distractors.slice(0, 2) })
+    expect(debrief.patientZero.id).toBe(answers.patientZeroId)
+    expect(debrief.chain.length).toBeGreaterThanOrEqual(5)
+    expect(debrief.evidence.filter((item) => item.correct)).toHaveLength(2)
+    expect(debrief.evidence.filter((item) => item.selected)).toHaveLength(2)
+    expect(debrief.decoys.every((decoy) => decoy.subject)).toBe(true)
   })
 
   it('refuses selections that do not belong to the case', () => {
-    expect(() => verdict('zz99', answers.evidenceIds)).toThrow(/PHISH_UNKNOWN_SELECTION|selection/)
-    expect(() => verdict(answers.patientZeroId, [answers.evidenceIds[0], 'ev-invented'])).toThrow()
+    const state = { caseId, datasetVersion: content.datasetVersion }
+    expect(() =>
+      library().assertSelection(state, {
+        selectedEmailId: 'zz99',
+        evidenceIds: answers.evidenceIds,
+      }),
+    ).toThrow(expect.objectContaining({ code: 'PHISH_UNKNOWN_SELECTION', status: 400 }))
+    expect(() =>
+      library().assertSelection(state, {
+        selectedEmailId: answers.patientZeroId,
+        evidenceIds: [answers.evidenceIds[0], 'ev-invented'],
+      }),
+    ).toThrow(expect.objectContaining({ code: 'PHISH_UNKNOWN_SELECTION' }))
   })
 
   it('refuses a stale dataset version', () => {
     expect(() =>
-      service().scoreVerdict({
-        caseId,
-        datasetVersion: '1999-01-01',
-        actionId: action,
-        selectedEmailId: answers.patientZeroId,
-        evidenceIds: answers.evidenceIds,
-      }),
-    ).toThrow()
+      library().assertSelection(
+        { caseId, datasetVersion: '1999-01-01' },
+        { selectedEmailId: answers.patientZeroId, evidenceIds: answers.evidenceIds },
+      ),
+    ).toThrow(expect.objectContaining({ code: 'PHISH_DATASET_CHANGED', status: 409 }))
   })
 })
 
 describe('case delivery', () => {
-  it('never ships the answer key with the case', () => {
+  it('never ships the answer key with the public case', () => {
     for (const caseId of CASE_IDS) {
       const answers = readAnswers(caseId)
+      const content = readCase(caseId)
       const payload = JSON.stringify(
-        service().startCase({ after: caseId === 'case-01' ? 'case-02' : 'case-01' }),
+        library().publicCase({ caseId, emailOrder: content.emails.map((email) => email.id) }),
       )
       expect(payload).not.toContain('patientZeroId')
       expect(payload).not.toContain(answers.summary)
@@ -86,29 +86,33 @@ describe('case delivery', () => {
     }
   })
 
-  it('rotates to the other case on replay', () => {
-    expect(service().startCase({ after: 'case-01' }).caseId).toBe('case-02')
-    expect(service().startCase({ after: 'case-02' }).caseId).toBe('case-01')
+  it('opens each authored case from the injected random source', () => {
+    expect(library(() => 0).openCase().caseId).toBe('case-01')
+    expect(library(() => 0.99).openCase().caseId).toBe('case-02')
   })
 
   it('varies the inbox order without losing or inventing messages', () => {
-    const first = service(() => 0.1).startCase({ after: 'case-02' })
-    const second = service(() => 0.9).startCase({ after: 'case-02' })
-    const ids = (edition) => edition.emails.map((email) => email.id)
-    expect(ids(first)).not.toEqual(ids(second))
-    expect([...ids(first)].sort()).toEqual([...ids(second)].sort())
-    expect(first.emails).toHaveLength(20)
+    const first = library(() => 0.1).openCase()
+    const second = library(() => 0.9).openCase()
+    expect(first.emailOrder).toHaveLength(20)
+    expect(first.emailOrder).not.toEqual(readCase(first.caseId).emails.map((email) => email.id))
+    expect([...first.emailOrder].sort()).toEqual(
+      readCase(first.caseId)
+        .emails.map((email) => email.id)
+        .sort(),
+    )
+    expect(second.emailOrder).toHaveLength(20)
+  })
+
+  it('shows emails in the stored order', () => {
+    const opened = library(() => 0.3).openCase()
+    const shown = library().publicCase(opened)
+    expect(shown.emails.map((email) => email.id)).toEqual(opened.emailOrder)
   })
 
   it('rejects an unknown case', () => {
-    expect(() =>
-      service().scoreVerdict({
-        caseId: 'case-99',
-        datasetVersion: '2026-09-21',
-        actionId: action,
-        selectedEmailId: 'a11',
-        evidenceIds: ['ev-lookalike-domain', 'ev-click-then-credentials'],
-      }),
-    ).toThrow()
+    expect(() => library().publicCase({ caseId: 'case-99', emailOrder: [] })).toThrow(
+      expect.objectContaining({ code: 'PHISH_CASE_UNAVAILABLE' }),
+    )
   })
 })

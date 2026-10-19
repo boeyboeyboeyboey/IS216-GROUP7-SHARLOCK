@@ -24,6 +24,7 @@ const {
   selectedEvidenceIds,
   pane,
   reviewing,
+  verdictLocked,
   canSubmit,
   load,
   replay,
@@ -44,7 +45,7 @@ onMounted(() => load())
 // the reading pane scrolls inside the page, so a new message or the debrief starts at the top
 watch([selectedEmailId, result, reviewing], async () => {
   await nextTick()
-  readingPane.value?.scrollTo({ top: 0 })
+  readingPane.value?.scrollTo?.({ top: 0 })
 })
 
 // the narrow layout swaps panes, so focus has to follow the reader in both directions
@@ -177,7 +178,7 @@ async function backToInbox() {
             :selected-subject="accusedEmail?.subject ?? ''"
             :evidence-options="caseFile.evidenceOptions"
             :selected-evidence-ids="selectedEvidenceIds"
-            :disabled="submitting"
+            :disabled="submitting || verdictLocked"
             @update-evidence="setEvidence"
             @submit-verdict="submit"
           />
@@ -186,8 +187,9 @@ async function backToInbox() {
 
       <div v-if="submissionError" class="phish-state phish-error" role="alert">
         <p>{{ submissionError }}</p>
+        <p v-if="verdictLocked">Your verdict is recorded. Retry to save the result.</p>
         <button type="button" class="sharmail-submit" :disabled="!canSubmit" @click="submit">
-          Retry verdict
+          {{ verdictLocked ? 'Retry saving' : 'Retry verdict' }}
         </button>
         <button type="button" class="sharmail-inspect" :disabled="submitting" @click="load()">
           Reload case

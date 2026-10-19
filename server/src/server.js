@@ -7,6 +7,8 @@ import { initializeCohortStorage } from './modules/cohorts/storage.js'
 import { initializeAuditStorage } from './modules/audit/storage.js'
 import { initializeRecoveryStorage } from './modules/recovery/storage.js'
 import { initializeAttemptStorage } from './modules/attempts/storage.js'
+import { createAttemptRegistry } from './modules/attempts/registry.js'
+import { createPhishingRuleset } from './modules/games/phishing-post-mortem/ruleset.js'
 import { createApp } from './app.js'
 import { loadEnvironment } from './config/env.js'
 import { connectDatabase } from './config/database.js'
@@ -62,8 +64,10 @@ try {
   } catch {
     throw new Error('Activation storage could not initialize. Check database access and restart.')
   }
+  // saved games register here; storage and the attempt router must share this one registry
+  const attemptRegistry = createAttemptRegistry([createPhishingRuleset()])
   try {
-    await initializeAttemptStorage(database)
+    await initializeAttemptStorage(database, attemptRegistry)
   } catch {
     throw new Error(
       'Saved activity storage could not initialize. Check database access and restart.',
@@ -91,6 +95,7 @@ try {
       clientOrigin: config.clientOrigin,
       sessionSecret: config.sessionSecret,
     },
+    attempts: { registry: attemptRegistry },
     news: {
       apiKey: config.nodeEnv === 'test' ? undefined : config.guardianApiKey,
       store: newsStore,

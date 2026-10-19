@@ -1,54 +1,48 @@
 # Phishing Post-Mortem - server module
 
-Serves the authored cases for G-PHISH and scores the player's single verdict. The private answer key never leaves this directory.
+Owns the authored G-PHISH cases, their private answer keys and the scoring rules. Since G-PHISH-02 every case is a saved attempt in the shared attempt service; this module adds no routes or collections of its own.
 
 ## Request and data flow
 
 ```
 client/src/games/phishing-post-mortem/phishing.js
-  -> shared Axios client (client/src/services/api.js, baseURL /api)
-  -> Express app (server/src/app.js mounts createPhishingRouter under /api)
-  -> router.js   validates the request, paces repeated verdicts
-  -> policy.js   field allowlist, identifier patterns, typed PhishingError
-  -> service.js  picks the case, shuffles the inbox, compares against the answer key
-  -> cases/*.public.json        public content, safe to send to the browser
-  -> cases/answers/*.answers.json  patient zero, correct clues, notes - server only
+  -> client/src/services/attempts.js   shared saved-attempt requests with the csrf header
+  -> server/src/modules/attempts/router.js   session, origin, csrf and rate limits
+  -> server/src/modules/attempts/service.js  owner check, revisions, receipts, one game_attempts document
+  -> ruleset.js   this game's registry entry (createState, validateAction, applyAction, summarize...)
+  -> service.js   createCaseLibrary: opens a case, shuffles the inbox, scores and builds the debrief
+  -> cases/*.public.json             public content
+  -> cases/answers/*.answers.json    patient zero, correct clues and notes - server only
 ```
 
-## Endpoints
+`server/src/server.js` registers `createPhishingRuleset()` in the one attempt registry it passes to both `initializeAttemptStorage` and `createApp`.
 
-| Route                                          | Purpose                                                                      |
-| ---------------------------------------------- | ---------------------------------------------------------------------------- |
-| `GET /api/games/phishing-post-mortem/case`     | One case with its twenty emails in shuffled order, timeline and clues.       |
-| `POST /api/games/phishing-post-mortem/verdict` | Scores `{ caseId, datasetVersion, actionId, selectedEmailId, evidenceIds }`. |
+## Saved play
 
-`?after=<caseId>` asks for a different case, which is how replay rotates between the two. Both routes send `Cache-Control: no-store`.
+Paths are relative to `/api` and follow the [attempt contract](../../attempts/README.md). Every request needs a signed-in account; POSTs also need the exact origin and a csrf token.
 
-Scoring is 60 points for naming Patient Zero and 20 for each correct supporting clue, with clues counting only behind a correct accusation. Maximum 100.
+| Step         | Request                                                                                        | What the player gets                                                                   |
+| ------------ | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Open a case  | `POST /games/phishing-post-mortem/attempts` with `{ context: { kind: 'personal' } }`           | 201 snapshot. `publicState` holds the shuffled inbox, timeline and clue list           |
+| Verdict      | `POST /attempts/:id/actions` with `type: 'submit-verdict'`, `{ selectedEmailId, evidenceIds }` | 200 snapshot with the server score; the answer is still hidden                         |
+| Save result  | `POST /attempts/:id/complete`                                                                  | 200 immutable snapshot with `feedback`, `topicOutcomes`, `publicState.outcome/debrief` |
+| Read it back | `GET /attempts/:id`                                                                            | The same completed snapshot, only for its owner                                        |
 
-Errors use the project shape `{ error: { code, message, fieldErrors? }, requestId }`: `PHISH_INVALID_REQUEST` (400), `PHISH_UNKNOWN_SELECTION` (400), `PHISH_CASE_NOT_FOUND` (404), `PHISH_DATASET_CHANGED` (409), `PHISH_RATE_LIMITED` (429), `PHISH_UNAVAILABLE` (503).
+Ruleset `phishing-post-mortem@phish-1`: standard, untimed, not competitive, `maxScore` 100, `maxActions` 1. Scoring is unchanged: 60 points for naming Patient Zero and 20 for each correct supporting clue, with clues counting only behind a correct accusation.
 
-## Why there is no database here
+Private state is `{ caseId, datasetVersion, emailOrder, selectedEmailId, evidenceIds, submittedAt }` under a strict schema. `serializePublicState` builds the public case explicitly and adds the outcome and debrief only once the attempt is completed.
 
-AUTH-01, AUTH-02, DATA-01 and GAME-01 are not implemented. Rather than invent a competing attempt collection, this module is deliberately stateless: it stores nothing, identifies nobody, and every response carries `persisted: false`. The UI says the same thing to the player.
+Game errors use the shared attempt error shape: `ATTEMPT_INVALID_REQUEST` (400, malformed verdict), `PHISH_UNKNOWN_SELECTION` (400, a message or clue outside this case), `PHISH_DATASET_CHANGED` (409, the case file changed after the attempt opened), `PHISH_CASE_UNAVAILABLE` (409), `PHISH_VERDICT_RECORDED` (409). A second verdict is refused by the action limit (`ATTEMPT_ACTION_LIMIT`) and a retried verdict with the same `actionId` replays its first response.
 
-Two consequences are honest limitations, not oversights. A player can submit different verdicts for the same case, because there is no attempt record to close; nothing is at stake because no score is kept. The in-memory pacing in `router.js` bounds abuse of a public endpoint but is not a security boundary and does not survive a restart.
+## Limits
 
-## Migrating onto GAME-01
-
-The response vocabulary is already GAME-01's: `gameId`, `rulesetVersion` (`phish-1`), `status`, `score`, `maxScore`, `topicOutcomes`, plus a per-case `datasetVersion` and a client-generated `actionId` that is currently echoed rather than de-duplicated.
-
-When GAME-01 exists:
-
-1. Replace the two routes with `POST /api/games/:gameId/attempts` and the `submit-verdict` action; `service.js` `scoreVerdict()` moves across unchanged as the ruleset's `applyAction`/`summarize`.
-2. Store `{ caseId, datasetVersion, emailOrder, selectedEmailId, evidenceIds, submittedAt }` as the attempt `state`, exactly as the TASKS.md blueprint specifies.
-3. Let the shared action service honour `actionId` for idempotency and enforce one verdict per attempt.
-4. Have the shared session/action layer authorize the actor and attempt before invoking the scorer. The current `scoreVerdict()` is stateless and accepts no actor argument; any later authentication integration requires an agreed interface.
-
-No client change is needed for steps 1 to 3 beyond the request URL.
+- Results save to the player's personal record only. The game offers no class chooser, ranking, profile history or instructor view yet.
+- A new attempt picks a case at random, so with two cases replay can open the same case again.
+- A case opened and never finished stays `active` in the player's record; it holds no score.
+- The earlier unauthenticated `/games/phishing-post-mortem/case` and `/verdict` routes were removed. Runs played through them were never stored, so there is nothing to migrate.
 
 ## Authoring a case
 
 Each case is a pair: `cases/<id>.public.json` and `cases/answers/<id>.answers.json`. A case needs exactly twenty uniquely identified emails, one unambiguous Patient Zero, exactly two correct clues among six options, and a timeline whose ordering supports the answer. Destinations must be `https` on a fictional `.example` host, links are inert text, and no real brand may appear. `server/tests/unit/phishing-post-mortem/case-integrity.test.js` enforces all of this, so run the unit suite after editing a case.
 
-Add the new id to `CASE_IDS` in `service.js`. Nothing else changes; rotation and shuffling pick it up automatically.
+Add the new id to `CASE_IDS` in `service.js`. Nothing else changes; case selection and shuffling pick it up automatically.

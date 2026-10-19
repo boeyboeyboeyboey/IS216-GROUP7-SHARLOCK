@@ -71,7 +71,7 @@ const errorMessage = computed(() =>
           <p>{{ user.email }}</p>
         </div>
       </div>
-      <p class="auth-summary__truth">Results are not saved</p>
+      <p class="auth-summary__truth">Phishing results saved</p>
       <SessionNotice
         v-if="errorMessage"
         :message="errorMessage"

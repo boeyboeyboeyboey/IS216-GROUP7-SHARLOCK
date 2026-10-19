@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import express from 'express'
 import { createNewsRouter } from './modules/news/router.js'
-import { createPhishingRouter } from './modules/games/phishing-post-mortem/router.js'
 import { createSocialEngineeringRouter } from './modules/games/social-engineering-simulator/router.js'
 import { createCliDefenderRouter } from './modules/games/cli-cyber-defender/router.js'
 import { createClearanceRouter } from './modules/games/clearance-tower/router.js'
@@ -24,7 +23,6 @@ export function createApp(
     cohorts = {},
     attempts = {},
     news = {},
-    phishing = {},
     socialEngineering = {},
     cliDefender = {},
     clearanceTower = {},
@@ -88,7 +86,6 @@ export function createApp(
   )
   app.use('/api', createHealthRouter(database))
   app.use('/api', createNewsRouter(database, news))
-  app.use('/api', createPhishingRouter(phishing))
   app.use('/api', createSocialEngineeringRouter(socialEngineering))
   app.use('/api', createCliDefenderRouter(cliDefender))
   app.use('/api', createClearanceRouter(clearanceTower))

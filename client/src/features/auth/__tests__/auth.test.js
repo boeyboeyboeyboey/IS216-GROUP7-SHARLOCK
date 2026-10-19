@@ -476,7 +476,7 @@ describe('auth forms and account summary', () => {
     })
     expect(wrapper.text()).toContain('Case_Finder')
     expect(wrapper.text()).toContain('detective@example.test')
-    expect(wrapper.text()).toContain('Results are not saved')
+    expect(wrapper.text()).toContain('Phishing results saved')
     expect(wrapper.text()).not.toMatch(/points|badge|rank|completed/i)
     expect(wrapper.get('img').attributes('src')).toBe('/images/avatars/blue.png')
     wrapper.unmount()

@@ -1,7 +1,51 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
-import { fetchCase, newActionId, phishingErrorMessage, submitVerdict } from '../phishing.js'
+import {
+  attemptErrorCode,
+  newActionId,
+  openSavedCase,
+  phishingErrorMessage,
+  recordVerdict,
+  rereadSavedCase,
+  saveResult,
+} from '../phishing.js'
 
 export const REQUIRED_EVIDENCE = 2
+
+// these mean the server already moved past this page's copy, so the attempt is read back first
+const RESYNC_CODES = new Set([
+  'ATTEMPT_STALE_REVISION',
+  'ATTEMPT_ACTION_CONFLICT',
+  'ATTEMPT_ACTION_LIMIT',
+  'PHISH_VERDICT_RECORDED',
+])
+
+function sameVerdict(first, second) {
+  if (!first || !second) return false
+  return (
+    first.selectedEmailId === second.selectedEmailId &&
+    first.evidenceIds.join() === second.evidenceIds.join()
+  )
+}
+
+// the debrief components keep their earlier shape; the values now come from the saved snapshot
+function toResult(snapshot) {
+  const { verdict, outcome, debrief } = snapshot.publicState
+  return {
+    score: snapshot.score,
+    maxScore: snapshot.maxScore,
+    persisted: snapshot.persisted === true && snapshot.status === 'completed',
+    completedAt: snapshot.completedAt,
+    feedback: snapshot.feedback,
+    topicOutcomes: snapshot.topicOutcomes,
+    result: {
+      selectedEmailId: verdict.selectedEmailId,
+      evidenceIds: verdict.evidenceIds,
+      emailCorrect: outcome.emailCorrect,
+      correctEvidenceIds: outcome.correctEvidenceIds,
+    },
+    debrief,
+  }
+}
 
 export function usePhishingCase() {
   const caseFile = ref(null)
@@ -17,11 +61,16 @@ export function usePhishingCase() {
   const selectedEvidenceIds = ref([])
   const pane = ref('message')
   const reviewing = ref(false)
+  const verdictLocked = ref(false)
 
   let controller
   let generation = 0
   let disposed = false
-  let actionId = ''
+  let attemptId = ''
+  let revision = 0
+  let sentVerdict = null
+  let verdictActionId = ''
+  let completionActionId = ''
 
   const findEmail = (id) => caseFile.value?.emails.find((email) => email.id === id) ?? null
   const selectedEmail = computed(() => findEmail(selectedEmailId.value))
@@ -50,7 +99,12 @@ export function usePhishingCase() {
     result.value = null
     reviewing.value = false
     pane.value = 'message'
-    actionId = newActionId()
+    verdictLocked.value = false
+    attemptId = ''
+    revision = 0
+    sentVerdict = null
+    verdictActionId = ''
+    completionActionId = newActionId()
   }
 
   function selectEmail(id) {
@@ -83,7 +137,7 @@ export function usePhishingCase() {
     pane.value = 'inbox'
   }
 
-  async function load(after = null) {
+  async function load() {
     controller?.abort()
     controller = new AbortController()
     // a generation guard keeps a slow earlier response from overwriting a newer case
@@ -94,9 +148,11 @@ export function usePhishingCase() {
     caseFile.value = null
     reset()
     try {
-      const data = await fetchCase(after, controller.signal)
+      const snapshot = await openSavedCase(controller.signal)
       if (disposed || request !== generation) return
-      caseFile.value = data
+      attemptId = snapshot.attemptId
+      revision = snapshot.revision
+      caseFile.value = snapshot.publicState
     } catch (requestError) {
       if (disposed || request !== generation) return
       loadError.value = phishingErrorMessage(
@@ -108,23 +164,66 @@ export function usePhishingCase() {
     }
   }
 
+  function acceptSnapshot(snapshot) {
+    revision = snapshot.revision
+    verdictLocked.value = Boolean(snapshot.publicState?.verdict)
+  }
+
+  function requestResult(signal) {
+    return saveResult(
+      attemptId,
+      { actionId: completionActionId, expectedRevision: revision },
+      signal,
+    )
+  }
+
+  // the verdict and the saved result are two server steps; a recorded verdict is never sent twice
+  async function recordAndSave(signal) {
+    if (!verdictLocked.value) {
+      const verdict = {
+        selectedEmailId: accusedEmailId.value,
+        evidenceIds: [...selectedEvidenceIds.value],
+      }
+      // a retry of the same verdict reuses its action id so a lost response is replayed, not repeated
+      if (!sameVerdict(verdict, sentVerdict)) {
+        sentVerdict = verdict
+        verdictActionId = newActionId()
+      }
+      const recorded = await recordVerdict(
+        attemptId,
+        { actionId: verdictActionId, expectedRevision: revision, verdict },
+        signal,
+      )
+      acceptSnapshot(recorded)
+    }
+    return requestResult(signal)
+  }
+
+  async function resyncAndSave(signal, originalError) {
+    const latest = await rereadSavedCase(attemptId, signal)
+    if (latest.status === 'completed') return latest
+    acceptSnapshot(latest)
+    if (!verdictLocked.value) throw originalError
+    return requestResult(signal)
+  }
+
+  async function saveVerdict(signal) {
+    try {
+      return await recordAndSave(signal)
+    } catch (requestError) {
+      if (!RESYNC_CODES.has(attemptErrorCode(requestError))) throw requestError
+      return resyncAndSave(signal, requestError)
+    }
+  }
+
   async function submit() {
-    if (!canSubmit.value || !caseFile.value) return
+    if (!canSubmit.value || !attemptId) return
     const request = generation
     submitting.value = true
     try {
-      const data = await submitVerdict(
-        {
-          caseId: caseFile.value.caseId,
-          datasetVersion: caseFile.value.datasetVersion,
-          actionId,
-          selectedEmailId: accusedEmailId.value,
-          evidenceIds: [...selectedEvidenceIds.value],
-        },
-        controller?.signal,
-      )
+      const finished = await saveVerdict(controller?.signal)
       if (disposed || request !== generation) return
-      result.value = data
+      result.value = toResult(finished)
       reviewing.value = false
       submissionError.value = ''
       pane.value = 'message'
@@ -132,7 +231,7 @@ export function usePhishingCase() {
       if (disposed || request !== generation) return
       submissionError.value = phishingErrorMessage(
         requestError,
-        'That verdict could not be submitted. Try again in a moment.',
+        'That verdict could not be saved. Try again in a moment.',
       )
     } finally {
       if (!disposed && request === generation) submitting.value = false
@@ -140,7 +239,7 @@ export function usePhishingCase() {
   }
 
   function replay() {
-    return load(caseFile.value?.caseId ?? null)
+    return load()
   }
 
   onBeforeUnmount(() => {
@@ -164,6 +263,7 @@ export function usePhishingCase() {
     inspectedLinkIds,
     pane,
     reviewing,
+    verdictLocked,
     canSubmit,
     load,
     replay,

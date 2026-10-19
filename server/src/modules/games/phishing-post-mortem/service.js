@@ -3,11 +3,8 @@ import { fileURLToPath } from 'node:url'
 import {
   EMAIL_POINTS,
   EVIDENCE_POINTS,
-  GAME_ID,
-  MAX_SCORE,
   REQUIRED_EVIDENCE,
-  RULESET_VERSION,
-  caseNotFound,
+  caseUnavailable,
   datasetChanged,
   unknownSelection,
 } from './policy.js'
@@ -45,7 +42,8 @@ function publicEmail(email) {
   }
 }
 
-export function createPhishingService({ random = Math.random } = {}) {
+// authored cases and their private answer keys; the saved-attempt ruleset is the only caller
+export function createCaseLibrary({ random = Math.random } = {}) {
   const cases = new Map(
     CASE_IDS.map((caseId) => [
       caseId,
@@ -58,26 +56,37 @@ export function createPhishingService({ random = Math.random } = {}) {
 
   function requireCase(caseId) {
     const entry = cases.get(caseId)
-    if (!entry) throw caseNotFound()
+    if (!entry) throw caseUnavailable()
     return entry
   }
 
-  function startCase({ after = null } = {}) {
-    const remaining = CASE_IDS.filter((caseId) => caseId !== after)
-    const pool = remaining.length ? remaining : CASE_IDS
-    const { content } = requireCase(pool[Math.floor(random() * pool.length)])
+  function openCase() {
+    const { content } = requireCase(CASE_IDS[Math.floor(random() * CASE_IDS.length)])
     return {
-      gameId: GAME_ID,
-      rulesetVersion: RULESET_VERSION,
+      caseId: content.caseId,
+      datasetVersion: content.datasetVersion,
+      emailOrder: shuffle(
+        content.emails.map((email) => email.id),
+        random,
+      ),
+    }
+  }
+
+  function publicCase({ caseId, emailOrder }) {
+    const { content } = requireCase(caseId)
+    const emailsById = new Map(content.emails.map((email) => [email.id, email]))
+    const ordered = emailOrder.map((id) => emailsById.get(id)).filter(Boolean)
+    // an edited case keeps its stored order but must still show every current message
+    const emails = ordered.length === content.emails.length ? ordered : content.emails
+    return {
       caseId: content.caseId,
       datasetVersion: content.datasetVersion,
       title: content.title,
       organisation: content.organisation,
       briefing: content.briefing,
       timezoneLabel: content.timezoneLabel,
-      maxScore: MAX_SCORE,
       requiredEvidence: REQUIRED_EVIDENCE,
-      emails: shuffle(content.emails, random).map(publicEmail),
+      emails: emails.map(publicEmail),
       timeline: content.timeline.map((event) => ({
         id: event.id,
         at: event.at,
@@ -91,43 +100,29 @@ export function createPhishingService({ random = Math.random } = {}) {
     }
   }
 
-  function scoreVerdict({ caseId, datasetVersion, actionId, selectedEmailId, evidenceIds }) {
-    const { content, answers } = requireCase(caseId)
+  function assertSelection({ caseId, datasetVersion }, { selectedEmailId, evidenceIds }) {
+    const { content } = requireCase(caseId)
     if (datasetVersion !== content.datasetVersion) throw datasetChanged()
-    const emailsById = new Map(content.emails.map((email) => [email.id, email]))
     const optionIds = new Set(content.evidenceOptions.map((option) => option.id))
-    if (!emailsById.has(selectedEmailId))
-      throw unknownSelection({ selectedEmailId: 'not an email in this case' })
-    if (evidenceIds.some((id) => !optionIds.has(id)))
-      throw unknownSelection({ evidenceIds: 'not evidence offered by this case' })
+    if (!content.emails.some((email) => email.id === selectedEmailId)) throw unknownSelection()
+    if (evidenceIds.some((id) => !optionIds.has(id))) throw unknownSelection()
+  }
 
+  function scoreVerdict({ caseId, selectedEmailId, evidenceIds }) {
+    const { answers } = requireCase(caseId)
     const emailCorrect = selectedEmailId === answers.patientZeroId
     const selected = new Set(evidenceIds)
-    const correctEvidence = answers.evidenceIds.filter((id) => selected.has(id))
+    const correctEvidenceIds = answers.evidenceIds.filter((id) => selected.has(id))
     // clues only score behind a correct verdict, so a lucky clue cannot carry a wrong accusation
-    const score = emailCorrect ? EMAIL_POINTS + EVIDENCE_POINTS * correctEvidence.length : 0
-    const patientZero = emailsById.get(answers.patientZeroId)
-
+    const score = emailCorrect ? EMAIL_POINTS + EVIDENCE_POINTS * correctEvidenceIds.length : 0
     return {
-      gameId: GAME_ID,
-      rulesetVersion: RULESET_VERSION,
-      caseId: content.caseId,
-      datasetVersion: content.datasetVersion,
-      actionId,
-      status: 'completed',
       score,
-      maxScore: MAX_SCORE,
-      persisted: false,
-      result: {
-        selectedEmailId,
-        emailCorrect,
-        evidenceIds: [...evidenceIds],
-        correctEvidenceIds: correctEvidence,
-      },
+      emailCorrect,
+      correctEvidenceIds,
       feedback: {
         verdictCode: emailCorrect ? 'PHISH_VERDICT_CORRECT' : 'PHISH_VERDICT_INCORRECT',
         summary: emailCorrect
-          ? `You identified Patient Zero and ${correctEvidence.length} of ${answers.evidenceIds.length} supporting clues.`
+          ? `You identified Patient Zero and ${correctEvidenceIds.length} of ${answers.evidenceIds.length} supporting clues.`
           : 'That message is not the one that caused the compromise. The evidence chain is below.',
       },
       topicOutcomes: answers.topics.map((topic) => {
@@ -139,31 +134,38 @@ export function createPhishingService({ random = Math.random } = {}) {
           feedbackCode: achieved ? topic.achievedCode : topic.missedCode,
         }
       }),
-      debrief: {
-        summary: answers.summary,
-        patientZero: {
-          id: patientZero.id,
-          senderName: patientZero.senderName,
-          senderAddress: patientZero.senderAddress,
-          replyTo: patientZero.replyTo,
-          subject: patientZero.subject,
-        },
-        chain: [...answers.chain],
-        evidence: content.evidenceOptions.map((option) => ({
-          id: option.id,
-          label: option.label,
-          correct: Boolean(answers.evidenceNotes[option.id]?.correct),
-          selected: selected.has(option.id),
-          note: answers.evidenceNotes[option.id]?.note ?? '',
-        })),
-        decoys: answers.decoys.map((decoy) => ({
-          emailId: decoy.emailId,
-          subject: emailsById.get(decoy.emailId)?.subject ?? '',
-          note: decoy.note,
-        })),
-      },
     }
   }
 
-  return { startCase, scoreVerdict }
+  function debrief({ caseId, evidenceIds }) {
+    const { content, answers } = requireCase(caseId)
+    const emailsById = new Map(content.emails.map((email) => [email.id, email]))
+    const selected = new Set(evidenceIds)
+    const patientZero = emailsById.get(answers.patientZeroId)
+    return {
+      summary: answers.summary,
+      patientZero: {
+        id: patientZero.id,
+        senderName: patientZero.senderName,
+        senderAddress: patientZero.senderAddress,
+        replyTo: patientZero.replyTo,
+        subject: patientZero.subject,
+      },
+      chain: [...answers.chain],
+      evidence: content.evidenceOptions.map((option) => ({
+        id: option.id,
+        label: option.label,
+        correct: Boolean(answers.evidenceNotes[option.id]?.correct),
+        selected: selected.has(option.id),
+        note: answers.evidenceNotes[option.id]?.note ?? '',
+      })),
+      decoys: answers.decoys.map((decoy) => ({
+        emailId: decoy.emailId,
+        subject: emailsById.get(decoy.emailId)?.subject ?? '',
+        note: decoy.note,
+      })),
+    }
+  }
+
+  return { openCase, publicCase, assertSelection, scoreVerdict, debrief }
 }
