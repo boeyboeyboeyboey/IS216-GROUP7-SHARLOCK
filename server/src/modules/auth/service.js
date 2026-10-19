@@ -49,7 +49,7 @@ export function createAuthService(database, { now = Date.now } = {}) {
 
   async function login(input) {
     const user = await User.findOne({ emailNormalized: input.emailNormalized }).select(
-      '+passwordHash',
+      '+passwordHash +emailVerification',
     )
     if (!user) {
       await verifyDummyPassword(input.password)
@@ -58,6 +58,9 @@ export function createAuthService(database, { now = Date.now } = {}) {
 
     const passwordMatches = await verifyPassword(user.passwordHash, input.password)
     if (!passwordMatches || user.accountStatus !== 'active') throw invalidCredentialsError()
+
+    // correct password but the email address was never confirmed: no session yet
+    if (user.emailVerification) return { pendingVerification: true, userId: user._id.toString() }
 
     const currentUser = await User.findById(user._id)
     if (
@@ -76,8 +79,9 @@ export function createAuthService(database, { now = Date.now } = {}) {
 
   async function findActiveSessionUser(userId, authVersion) {
     if (!Types.ObjectId.isValid(userId)) return null
-    const user = await User.findById(userId)
+    const user = await User.findById(userId).select('+emailVerification')
     if (!user || user.accountStatus !== 'active' || user.authVersion !== authVersion) return null
+    if (user.emailVerification) return null
     return serializeUser(user)
   }
 

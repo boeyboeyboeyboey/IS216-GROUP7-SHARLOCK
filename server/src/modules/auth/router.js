@@ -9,6 +9,9 @@ import {
   parseRegistrationInput,
 } from './policy.js'
 import { createAuthService } from './service.js'
+import { createVerificationService } from './verification-service.js'
+import { notPendingError, parseVerificationInput } from './verification.js'
+import { createConsoleMailer } from './mailer.js'
 import { createProtectedSessionAccess, loadSessionActor } from './access.js'
 import { createActivationRouter } from '../recovery/router.js'
 import { createRecoveryService } from '../recovery/service.js'
@@ -24,6 +27,7 @@ import {
   createAnonymousSessionValues,
   createAuthenticatedSessionValues,
   createAuthSessionMiddleware,
+  createPendingVerificationSessionValues,
   destroySession,
   rotateSession,
   saveSession,
@@ -67,10 +71,36 @@ function requestError(error, _request, response, next) {
   })
 }
 
-export function createAuthRouter(database, settings) {
+// the account is created unverified and the browser holds only an anonymous session that
+// remembers which account is waiting for its code. No authenticated session exists until the
+// code is confirmed.
+async function startPendingVerificationSession(request, response, csrf, authSettings, userId) {
+  const invitation = pendingInvitationValues(request, authSettings.now)
+  await rotateSession(request, {
+    ...createPendingVerificationSessionValues(userId, authSettings.now),
+    ...invitation,
+  })
+  const csrfToken = csrf.generateToken(request, true)
+  setSessionCookieLifetime(request, authSettings.now)
+  await saveSession(request)
+  return csrfToken
+}
+
+function pendingVerificationUserId(request) {
+  const userId = request.session?.pendingVerificationUserId
+  if (request.session?.userId || typeof userId !== 'string') throw notPendingError()
+  return userId
+}
+
+export function createAuthRouter(database, settings, { mailer = createConsoleMailer() } = {}) {
   const sessionRuntime = createAuthSessionMiddleware(database, settings)
   const authSettings = sessionRuntime.settings
   const authService = createAuthService(database, { now: authSettings.now })
+  const verificationService = createVerificationService(database, {
+    now: authSettings.now,
+    secret: authSettings.sessionSecret,
+    mailer,
+  })
   const recoveryService = createRecoveryService(database, {
     now: authSettings.now,
     clientOrigin: authSettings.clientOrigin,
@@ -120,6 +150,8 @@ export function createAuthRouter(database, settings) {
         [
           '/register',
           '/login',
+          '/verify-email',
+          '/verify-email/resend',
           '/logout',
           '/activate-account',
           '/reset-password',
@@ -167,7 +199,80 @@ export function createAuthRouter(database, settings) {
       try {
         parseEmptyQuery(request.query)
         const input = parseRegistrationInput(request.body)
-        const account = await authService.register(input)
+        const pending = await verificationService.registerPending(input)
+        const csrfToken = await startPendingVerificationSession(
+          request,
+          response,
+          csrf,
+          authSettings,
+          pending.userId,
+        )
+        response.status(202).json({ verification: pending.verification, csrfToken })
+      } catch (error) {
+        next(error)
+      }
+    },
+  )
+
+  router.post(
+    '/login',
+    rateLimits.loginIp,
+    requireOrigin,
+    csrf.protect,
+    async (request, response, next) => {
+      let failureSlot
+      try {
+        parseEmptyQuery(request.query)
+        const input = parseLoginInput(request.body)
+        failureSlot = rateLimits.reserveFailedLogin(input.emailNormalized, request.ip)
+        const account = await authService.login(input)
+        failureSlot.succeed()
+        if (account.pendingVerification) {
+          const verification = await verificationService.issueForLogin(account.userId)
+          const csrfToken = await startPendingVerificationSession(
+            request,
+            response,
+            csrf,
+            authSettings,
+            account.userId,
+          )
+          response.status(202).json({ verification, csrfToken })
+          return
+        }
+        const invitation = pendingInvitationValues(request, authSettings.now)
+        await rotateSession(request, {
+          ...createAuthenticatedSessionValues(
+            account.userId,
+            account.authVersion,
+            authSettings.now,
+          ),
+          ...invitation,
+        })
+        const csrfToken = csrf.generateToken(request, true)
+        setSessionCookieLifetime(request, authSettings.now)
+        await saveSession(request)
+        sendUser(response, account.user, csrfToken)
+      } catch (error) {
+        if (failureSlot) {
+          if (error.code === 'INVALID_CREDENTIALS') failureSlot.fail()
+          else failureSlot.release()
+        }
+        next(error)
+      }
+    },
+  )
+
+  router.post(
+    '/verify-email',
+    rateLimits.verification,
+    requireOrigin,
+    csrf.protect,
+    async (request, response, next) => {
+      try {
+        parseEmptyQuery(request.query)
+        const { code } = parseVerificationInput(request.body)
+        const userId = pendingVerificationUserId(request)
+        const account = await verificationService.verify(userId, code)
         const invitation = pendingInvitationValues(request, authSettings.now)
         await rotateSession(request, {
           ...createAuthenticatedSessionValues(
@@ -188,36 +293,17 @@ export function createAuthRouter(database, settings) {
   )
 
   router.post(
-    '/login',
-    rateLimits.loginIp,
+    '/verify-email/resend',
+    rateLimits.verification,
     requireOrigin,
     csrf.protect,
     async (request, response, next) => {
-      let failureSlot
       try {
         parseEmptyQuery(request.query)
-        const input = parseLoginInput(request.body)
-        failureSlot = rateLimits.reserveFailedLogin(input.emailNormalized, request.ip)
-        const account = await authService.login(input)
-        failureSlot.succeed()
-        const invitation = pendingInvitationValues(request, authSettings.now)
-        await rotateSession(request, {
-          ...createAuthenticatedSessionValues(
-            account.userId,
-            account.authVersion,
-            authSettings.now,
-          ),
-          ...invitation,
-        })
-        const csrfToken = csrf.generateToken(request, true)
-        setSessionCookieLifetime(request, authSettings.now)
-        await saveSession(request)
-        sendUser(response, account.user, csrfToken)
+        parseEmptyInput(request.body)
+        const verification = await verificationService.resend(pendingVerificationUserId(request))
+        response.status(202).json({ verification })
       } catch (error) {
-        if (failureSlot) {
-          if (error.code === 'INVALID_CREDENTIALS') failureSlot.fail()
-          else failureSlot.release()
-        }
         next(error)
       }
     },

@@ -53,6 +53,11 @@ export function createRateLimits({ secret, now = Date.now } = {}) {
     limit: 30,
     message: 'Too many sign-in attempts. Please try again later.',
   })
+  const verification = requestLimiter({
+    windowMs: FIFTEEN_MINUTES,
+    limit: 30,
+    message: 'Too many verification attempts. Please try again later.',
+  })
   const activation = requestLimiter({
     windowMs: FIFTEEN_MINUTES,
     limit: 10,
@@ -155,6 +160,7 @@ export function createRateLimits({ secret, now = Date.now } = {}) {
     csrf: csrf.middleware,
     registration: registration.middleware,
     loginIp: loginIp.middleware,
+    verification: verification.middleware,
     activation: activation.middleware,
     classInvitation: classInvitation.middleware,
     recoveryIssueStaff: recoveryIssueStaff.middleware,
@@ -168,6 +174,7 @@ export function createRateLimits({ secret, now = Date.now } = {}) {
       csrf.store.shutdown()
       registration.store.shutdown()
       loginIp.store.shutdown()
+      verification.store.shutdown()
       activation.store.shutdown()
       classInvitation.store.shutdown()
       recoveryIssueStaff.store.shutdown()

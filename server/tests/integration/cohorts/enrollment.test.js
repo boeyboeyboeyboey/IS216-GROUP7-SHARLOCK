@@ -19,6 +19,7 @@ import {
   initializeTestAuth,
   createTestApp,
   registerTestStudent,
+  testMailer,
   disposeTestAuthApps,
 } from '../auth/helpers.js'
 
@@ -163,16 +164,24 @@ describe.skipIf(process.env.SHARLOCK_TEST_REPLICA_SET !== '1')('cohort enrollmen
       .set('X-CSRF-Token', csrf.body.csrfToken)
       .send({ code: rawCode })
       .expect(204)
-    const registered = await anonymous
+    const invitedEmail = `invited-${randomUUID().replaceAll('-', '').slice(0, 12)}@example.test`
+    const pending = await anonymous
       .post('/api/auth/register')
       .set('Origin', origin)
       .set('X-CSRF-Token', csrf.body.csrfToken)
       .send({
-        email: `invited-${randomUUID().replaceAll('-', '').slice(0, 12)}@example.test`,
+        email: invitedEmail,
         username: `invited-${randomUUID().replaceAll('-', '').slice(0, 12)}`,
         password,
         avatarId: 'mint',
       })
+      .expect(202)
+    // the invitation waits in the session while the email address is confirmed
+    const registered = await anonymous
+      .post('/api/auth/verify-email')
+      .set('Origin', origin)
+      .set('X-CSRF-Token', pending.body.csrfToken)
+      .send({ code: testMailer(app).lastCodeFor(invitedEmail) })
       .expect(201)
     owned.users.add(registered.body.user.id)
     const state = await anonymous.get('/api/me/enrollment').set('Origin', origin).expect(200)

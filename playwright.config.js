@@ -1,4 +1,8 @@
+import { resolve } from 'node:path'
 import { defineConfig } from '@playwright/test'
+
+// the test server writes sign-up codes here; tests/e2e/fixtures/mail.js reads the same path
+const mailOutbox = resolve('.local', 'e2e-mail.jsonl')
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -32,7 +36,12 @@ export default defineConfig({
       url: 'http://127.0.0.1:3001/api/health',
       reuseExistingServer: false,
       timeout: 30000,
-      env: { NODE_ENV: 'test', PORT: '3001', CLIENT_ORIGIN: 'http://localhost:5174' },
+      env: {
+        NODE_ENV: 'test',
+        PORT: '3001',
+        CLIENT_ORIGIN: 'http://localhost:5174',
+        TEST_MAIL_OUTBOX: mailOutbox,
+      },
     },
     {
       command: 'pnpm dev:client',

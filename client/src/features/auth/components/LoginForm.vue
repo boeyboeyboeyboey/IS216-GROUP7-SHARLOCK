@@ -90,18 +90,22 @@ defineExpose({ clearSecrets })
           :type="showPassword ? 'text' : 'password'"
           name="password"
           autocomplete="current-password"
+          aria-keyshortcuts="Alt+S"
           required
           :disabled="pending"
           :aria-invalid="Boolean(passwordError)"
           :aria-describedby="
             passwordError ? 'login-password-hint login-password-error' : 'login-password-hint'
           "
+          @keydown.alt.s.prevent="showPassword = !showPassword"
         />
         <button
           class="auth-password-toggle"
           type="button"
+          tabindex="-1"
           :aria-pressed="showPassword"
           :aria-label="showPassword ? 'Hide password' : 'Show password'"
+          title="Show or hide (Alt+S in the field)"
           :disabled="pending"
           @click="showPassword = !showPassword"
         >

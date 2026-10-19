@@ -1,6 +1,20 @@
 import { Schema } from 'mongoose'
 import { avatarPresets } from '../modules/auth/avatars.js'
 
+// present only while an email address awaits verification. Accounts without it, including every
+// account created before verification existed, count as verified.
+const emailVerificationSchema = new Schema(
+  {
+    codeHash: { type: String, required: true },
+    expiresAt: { type: Date, required: true },
+    attempts: { type: Number, required: true, min: 0, default: 0 },
+    lastSentAt: { type: Date, required: true },
+    sendCount: { type: Number, required: true, min: 0, default: 0 },
+    sendWindowStartedAt: { type: Date, required: true },
+  },
+  { _id: false, strict: 'throw' },
+)
+
 const userSchema = new Schema(
   {
     emailNormalized: { type: String, required: true, maxlength: 254, unique: true },
@@ -34,6 +48,8 @@ const userSchema = new Schema(
       validate: Number.isSafeInteger,
       select: false,
     },
+    emailVerifiedAt: { type: Date, default: null },
+    emailVerification: { type: emailVerificationSchema, default: null, select: false },
     classOnboardingCompletedAt: { type: Date, default: null },
     instructorAssignmentRevision: {
       type: Number,

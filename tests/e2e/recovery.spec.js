@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { expect, test } from './fixtures/admin.js'
+import { readVerificationCode } from './fixtures/mail.js'
 
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 
@@ -78,6 +79,10 @@ async function createStudentThroughRegistration(page, identity) {
   await page.getByLabel('Confirm password').fill(identity.password)
   await page.locator('input[name="avatarId"][value="mint"]').check()
   await page.getByRole('button', { name: 'Create account' }).click()
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible()
+  await page.getByLabel('Digit 1 of 6').click()
+  await page.keyboard.type(await readVerificationCode(identity.email))
+  await page.getByRole('button', { name: 'Confirm code' }).click()
   await expect(page).toHaveURL(/\/join-class\?onboarding=1$/)
   await page.getByRole('button', { name: 'Skip and explore Sharlock' }).click()
   await expect(page).toHaveURL('/')

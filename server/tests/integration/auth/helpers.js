@@ -3,9 +3,17 @@ import request from 'supertest'
 import { createApp } from '../../../src/app.js'
 import { assertSafeTestDatabaseUri } from '../../../src/config/database-uri.js'
 import { initializeAuthStorage } from '../../../src/modules/auth/storage.js'
+import { createMemoryMailer } from '../../../src/modules/auth/mailer.js'
 
 const authApps = new Set()
 const appOrigins = new WeakMap()
+const appMailers = new WeakMap()
+
+export function testMailer(app) {
+  const mailer = appMailers.get(app)
+  if (!mailer) throw new Error('Create the app with createTestApp to read its test mailbox.')
+  return mailer
+}
 
 export async function initializeTestAuth(database, config) {
   if (config?.nodeEnv !== 'test') {
@@ -21,7 +29,9 @@ export async function initializeTestAuth(database, config) {
 }
 
 export function createTestApp(database, authOptions, featureOptions = {}) {
-  const app = createApp(database, { ...featureOptions, auth: authOptions })
+  const mailer = createMemoryMailer()
+  const app = createApp(database, { ...featureOptions, auth: authOptions, mail: { mailer } })
+  appMailers.set(app, mailer)
   appOrigins.set(app, authOptions.clientOrigin)
   authApps.add(app)
   return app
@@ -52,12 +62,20 @@ export async function registerTestStudent(app, overrides = {}) {
     .set('Origin', origin)
     .set('X-CSRF-Token', csrf.body.csrfToken)
     .send(registration)
+    .expect(202)
+
+  // finish the account the way a student does: read the emailed code and confirm it
+  const verified = await agent
+    .post('/api/auth/verify-email')
+    .set('Origin', origin)
+    .set('X-CSRF-Token', response.body.csrfToken)
+    .send({ code: testMailer(app).lastCodeFor(registration.email) })
     .expect(201)
 
   return {
     agent,
-    user: response.body.user,
-    csrfToken: response.body.csrfToken,
+    user: verified.body.user,
+    csrfToken: verified.body.csrfToken,
     email: registration.email,
     password: registration.password,
   }

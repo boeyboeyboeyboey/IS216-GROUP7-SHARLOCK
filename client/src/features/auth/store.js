@@ -7,9 +7,28 @@ import {
   requestLogin,
   requestLogout,
   requestRegistration,
+  requestResendVerification,
+  requestVerifyEmail,
   SafeAuthError,
   toSafeAuthError,
 } from './api.js'
+
+const DELIVERY_STATES = ['sent', 'failed', 'recent']
+const CODE_PATTERN = /^\d{6}$/
+
+function verificationDto(value) {
+  if (
+    !value ||
+    typeof value.email !== 'string' ||
+    !DELIVERY_STATES.includes(value.delivery) ||
+    typeof value.expiresAt !== 'string' ||
+    typeof value.resendAvailableAt !== 'string'
+  ) {
+    throw new SafeAuthError({ message: 'Sharlock returned an incomplete response. Try again.' })
+  }
+  const { email, delivery, expiresAt, resendAvailableAt } = value
+  return Object.freeze({ email, delivery, expiresAt, resendAvailableAt })
+}
 
 function isAuthenticationRequired(error) {
   return error.status === 401 && error.code === 'AUTHENTICATION_REQUIRED'
@@ -40,6 +59,9 @@ export const useAuthStore = defineStore('auth', () => {
   const csrfToken = ref(null)
   const requestError = ref(null)
   const logoutPending = ref(false)
+  // set while an account exists but its email address is not confirmed yet. Memory only: a
+  // refresh returns to the form, and signing in again sends a fresh code.
+  const pendingVerification = ref(null)
 
   let generation = 0
   let restoreRequest = null
@@ -162,6 +184,24 @@ export const useAuthStore = defineStore('auth', () => {
     return request.promise
   }
 
+  function requireCsrfToken(response) {
+    if (typeof response.csrfToken !== 'string' || !response.csrfToken) {
+      throw new SafeAuthError({ message: 'Sign-in could not be completed. Please try again.' })
+    }
+  }
+
+  function completeSignIn(response, operation) {
+    const authenticatedUser = userDto(response?.user)
+    if (!isCurrent(operation)) return null
+    requireCsrfToken(response)
+    user.value = authenticatedUser
+    csrfToken.value = response.csrfToken
+    status.value = 'authenticated'
+    pendingVerification.value = null
+    requestError.value = null
+    return authenticatedUser
+  }
+
   async function authenticate(kind, payload) {
     const operation = beginMutation()
     try {
@@ -170,16 +210,17 @@ export const useAuthStore = defineStore('auth', () => {
         kind === 'register'
           ? await requestRegistration(payload, token)
           : await requestLogin(payload, token)
-      const authenticatedUser = userDto(response?.user)
-      if (!isCurrent(operation)) return null
-      if (typeof response.csrfToken !== 'string' || !response.csrfToken) {
-        throw new SafeAuthError({ message: 'Sign-in could not be completed. Please try again.' })
+      if (response?.verification && !response.user) {
+        // correct details, but the email address still needs its code: no identity yet
+        const verification = verificationDto(response.verification)
+        if (!isCurrent(operation)) return null
+        requireCsrfToken(response)
+        pendingVerification.value = verification
+        csrfToken.value = response.csrfToken
+        requestError.value = null
+        return null
       }
-      user.value = authenticatedUser
-      csrfToken.value = response.csrfToken
-      status.value = 'authenticated'
-      requestError.value = null
-      return authenticatedUser
+      return completeSignIn(response, operation)
     } catch (error) {
       const safeError = storeMutationError(error, operation)
       if (safeError.status === 403) await refreshCsrfAfterRejection(operation)
@@ -205,6 +246,75 @@ export const useAuthStore = defineStore('auth', () => {
       password: input.password,
       avatarId: input.avatarId,
     })
+  }
+
+  async function verifyEmail(code) {
+    const submitted = typeof code === 'string' ? code.replace(/\s/g, '') : ''
+    if (!CODE_PATTERN.test(submitted)) {
+      const safeError = new SafeAuthError({
+        code: 'VALIDATION_ERROR',
+        status: 400,
+        message: 'Enter the 6-digit code.',
+        fieldErrors: { code: 'Enter the 6-digit code.' },
+      })
+      requestError.value = safeError
+      throw safeError
+    }
+    if (!pendingVerification.value) {
+      const safeError = new SafeAuthError({
+        code: 'VERIFICATION_NOT_PENDING',
+        status: 409,
+        message: 'Your sign-up session ended. Sign in to get a new code.',
+      })
+      requestError.value = safeError
+      throw safeError
+    }
+
+    const operation = beginMutation()
+    try {
+      const token = await getCsrf(operation)
+      const response = await requestVerifyEmail({ code: submitted }, token)
+      return completeSignIn(response, operation)
+    } catch (error) {
+      const safeError = storeMutationError(error, operation)
+      if (safeError.status === 403) await refreshCsrfAfterRejection(operation)
+      // the server no longer holds a pending sign-up for this browser: start over
+      if (isCurrent(operation) && safeError.code === 'VERIFICATION_NOT_PENDING') {
+        pendingVerification.value = null
+      }
+      throw safeError
+    } finally {
+      mutationPending = false
+    }
+  }
+
+  async function resendVerification() {
+    if (!pendingVerification.value) return null
+    const operation = beginMutation()
+    try {
+      const token = await getCsrf(operation)
+      const response = await requestResendVerification(token)
+      const verification = verificationDto(response?.verification)
+      if (isCurrent(operation)) {
+        pendingVerification.value = verification
+        requestError.value = null
+      }
+      return verification
+    } catch (error) {
+      const safeError = storeMutationError(error, operation)
+      if (safeError.status === 403) await refreshCsrfAfterRejection(operation)
+      if (isCurrent(operation) && safeError.code === 'VERIFICATION_NOT_PENDING') {
+        pendingVerification.value = null
+      }
+      throw safeError
+    } finally {
+      mutationPending = false
+    }
+  }
+
+  function cancelVerification() {
+    pendingVerification.value = null
+    requestError.value = null
   }
 
   async function logout() {
@@ -249,6 +359,7 @@ export const useAuthStore = defineStore('auth', () => {
     mutationPending = false
     logoutPending.value = false
     requestError.value = null
+    pendingVerification.value = null
     clearIdentity('anonymous')
   }
 
@@ -258,9 +369,13 @@ export const useAuthStore = defineStore('auth', () => {
     csrfToken,
     requestError,
     logoutPending,
+    pendingVerification,
     restoreSession,
     login,
     register,
+    verifyEmail,
+    resendVerification,
+    cancelVerification,
     logout,
     invalidateSession,
   }

@@ -6,6 +6,7 @@ const FIELD_NAMES = new Set([
   'password',
   'passwordConfirmation',
   'avatarId',
+  'code',
   '_',
 ])
 
@@ -18,6 +19,10 @@ const SAFE_MESSAGES = Object.freeze({
   ORIGIN_FORBIDDEN: 'This request could not be verified. Refresh and try again.',
   RATE_LIMITED: 'Too many requests. Please try again later.',
   PASSWORD_SERVICE_BUSY: 'Sign-in is temporarily busy. Please try again shortly.',
+  VERIFICATION_CODE_INVALID: 'That code is not right. Check it and try again.',
+  VERIFICATION_CODE_EXPIRED: 'That code has expired. Request a new one.',
+  VERIFICATION_ATTEMPTS_EXCEEDED: 'Too many wrong codes. Request a new code to try again.',
+  VERIFICATION_NOT_PENDING: 'Your sign-up session ended. Sign in to get a new code.',
 })
 
 const FIELD_MESSAGES = Object.freeze({
@@ -26,6 +31,7 @@ const FIELD_MESSAGES = Object.freeze({
   password: 'That password could not be accepted. Please choose a different password.',
   passwordConfirmation: 'Passwords must match.',
   avatarId: 'Choose one of the available avatars.',
+  code: 'Enter the 6-digit code.',
   _: 'Check the highlighted fields and try again.',
 })
 
@@ -107,6 +113,16 @@ export async function requestLogin(payload, csrfToken) {
 
 export async function requestRegistration(payload, csrfToken) {
   const response = await api.post('/auth/register', payload, csrfHeaders(csrfToken))
+  return response.data
+}
+
+export async function requestVerifyEmail(payload, csrfToken) {
+  const response = await api.post('/auth/verify-email', payload, csrfHeaders(csrfToken))
+  return response.data
+}
+
+export async function requestResendVerification(csrfToken) {
+  const response = await api.post('/auth/verify-email/resend', null, csrfHeaders(csrfToken))
   return response.data
 }
 
