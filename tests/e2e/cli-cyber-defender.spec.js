@@ -4,6 +4,8 @@ import { SCENARIOS } from '../../server/src/modules/games/cli-cyber-defender/sce
 import { DEMO_SCENES } from '../../client/src/games/cli-cyber-defender/cliDefender.js'
 
 test.beforeEach(async ({ page }) => {
+  // these specs exercise the 2D pixel town
+  await page.addInitScript(() => localStorage.setItem('sharlock.townMode', '2d'))
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
     route.fulfill({ contentType: 'text/css', body: '' }),
   )

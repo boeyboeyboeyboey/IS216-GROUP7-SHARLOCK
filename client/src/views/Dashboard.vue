@@ -2,7 +2,9 @@
 defineOptions({ name: 'SharlockDashboard' })
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import TownMap from '../components/town/TownMap.vue'
+import HubScene from '../features/hub/HubScene.vue'
+import TownMap from '../features/legacy-town/TownMap.vue'
+import { useTownMode } from '../features/legacy-town/useTownMode.js'
 import PixelIcon from '../components/town/PixelIcon.vue'
 import { gameCatalog } from '../data/gameCatalog.js'
 import { useAuthStore } from '../features/auth/store.js'
@@ -11,7 +13,11 @@ const auth = useAuthStore()
 const avatar = computed(() => avatarFor(auth.user?.avatarId))
 const route = useRoute()
 const router = useRouter()
+const hubScene = ref(null)
 const townMap = ref(null)
+const townMode = useTownMode()
+const is3d = computed(() => townMode.mode.value === '3d')
+const toggleLabel = computed(() => (is3d.value ? 'Switch to 2D map' : 'Switch to 3D wharf'))
 let openedFromTown = false
 watch(
   () => route.name,
@@ -22,7 +28,8 @@ watch(
     } else if (name === 'town' && previous === 'news') {
       openedFromTown = false
       await nextTick()
-      townMap.value?.focusBuilding('threat-briefing')
+      if (is3d.value) hubScene.value?.focusDestination('threat-briefing')
+      else townMap.value?.focusBuilding('threat-briefing')
     }
   },
 )
@@ -33,8 +40,9 @@ function closeNewspaper() {
 }
 </script>
 <template>
-  <div class="town-dashboard">
-    <section class="town-intro">
+  <div class="town-dashboard" :class="{ 'is-hub': is3d }">
+    <h1 v-if="is3d" class="visually-hidden" tabindex="-1">Thames Wharf</h1>
+    <section v-else class="town-intro">
       <div>
         <p class="town-eyebrow">A SMALL TOWN. A WORLD OF DISCOVERIES.</p>
         <h1 tabindex="-1">Welcome to Sharlock Town.</h1>
@@ -43,29 +51,173 @@ function closeNewspaper() {
           <RouterLink to="/about">About Sharlock</RouterLink>
         </p>
       </div>
-      <RouterLink to="/profile" class="town-player" aria-label="View your detective profile">
-        <img :src="avatar.path" width="80" height="80" :alt="avatar.label" class="avatar-image" />
-        <span
-          ><strong>{{ auth.user?.username }}</strong
-          ><span>Results are not saved</span></span
+      <div class="town-intro-actions">
+        <button
+          v-if="!townMode.forced.value"
+          type="button"
+          class="pixel-button"
+          data-testid="town-mode-toggle"
+          :aria-label="toggleLabel"
+          @click="townMode.toggle"
         >
-      </RouterLink>
+          {{ is3d ? '2D map' : '3D wharf' }}
+        </button>
+        <RouterLink to="/profile" class="town-player" aria-label="View your detective profile">
+          <img :src="avatar.path" width="80" height="80" :alt="avatar.label" class="avatar-image" />
+          <span
+            ><strong>{{ auth.user?.username }}</strong
+            ><span>Results are not saved</span></span
+          >
+        </RouterLink>
+      </div>
     </section>
-    <p v-if="route.query.classRequest === 'pending'" class="alert alert-success" role="status">
-      Your class request is pending staff approval. You can explore on your own while you wait.
-      <RouterLink to="/classes">View your classes</RouterLink>
-    </p>
-    <p v-else-if="route.query.classRequest === 'active'" class="alert alert-success" role="status">
-      You already belong to this class. <RouterLink to="/classes">View your classes</RouterLink>
-    </p>
+    <template v-if="!is3d">
+      <p v-if="route.query.classRequest === 'pending'" class="alert alert-success" role="status">
+        Your class request is pending staff approval. You can explore on your own while you wait.
+        <RouterLink to="/classes">View your classes</RouterLink>
+      </p>
+      <p v-else-if="route.query.classRequest === 'active'" class="alert alert-success" role="status">
+        You already belong to this class. <RouterLink to="/classes">View your classes</RouterLink>
+      </p>
+      <p
+        v-if="townMode.forced.value"
+        class="alert alert-info"
+        role="status"
+        data-testid="town-mode-notice"
+      >
+        The 3D wharf is not available on this device, so you are seeing the 2D map.
+      </p>
+    </template>
+    <HubScene
+      v-if="is3d"
+      ref="hubScene"
+      fill
+      :games="gameCatalog"
+      :input-paused="route.name === 'news'"
+      @enter="router.push($event.route)"
+      @failed="townMode.markFailed"
+    >
+      <div class="hud-row">
+        <button
+          type="button"
+          class="pixel-button hud-toggle"
+          data-testid="town-mode-toggle"
+          :aria-label="toggleLabel"
+          @click="townMode.toggle"
+        >
+          2D map
+        </button>
+        <RouterLink
+          to="/profile"
+          class="town-player hud-player"
+          aria-label="View your detective profile"
+        >
+          <img :src="avatar.path" width="40" height="40" :alt="avatar.label" class="avatar-image" />
+          <span
+            ><strong>{{ auth.user?.username }}</strong
+            ><span class="hud-note">Results are not saved</span></span
+          >
+        </RouterLink>
+      </div>
+      <p v-if="route.query.classRequest === 'pending'" class="hud-alert" role="status">
+        Your class request is pending staff approval. You can explore on your own while you wait.
+        <RouterLink to="/classes">View your classes</RouterLink>
+      </p>
+      <p v-else-if="route.query.classRequest === 'active'" class="hud-alert" role="status">
+        You already belong to this class. <RouterLink to="/classes">View your classes</RouterLink>
+      </p>
+    </HubScene>
     <TownMap
+      v-else
       ref="townMap"
       class="town-canvas"
       :games="gameCatalog"
       :sound-suspended="route.name === 'news'"
       @activate="router.push($event)"
     />
-    <p class="town-footnote"><PixelIcon name="star" :size="16" /> Explore at your own pace.</p>
+    <p v-if="!is3d" class="town-footnote">
+      <PixelIcon name="star" :size="16" /> Explore at your own pace.
+    </p>
     <RouterView @request-close="closeNewspaper" />
   </div>
 </template>
+
+<style scoped>
+.town-intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 3d landing: the wharf fills the window below the navbar, so the shared page padding and footer step aside */
+.town-dashboard.is-hub {
+  position: relative;
+  display: block;
+  height: calc(100dvh - var(--header-height));
+  min-height: 0;
+}
+:global(.portal-main:has(> .town-dashboard.is-hub)) {
+  max-width: none;
+  min-height: 0;
+  padding: 0;
+}
+:global(.portal-shell:has(.town-dashboard.is-hub) .portal-footer) {
+  display: none;
+}
+.hud-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hud-toggle {
+  min-width: 44px;
+  padding: 4px 10px;
+  font-size: 14px;
+  box-shadow: 3px 3px 0 var(--town-edge);
+}
+.hud-player {
+  min-height: 44px;
+  gap: 8px;
+  padding: 2px 10px 2px 2px;
+  box-shadow: 3px 3px 0 var(--town-edge);
+  min-width: 0;
+}
+.hud-player img {
+  width: 40px;
+  height: 40px;
+}
+.hud-player strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.hud-note {
+  font-size: 12px;
+}
+.hud-alert {
+  max-width: 320px;
+  margin: 0;
+  padding: 6px 10px;
+  border: 2px solid var(--town-edge);
+  background: var(--town-paper);
+  box-shadow: 3px 3px 0 var(--town-edge);
+  font-size: 13px;
+}
+@media (max-width: 575.98px) {
+  .hud-player > span {
+    gap: 0;
+  }
+  .hud-note {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .hud-alert {
+    max-width: 240px;
+    font-size: 12px;
+  }
+}
+</style>

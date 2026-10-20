@@ -2,7 +2,7 @@
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import Panzoom from '@panzoom/panzoom'
 import { TOWN_SIZE } from '../../data/gameCatalog.js'
-import PixelIcon from './PixelIcon.vue'
+import PixelIcon from '../../components/town/PixelIcon.vue'
 import TownScenery from './TownScenery.vue'
 import TownAudio from './TownAudio.vue'
 import GameInfoCard from './GameInfoCard.vue'

@@ -12,6 +12,8 @@ const CASES = ['case-01', 'case-02'].map((id) => ({
 }))
 
 test.beforeEach(async ({ page }) => {
+  // these specs exercise the 2D pixel town
+  await page.addInitScript(() => localStorage.setItem('sharlock.townMode', '2d'))
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
     route.fulfill({ contentType: 'text/css', body: '' }),
   )

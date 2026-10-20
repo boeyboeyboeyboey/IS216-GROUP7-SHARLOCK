@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import PixelIcon from './PixelIcon.vue'
+import PixelIcon from '../../components/town/PixelIcon.vue'
 const props = defineProps({ game: { type: Object, required: true } })
 defineEmits(['close'])
 const actionLabel = computed(() => {

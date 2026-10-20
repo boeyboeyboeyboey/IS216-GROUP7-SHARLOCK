@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineGameCatalog, gameCatalog } from '../data/gameCatalog.js'
-import GameInfoCard from '../components/town/GameInfoCard.vue'
-import TownAudio from '../components/town/TownAudio.vue'
+import { defineGameCatalog, gameCatalog } from '../../../data/gameCatalog.js'
+import GameInfoCard from '../GameInfoCard.vue'
+import TownAudio from '../TownAudio.vue'
 
 afterEach(() => vi.restoreAllMocks())
 

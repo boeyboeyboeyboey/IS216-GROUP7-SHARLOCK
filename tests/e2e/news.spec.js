@@ -41,6 +41,8 @@ function fixture(section = 'cybersecurity', range = 'week', overrides = {}) {
 }
 
 test.beforeEach(async ({ page }) => {
+  // these specs exercise the 2D pixel town
+  await page.addInitScript(() => localStorage.setItem('sharlock.townMode', '2d'))
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
     route.fulfill({ contentType: 'text/css', body: '' }),
   )

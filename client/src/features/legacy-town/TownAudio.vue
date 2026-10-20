@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, onBeforeUnmount, watch } from 'vue'
-import PixelIcon from './PixelIcon.vue'
+import PixelIcon from '../../components/town/PixelIcon.vue'
 const props = defineProps({ suspended: Boolean })
 const audio = ref(null)
 const isMuted = ref(true)
