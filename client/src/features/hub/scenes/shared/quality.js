@@ -1,12 +1,26 @@
+import { getDeviceCheck } from '../../deviceCheck.js';
+
 // one place that decides how heavy a scene may be
-export function getTier(params = new URLSearchParams()) {
+// counts are barges, moored boats, workers, gulls; smoke rates are particles per second, 0 for none
+const TIERS = {
+  desktop: { name: 'desktop', desktop: true, mirror: true, mirrorRatio: 0.5, shadowSize: 1536, cascades: 2, post: true, bloomKernel: 64, crowd: 1, renderScale: 1.5, fpsCap: 0, barges: 3, moored: 6, workers: 8, gulls: 9, chimneySmoke: 30, funnelSmoke: 18 },
+  compact: { name: 'compact', desktop: false, mirror: false, mirrorRatio: 0.35, shadowSize: 1024, cascades: 2, post: true, bloomKernel: 32, crowd: 0.5, renderScale: 1.5, fpsCap: 0, barges: 2, moored: 3, workers: 4, gulls: 5, chimneySmoke: 12, funnelSmoke: 8 },
+  // no mirror, no shadows, tone mapping only, rendered at 0.75 scale and capped at 30 fps
+  low: { name: 'low', desktop: false, mirror: false, mirrorRatio: 0.35, shadowSize: 0, cascades: 0, post: false, bloomKernel: 0, crowd: 0.25, renderScale: 0.75, fpsCap: 30, barges: 1, moored: 2, workers: 2, gulls: 3, chimneySmoke: 0, funnelSmoke: 6 },
+};
+
+export const GRAPHICS_TO_TIER = { high: 'desktop', medium: 'compact', low: 'low' };
+
+// setting is the user's Graphics choice: auto, high, medium or low
+export function getTier(params = new URLSearchParams(), setting = 'auto') {
   const forced = params.get('tier');
-  const fine = window.matchMedia('(pointer: fine)').matches;
-  const desktop = forced ? forced === 'desktop' : fine && window.innerWidth >= 900;
+  let name = GRAPHICS_TO_TIER[setting];
+  if (forced) name = TIERS[forced] ? forced : 'compact';
+  name ??= getDeviceCheck().tier;
   // ?mirror=0 switches the planar reflection off for comparison runs, ?mirror=1 forces it on for compact
   const mirrorParam = params.get('mirror');
-  if (desktop) {
-    return { name: 'desktop', desktop: true, mirror: mirrorParam !== '0', mirrorRatio: 0.5, shadowSize: 1536, cascades: 2, bloomKernel: 64, crowd: 1 };
-  }
-  return { name: 'compact', desktop: false, mirror: mirrorParam === '1', mirrorRatio: 0.35, shadowSize: 1024, cascades: 2, bloomKernel: 32, crowd: 0.5 };
+  const tier = { ...TIERS[name] };
+  if (name === 'desktop' && mirrorParam === '0') tier.mirror = false;
+  if (name === 'compact' && mirrorParam === '1') tier.mirror = true;
+  return tier;
 }

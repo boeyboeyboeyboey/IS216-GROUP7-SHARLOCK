@@ -3,6 +3,14 @@ defineOptions({ name: 'SharlockAboutStory' })
 import PixelIcon from '../../components/town/PixelIcon.vue'
 import ConnectionStatus from '../../components/portal/ConnectionStatus.vue'
 import SharlockTip from '../../components/portal/SharlockTip.vue'
+import { nextTick, onMounted } from 'vue'
+
+// the router does not scroll to hashes, so the graphics section is brought into view here
+onMounted(async () => {
+  if (location.hash !== '#graphics') return
+  await nextTick()
+  document.getElementById('graphics')?.scrollIntoView()
+})
 </script>
 <template>
   <div class="landing-view">
@@ -82,6 +90,19 @@ import SharlockTip from '../../components/portal/SharlockTip.vue'
         Create an account or sign in to read The Sharlock Times and explore the town's games and
         previews. Your account and avatar are saved; game results, progress and achievements are not
         saved yet.
+      </p>
+    </section>
+    <section id="graphics" class="about-details" aria-labelledby="about-graphics-heading">
+      <h2 id="about-graphics-heading">3D and 2D modes</h2>
+      <p>
+        The wharf is 3D by default. On devices without WebGL 2, or ones that draw in software,
+        Sharlock picks the 2D map automatically. Low-memory devices start on low graphics. You can
+        change Graphics or switch between 3D and 2D any time, and your choice is remembered.
+      </p>
+      <p>
+        If it's struggling: on Auto, Sharlock watches how smoothly the wharf runs. It lowers
+        graphics step by step and, if that is still not enough, switches to the 2D map. The
+        Graphics setting and the 2D/3D toggle let you override this any time.
       </p>
     </section>
     <ConnectionStatus />

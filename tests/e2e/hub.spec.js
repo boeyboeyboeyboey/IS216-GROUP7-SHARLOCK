@@ -40,6 +40,12 @@ function newsFixture() {
 }
 
 test.beforeEach(async ({ page }) => {
+  // headless chromium renders in software, which the device checks send to 2D; dev builds honour this key
+  await page.addInitScript(() => {
+    localStorage.setItem('sharlock.hubForce3d', '1')
+    // software rendering is slow by nature, so the runtime watch only reacts to simulated fps
+    localStorage.setItem('sharlock.hubWatchManual', '1')
+  })
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) =>
     route.fulfill({ contentType: 'text/css', body: '' }),
   )
@@ -216,4 +222,26 @@ test('switches between the 3D wharf and the 2D town and remembers the choice', a
   await page.reload()
   await hubReady(page)
   await expect(toggle).toHaveText('2D map')
+})
+
+test('rebuilds the hub at the low tier from the Graphics setting and remembers it', async ({ page }) => {
+  await page.goto('/')
+  await hubReady(page)
+  const graphics = page.getByTestId('hub-graphics')
+  await expect(graphics).toHaveAccessibleName(/graphics/i)
+  await expect(graphics).toHaveValue('auto')
+  expect(await page.evaluate(() => window.__hub.state.tier)).not.toBe('low')
+
+  await graphics.focus()
+  await graphics.selectOption('low')
+  await page.waitForFunction(() => window.__hub?.state.tier === 'low' && window.__hub.state.ready, null, slow)
+  expect(await page.evaluate(() => localStorage.getItem('sharlock.graphics'))).toBe('low')
+  expect(await page.evaluate(() => window.__hub.state.look.mirror)).toBe(false)
+  await expect(page.locator('canvas.hub-canvas')).toHaveCount(1)
+  await expect(graphics).toBeFocused()
+
+  await page.reload()
+  await hubReady(page)
+  await expect(graphics).toHaveValue('low')
+  expect(await page.evaluate(() => window.__hub.state.tier)).toBe('low')
 })

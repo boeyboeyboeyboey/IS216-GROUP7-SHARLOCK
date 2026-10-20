@@ -35,31 +35,35 @@ export function setupLook({ scene, camera, tier }) {
   sun.intensity = 4.2;
   sun.diffuse = new Color3(1.0, 0.82, 0.58);
   sun.specular = new Color3(0, 0, 0);
-  sun.shadowEnabled = true;
+  sun.shadowEnabled = tier.shadowSize > 0;
   sun.position = new Vector3(0, 80, 40).add(toSun.scale(60));
   sun.autoUpdateExtends = true;
 
-  const csm = new CascadedShadowGenerator(tier.shadowSize, sun);
-  csm.numCascades = tier.cascades;
-  csm.lambda = 0.7;
-  csm.shadowMaxZ = 130;
-  csm.stabilizeCascades = true;
-  csm.autoCalcDepthBounds = false;
-  csm.bias = 0.004;
-  csm.normalBias = 0.04;
-  csm.darkness = 0.0;
-  csm.filteringQuality = CascadedShadowGenerator.QUALITY_MEDIUM;
-  csm.usePercentageCloserFiltering = true;
-  csm.transparencyShadow = false;
-  csm.cascadeBlendPercentage = 0.1;
+  // the low tier draws no shadows, so its generator is an inert stand in
+  const csm = tier.shadowSize > 0 ? new CascadedShadowGenerator(tier.shadowSize, sun) : { addShadowCaster() {}, dispose() {} };
+  if (tier.shadowSize > 0) {
+    csm.numCascades = tier.cascades;
+    csm.lambda = 0.7;
+    csm.shadowMaxZ = 130;
+    csm.stabilizeCascades = true;
+    csm.autoCalcDepthBounds = false;
+    csm.bias = 0.004;
+    csm.normalBias = 0.04;
+    csm.darkness = 0.0;
+    csm.filteringQuality = CascadedShadowGenerator.QUALITY_MEDIUM;
+    csm.usePercentageCloserFiltering = true;
+    csm.transparencyShadow = false;
+    csm.cascadeBlendPercentage = 0.1;
+  }
 
   const pipeline = new DefaultRenderingPipeline('grade', true, scene, [camera]);
-  pipeline.bloomEnabled = true;
+  // the low tier keeps only the grade and tone mapping pass
+  pipeline.bloomEnabled = tier.post;
   pipeline.bloomThreshold = 1.15;
   pipeline.bloomWeight = tier.desktop ? 0.45 : 0.34;
   pipeline.bloomKernel = tier.bloomKernel;
   pipeline.bloomScale = 0.5;
-  pipeline.fxaaEnabled = true;
+  pipeline.fxaaEnabled = tier.post;
   pipeline.imageProcessingEnabled = true;
   const ip = pipeline.imageProcessing;
   ip.toneMappingEnabled = true;

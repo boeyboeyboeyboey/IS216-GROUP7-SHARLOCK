@@ -113,7 +113,7 @@ export function buildLife({ scene, world, tier, reduced, chimneys }) {
     roundedLoop([[-8.5, -14], [-5.5, -14], [-5.5, -28], [-8.5, -28]], 0.8),
     roundedLoop([[-14, 40], [-6, 40], [-6, 44], [-14, 44]], 1),
   ];
-  const workerCount = tier.desktop ? 8 : 4;
+  const workerCount = tier.workers;
   const crowd = createCapybaraCrowd(scene, { variants, count: workerCount, size: 1.05, toon, reduced });
   const workers = [];
   for (let i = 0; i < workerCount; i += 1) workers.push({ path: loops[i % loops.length], speed: 1.1 + rand() * 0.7, start: rand() * 60, dir: i % 3 === 0 ? -1 : 1 });
@@ -136,7 +136,7 @@ export function buildLife({ scene, world, tier, reduced, chimneys }) {
   const gullMaterial = glowMaterial(scene, 'gulls', { fog: false, backFaceCulling: false });
   const gull = rawMesh(scene, 'gull', [0, 0, 0.3, -1.1, 0.12, -0.1, -0.15, 0.02, -0.35, 0, 0, -0.4, 1.1, 0.12, -0.1, 0.15, 0.02, -0.35], [0, 1, 2, 0, 5, 4, 0, 2, 3, 0, 3, 5], null, gullMaterial);
   gull.alwaysSelectAsActiveMesh = true;
-  const gullCount = tier.desktop ? 9 : 5;
+  const gullCount = tier.gulls;
   const gulls = Array.from({ length: gullCount }, (_, i) => ({ cx: 8 + (i % 3) * 24 - 24, cz: 84 + (i % 2) * 18, r: 10 + rand() * 18, h: 14 + rand() * 16, speed: (0.14 + rand() * 0.1) * (i % 2 ? 1 : -1), phase: rand() * TAU, flap: 4 + rand() * 2 }));
   const gullMatrices = new Float32Array(gullCount * 16);
   const gullColors = new Float32Array(gullCount * 4);
@@ -170,8 +170,8 @@ export function buildLife({ scene, world, tier, reduced, chimneys }) {
 
   // chimney smoke, one system fed by every stack
   const puff = puffTexture(scene, 515);
-  const smoke = chimneys.length
-    ? makeSmoke(scene, { name: 'chimney-smoke', texture: puff, points: chimneys, rate: tier.desktop ? 30 : 12, capacity: 260, color1: new Color4(0.95, 0.72, 0.62, 0.34), color2: new Color4(0.85, 0.62, 0.7, 0.26), life: [4, 7], size: [0.9, 1.5], grow: 5, power: [0.6, 1.2], wind: [0.55, 0.45, 0.2] })
+  const smoke = chimneys.length && tier.chimneySmoke
+    ? makeSmoke(scene, { name: 'chimney-smoke', texture: puff, points: chimneys, rate: tier.chimneySmoke, capacity: 260, color1: new Color4(0.95, 0.72, 0.62, 0.34), color2: new Color4(0.85, 0.62, 0.7, 0.26), life: [4, 7], size: [0.9, 1.5], grow: 5, power: [0.6, 1.2], wind: [0.55, 0.45, 0.2] })
     : null;
 
   let time = 0;

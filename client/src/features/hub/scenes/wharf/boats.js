@@ -164,7 +164,7 @@ export function buildBoats({ scene, world, tier, reduced }) {
   const b = barge(scene, materials);
   b.hullMesh.isVisible = false;
   b.sailMesh.isVisible = false;
-  const bargeCount = tier.desktop ? 3 : 2;
+  const bargeCount = tier.barges;
   const bargeLoops = [loop(-36, 108, 74, 30, 150, 0.4, 1), loop(30, 142, 95, 22, 190, 2.4, -1), loop(-52, 80, 30, 14, 110, 4.1, 1)];
   for (let i = 0; i < bargeCount; i += 1) {
     const node = new TransformNode(`barge-${i}`, scene);
@@ -197,7 +197,7 @@ export function buildBoats({ scene, world, tier, reduced }) {
   const funnel = new TransformNode('funnel', scene);
   funnel.parent = steamerNode;
   funnel.position.set(0, 9.2, -3.8);
-  const smoke = makeSmoke(scene, { name: 'funnel-smoke', texture: puff, emitter: funnel, rate: tier.desktop ? 18 : 8, capacity: 120, color1: new Color4(0.2, 0.17, 0.22, 0.5), color2: new Color4(0.45, 0.35, 0.34, 0.4), life: [3, 5.5], size: [0.9, 1.6], grow: 4.5, power: [0.8, 1.4], wind: [-0.5, 0.35, 0.2] });
+  const smoke = makeSmoke(scene, { name: 'funnel-smoke', texture: puff, emitter: funnel, rate: tier.funnelSmoke, capacity: 120, color1: new Color4(0.2, 0.17, 0.22, 0.5), color2: new Color4(0.45, 0.35, 0.34, 0.4), life: [3, 5.5], size: [0.9, 1.6], grow: 4.5, power: [0.8, 1.4], wind: [-0.5, 0.35, 0.2] });
   disposers.push(() => {
     smoke.dispose();
     puff.dispose();
@@ -221,7 +221,7 @@ export function buildBoats({ scene, world, tier, reduced }) {
   const dingy = dinghy(scene, materials);
   dingy.isVisible = false;
   const moors = [[-6.5, quayZ + 1.7, 0.08], [9, quayZ + 1.6, -0.05], [26, quayZ + 1.8, 0.1], [-19, quayZ + 1.7, -0.07], [5.4, 62, Math.PI / 2 + 0.05], [-5.2, 70, -Math.PI / 2 + 0.04]];
-  const mooredCount = tier.desktop ? moors.length : 3;
+  const mooredCount = Math.min(tier.moored, moors.length);
   const moored = [];
   for (let i = 0; i < mooredCount; i += 1) {
     const inst = dingy.createInstance(`moored-${i}`);

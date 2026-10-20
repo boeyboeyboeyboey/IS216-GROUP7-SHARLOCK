@@ -1,13 +1,20 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { GRAPHICS_TO_TIER } from './scenes/shared/quality.js'
+import { decidePerf, perfRecord, writePerf } from './perfWatch.js'
 
 const props = defineProps({
   games: { type: Array, required: true },
   inputPaused: { type: Boolean, default: false },
   // fills its parent instead of sitting in a framed box
   fill: { type: Boolean, default: false },
+  // the Graphics setting: auto, high, medium or low; changing it rebuilds the hub
+  quality: { type: String, default: 'auto' },
+  // an explicit 3d choice means a struggling device is never switched to the 2d map
+  explicit3d: { type: Boolean, default: false },
 })
-const emit = defineEmits(['enter', 'failed'])
+const emit = defineEmits(['enter', 'failed', 'slow'])
+const TIER_TO_GRAPHICS = Object.fromEntries(Object.entries(GRAPHICS_TO_TIER).map(([setting, tier]) => [tier, setting]))
 
 const isDev = import.meta.env.DEV
 const returnKey = 'sharlock.hubReturn'
@@ -23,6 +30,7 @@ const view = reactive({
   engine: null,
   fps: 0,
   drawCalls: 0,
+  lowering: false,
 })
 let hub = null
 let gone = false
@@ -38,7 +46,7 @@ const faded = computed(
 )
 const status = computed(() => {
   if (view.failed) return '3D view unavailable. Choose a destination below.'
-  if (!view.ready) return 'Loading the wharf'
+  if (!view.ready) return view.lowering ? 'Lowering graphics for smoother play' : 'Loading the wharf'
   return isDev ? `Engine ${view.engine}, ${view.fps} fps, ${view.drawCalls} draws` : ''
 })
 
@@ -49,6 +57,7 @@ function sync(state) {
   view.engine = state.engine
   view.fps = state.fps
   view.drawCalls = state.drawCalls
+  if (state.ready) view.lowering = false
 }
 
 // choosing the selected destination again deselects it
@@ -101,25 +110,75 @@ function pauseFromProp(value) {
   if (value) hub?.back()
 }
 
-onMounted(async () => {
-  // babylon loads only when the hub mounts, so no other page pays for it
-  let createHub
-  try {
-    ;({ createHub } = await import('./engine.js'))
-  } catch (error) {
-    console.error('hub engine failed to load', error)
-    if (!gone) view.failed = true
-    return
+let createHub = null
+// a rebuild must not let the previous hub's late state overwrite the new one
+let generation = 0
+// the tier the runtime watch stepped down to; only used while the setting is auto
+let watchedTier = null
+
+function onPerf({ fps, tier }) {
+  const decision = decidePerf({ tier, fps, explicit3d: props.explicit3d })
+  // a healthy result keeps whatever an earlier visit remembered
+  const record = perfRecord(decision)
+  if (record) writePerf(record)
+  if (decision.action === 'lower') {
+    watchedTier = decision.tier
+    view.lowering = true
+    rebuildHub()
+  } else if (decision.action === 'switch-2d') {
+    emit('slow')
   }
-  if (gone) return
+}
+
+async function mountHub(resume = null) {
+  const mine = ++generation
+  if (!createHub) {
+    // babylon loads only when the hub mounts, so no other page pays for it
+    try {
+      ;({ createHub } = await import('./engine.js'))
+    } catch (error) {
+      console.error('hub engine failed to load', error)
+      if (!gone) view.failed = true
+      return
+    }
+  }
+  if (gone || mine !== generation) return
   // dev overrides (renderer, tier, mirror) only apply outside a production build
   const params = isDev ? new URLSearchParams(location.search) : new URLSearchParams()
-  hub = createHub({ container: stage.value, joystick: { el: pad.value, knob: knob.value }, params, spawnAt: takeDoor(), onState: sync })
-  if (props.inputPaused) pauseFromProp(true)
-  hub.ready.catch(() => {
-    if (!gone) view.failed = true
+  const next = createHub({
+    container: stage.value,
+    joystick: { el: pad.value, knob: knob.value },
+    params,
+    spawnAt: takeDoor(),
+    quality: props.quality === 'auto' && watchedTier ? TIER_TO_GRAPHICS[watchedTier] : props.quality,
+    watch: props.quality === 'auto',
+    resumeAt: resume,
+    onPerf: (result) => {
+      if (mine === generation) onPerf(result)
+    },
+    onState: (state) => {
+      if (mine === generation) sync(state)
+    },
   })
-})
+  hub = next
+  if (props.inputPaused) pauseFromProp(true)
+  if (view.selected) next.select(view.selected)
+  next.ready.catch(() => {
+    if (!gone && mine === generation) view.failed = true
+  })
+}
+
+function rebuildHub() {
+  const resume = hub?.position?.() ?? null
+  hub?.dispose()
+  hub = null
+  view.ready = false
+  view.failed = false
+  view.mode = 'explore'
+  mountHub(resume)
+}
+
+onMounted(mountHub)
 
 onBeforeUnmount(() => {
   gone = true
@@ -128,6 +187,11 @@ onBeforeUnmount(() => {
 })
 
 watch(() => props.inputPaused, pauseFromProp)
+watch(() => props.quality, () => {
+  watchedTier = null
+  view.lowering = false
+  rebuildHub()
+})
 watch(
   () => view.failed,
   (failed) => {

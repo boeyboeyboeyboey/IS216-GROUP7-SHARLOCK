@@ -27,8 +27,8 @@ import { setupLook } from './wharf/look.js';
 import { applyToon } from './wharf/toon.js';
 import { destinations, heightAt, obstacles, paths, spawn, walkable, waterY } from './wharf/layout.js';
 
-export async function build({ engine, scene, canvas, state, notify, params, joystick, spawnAt = null }) {
-  const tier = getTier(params);
+export async function build({ engine, scene, canvas, state, notify, params, joystick, spawnAt = null, quality = 'auto', resumeAt = null }) {
+  const tier = getTier(params, quality);
   state.desktop = tier.desktop;
   state.tier = tier.name;
   const reduced = () => state.reducedMotion;
@@ -39,7 +39,7 @@ export async function build({ engine, scene, canvas, state, notify, params, joys
   // for wide screens, pulled back on tall ones so the street still fits
   // coming back from a game, stand just outside that door facing the street with the camera behind
   const returnTo = destinations.find((d) => d.id === spawnAt);
-  const origin = returnTo ? { ...doorSpot(returnTo, returnTo.reach + 2.3), heading: returnTo.face } : { ...spawn, heading: 0 };
+  const origin = resumeAt ? { x: resumeAt.x, z: resumeAt.z, heading: 0 } : returnTo ? { ...doorSpot(returnTo, returnTo.reach + 2.3), heading: returnTo.face } : { ...spawn, heading: 0 };
   const aspect = (canvas.clientWidth || 1440) / (canvas.clientHeight || 900);
   const camera = createFollowCamera({
     scene,

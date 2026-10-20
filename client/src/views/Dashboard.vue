@@ -4,6 +4,9 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HubScene from '../features/hub/HubScene.vue'
 import TownMap from '../features/legacy-town/TownMap.vue'
+import Hub3dWarning from '../features/legacy-town/Hub3dWarning.vue'
+import { GRAPHICS_OPTIONS, readGraphics, writeGraphics } from '../features/hub/graphics.js'
+import { writePerf } from '../features/hub/perfWatch.js'
 import { useTownMode } from '../features/legacy-town/useTownMode.js'
 import PixelIcon from '../components/town/PixelIcon.vue'
 import { gameCatalog } from '../data/gameCatalog.js'
@@ -17,6 +20,20 @@ const hubScene = ref(null)
 const townMap = ref(null)
 const townMode = useTownMode()
 const is3d = computed(() => townMode.mode.value === '3d')
+const graphics = ref(readGraphics())
+function setGraphics(event) {
+  graphics.value = event.target.value
+  writeGraphics(graphics.value)
+  // choosing auto again forgets the measured outcome so the device is measured afresh
+  if (graphics.value === 'auto') writePerf(null)
+}
+const noticeText = computed(() => {
+  const reasons = townMode.reasons.value
+  if (reasons.includes('no-webgl2')) return 'This browser does not support WebGL 2, so you are seeing the 2D map.'
+  if (reasons.includes('slow-runtime')) return 'Your device was struggling to run the 3D wharf, so we switched to the 2D map.'
+  if (reasons.includes('failed')) return 'The 3D wharf could not start on this device, so you are seeing the 2D map.'
+  return 'You are seeing the 2D map because this device may not run the 3D wharf smoothly.'
+})
 const toggleLabel = computed(() => (is3d.value ? 'Switch to 2D map' : 'Switch to 3D wharf'))
 let openedFromTown = false
 watch(
@@ -53,7 +70,7 @@ function closeNewspaper() {
       </div>
       <div class="town-intro-actions">
         <button
-          v-if="!townMode.forced.value"
+          v-if="!townMode.locked.value"
           type="button"
           class="pixel-button"
           data-testid="town-mode-toggle"
@@ -79,14 +96,36 @@ function closeNewspaper() {
       <p v-else-if="route.query.classRequest === 'active'" class="alert alert-success" role="status">
         You already belong to this class. <RouterLink to="/classes">View your classes</RouterLink>
       </p>
-      <p
-        v-if="townMode.forced.value"
-        class="alert alert-info"
+      <div
+        v-if="townMode.noticeVisible.value"
+        class="alert alert-info d-flex flex-wrap align-items-center gap-2"
         role="status"
         data-testid="town-mode-notice"
       >
-        The 3D wharf is not available on this device, so you are seeing the 2D map.
-      </p>
+        <span class="flex-grow-1">
+          {{ noticeText }}
+          <RouterLink to="/about#graphics">Why?</RouterLink>
+          <template v-if="!townMode.locked.value">
+            &middot;
+            <button
+              type="button"
+              class="btn btn-link p-0 align-baseline"
+              data-testid="town-mode-try3d"
+              @click="townMode.toggle"
+            >
+              Try 3D anyway
+            </button>
+          </template>
+        </span>
+        <button
+          v-if="!townMode.locked.value"
+          type="button"
+          class="btn-close"
+          aria-label="Dismiss this notice"
+          data-testid="town-mode-notice-close"
+          @click="townMode.dismissNotice"
+        ></button>
+      </div>
     </template>
     <HubScene
       v-if="is3d"
@@ -94,8 +133,11 @@ function closeNewspaper() {
       fill
       :games="gameCatalog"
       :input-paused="route.name === 'news'"
+      :quality="graphics"
+      :explicit3d="townMode.explicit3d.value"
       @enter="router.push($event.route)"
       @failed="townMode.markFailed"
+      @slow="townMode.markSlow"
     >
       <div class="hud-row">
         <button
@@ -107,6 +149,20 @@ function closeNewspaper() {
         >
           2D map
         </button>
+        <label class="hud-graphics">
+          <span>Graphics</span>
+          <select
+            class="form-select form-select-sm"
+            data-testid="hub-graphics"
+            aria-label="Graphics quality"
+            :value="graphics"
+            @change="setGraphics"
+          >
+            <option v-for="option in GRAPHICS_OPTIONS" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
         <RouterLink
           to="/profile"
           class="town-player hud-player"
@@ -138,6 +194,11 @@ function closeNewspaper() {
     <p v-if="!is3d" class="town-footnote">
       <PixelIcon name="star" :size="16" /> Explore at your own pace.
     </p>
+    <Hub3dWarning
+      v-if="townMode.warning.value"
+      @cancel="townMode.cancel3d"
+      @confirm="townMode.confirm3d"
+    />
     <RouterView @request-close="closeNewspaper" />
   </div>
 </template>
@@ -176,6 +237,21 @@ function closeNewspaper() {
   font-size: 14px;
   box-shadow: 3px 3px 0 var(--town-edge);
 }
+.hud-graphics {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 2px 6px;
+  border: 2px solid var(--town-edge);
+  background: var(--town-paper);
+  box-shadow: 3px 3px 0 var(--town-edge);
+  font-size: 13px;
+}
+.hud-graphics select {
+  width: auto;
+  min-height: 36px;
+}
 .hud-player {
   min-height: 44px;
   gap: 8px;
@@ -204,6 +280,12 @@ function closeNewspaper() {
   font-size: 13px;
 }
 @media (max-width: 575.98px) {
+  .hud-row {
+    flex-wrap: wrap;
+  }
+  .hud-graphics > span {
+    display: none;
+  }
   .hud-player > span {
     gap: 0;
   }

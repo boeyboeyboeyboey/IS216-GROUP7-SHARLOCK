@@ -9,6 +9,8 @@ import '@babylonjs/core/Meshes/instancedMesh.js';
 import { HavokPlugin } from '@babylonjs/core/Physics/v2/Plugins/havokPlugin.js';
 import HavokPhysics from '@babylonjs/havok';
 import havokWasm from '@babylonjs/havok/lib/esm/HavokPhysics.wasm?url';
+import { getTier } from './scenes/shared/quality.js';
+import { createSampler, realSamplingOff } from './perfWatch.js';
 
 // counted across instances so a remount can prove the previous hub was disposed
 let mountCount = 0;
@@ -56,10 +58,14 @@ async function createEngine(canvas, params) {
   return { engine: gl, type: 'webgl2', canvas };
 }
 
+// quality: the Graphics setting, auto, high, medium or low
+// watch: sample real frame rates and report them through onPerf({ fps, tier })
+// resumeAt: { x, z } to start where the player stood before a rebuild
 // params: URLSearchParams with the dev overrides renderer, tier and mirror
 // joystick: { el, knob } elements of the touch pad, owned by the caller
 // spawnAt: destination id whose door the player starts beside, for coming back from a game
-export function createHub({ container, joystick = {}, params = new URLSearchParams(), spawnAt = null, onState = () => {} }) {
+export function createHub({ container, joystick = {}, params = new URLSearchParams(), spawnAt = null, quality = 'auto', watch = false, resumeAt = null, onPerf = () => {}, onState = () => {} }) {
+  const tier = getTier(params, quality);
   const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   const state = {
     ready: false,
@@ -100,6 +106,8 @@ export function createHub({ container, joystick = {}, params = new URLSearchPara
   let built = null;
   let observer = null;
   let fpsTimer = null;
+  const manualWatch = realSamplingOff();
+  const perf = watch ? createSampler({ onResult: (fps) => onPerf({ fps, tier: tier.name }) }) : null;
   const onMotion = (event) => {
     state.reducedMotion = event.matches;
     emit();
@@ -115,7 +123,7 @@ export function createHub({ container, joystick = {}, params = new URLSearchPara
     canvas = created.canvas;
     if (disposed) return;
 
-    const applyScale = () => engine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio || 1, 1.5));
+    const applyScale = () => engine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio || 1, tier.renderScale));
     observer = new ResizeObserver(() => {
       applyScale();
       engine.resize();
@@ -129,11 +137,26 @@ export function createHub({ container, joystick = {}, params = new URLSearchPara
     scene.enablePhysics(new Vector3(0, -9.81, 0), new HavokPlugin(true, hk));
     const { build } = await import('./scenes/a-wharf.js');
     if (disposed) return;
-    built = await build({ engine, scene, canvas, state, notify: emit, params, joystick, spawnAt });
+    built = await build({ engine, scene, canvas, state, notify: emit, params, joystick, spawnAt, quality, resumeAt });
     if (disposed) return;
 
     const rendered = new Promise((resolve) => scene.onAfterRenderObservable.addOnce(resolve));
-    engine.runRenderLoop(() => scene.render());
+    // the low tier renders every other frame
+    let lastFrame = 0;
+    let lastTick = performance.now();
+    engine.runRenderLoop(() => {
+      if (tier.fpsCap) {
+        const now = performance.now();
+        if (now - lastFrame < 1000 / tier.fpsCap - 3) return;
+        lastFrame = now;
+      }
+      scene.render();
+      if (perf && !manualWatch) {
+        const tick = performance.now();
+        perf.frame(tick - lastTick, !document.hidden && state.ready && state.mode === 'explore' && !state.inputPaused);
+        lastTick = tick;
+      }
+    });
     fpsTimer = setInterval(() => {
       state.fps = Math.round(engine.getFps());
       emit();
@@ -193,6 +216,7 @@ export function createHub({ container, joystick = {}, params = new URLSearchPara
     },
     enter: (id) => api()?.enter(id) ?? Promise.resolve(false),
     back: () => api()?.back() ?? Promise.resolve(false),
+    position: () => api()?.debug.position() ?? null,
     pauseInput(value) {
       state.inputPaused = Boolean(value);
       api()?.setInputPaused(state.inputPaused);
@@ -213,7 +237,8 @@ export function createHub({ container, joystick = {}, params = new URLSearchPara
       back: hub.back,
       pauseInput: hub.pauseInput,
       get debug() {
-        return api()?.debug ?? null;
+        const debug = api()?.debug;
+        return debug ? { ...debug, simulateFps: (fps) => perf?.feed(fps) } : null;
       },
     };
   }
