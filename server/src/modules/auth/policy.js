@@ -12,7 +12,9 @@ export class AuthError extends Error {
 }
 
 const REGISTER_FIELDS = ['email', 'username', 'password', 'avatarId']
-const LOGIN_FIELDS = ['email', 'password']
+const LOGIN_FIELDS = ['identifier', 'password']
+const LEGACY_LOGIN_FIELDS = ['email', 'password']
+const LOGIN_IDENTIFIER_MESSAGE = 'Enter your email address or username.'
 const EMAIL_LOCAL = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i
 const EMAIL_DOMAIN =
   /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i
@@ -214,8 +216,33 @@ export function parseRegistrationInput(body) {
   return parseBody(body, REGISTER_FIELDS, true)
 }
 
+// usernames cannot contain '@', so the identifier type is unambiguous
+function normalizeLoginIdentifier(value, fieldErrors, field) {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed.includes('@')) {
+      const normalized = normalizeEmail(trimmed, Object.create(null))
+      if (normalized) return { kind: 'email', normalized }
+    } else if (USERNAME.test(trimmed)) {
+      return { kind: 'username', normalized: trimmed.toLowerCase() }
+    }
+  }
+  addFieldError(fieldErrors, field, LOGIN_IDENTIFIER_MESSAGE)
+  return undefined
+}
+
 export function parseLoginInput(body) {
-  return parseBody(body, LOGIN_FIELDS, false)
+  // older callers still send { email, password }
+  const expectedFields =
+    isRecord(body) && Object.hasOwn(body, 'email') && !Object.hasOwn(body, 'identifier')
+      ? LEGACY_LOGIN_FIELDS
+      : LOGIN_FIELDS
+  const { fieldErrors, values } = exactInput(body, expectedFields)
+  const field = expectedFields[0]
+  const identifier = normalizeLoginIdentifier(values[field], fieldErrors, field)
+  const password = parsePassword(values.password, fieldErrors, false)
+  throwIfInvalid(fieldErrors)
+  return { identifier, password }
 }
 
 export function parseEmptyInput(body) {

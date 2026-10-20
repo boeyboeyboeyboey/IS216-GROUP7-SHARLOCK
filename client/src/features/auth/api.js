@@ -12,7 +12,7 @@ const FIELD_NAMES = new Set([
 
 const SAFE_MESSAGES = Object.freeze({
   AUTHENTICATION_REQUIRED: 'Your session has ended. Sign in again to continue.',
-  INVALID_CREDENTIALS: 'Email or password is incorrect.',
+  INVALID_CREDENTIALS: 'Email, username or password is incorrect.',
   ACCOUNT_UNAVAILABLE: 'An account could not be created with those details.',
   VALIDATION_ERROR: 'Check the highlighted fields and try again.',
   CSRF_INVALID: 'Your security check expired. Review the form and try again.',

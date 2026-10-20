@@ -55,7 +55,7 @@ async function confirmEmail(agent, csrfToken, email) {
 }
 
 async function prepareLoginAgent(
-  email = validRegistration.email,
+  identifier = validRegistration.email,
   password = validRegistration.password,
 ) {
   const agent = request.agent(app)
@@ -67,7 +67,7 @@ async function prepareLoginAgent(
     .post('/api/auth/login')
     .set('Origin', baseAuthOptions.clientOrigin)
     .set('X-CSRF-Token', csrf.body.csrfToken)
-    .send({ email, password })
+    .send({ identifier, password })
   return {
     agent,
     bootstrapCookie: cookieValue(csrf),
@@ -283,7 +283,7 @@ describe('account and Mongo session HTTP contract', () => {
       expect(result.status).toBe(401)
       expect(result.body.error).toMatchObject({
         code: 'INVALID_CREDENTIALS',
-        message: 'Email or password is incorrect.',
+        message: 'Email, username or password is incorrect.',
       })
       expect(result.body.requestId).toBe(result.headers['x-request-id'])
     }
@@ -300,6 +300,64 @@ describe('account and Mongo session HTTP contract', () => {
         disabledAccount.response.body,
       ]),
     ).not.toMatch(/passwordHash|private|stack/)
+  })
+
+  it('signs in with an email or a username, ignoring case', async () => {
+    const student = await registerTestStudent(app, {
+      email: 'mixed.case@example.test',
+      username: 'Mixed_Case-7',
+    })
+    for (const identifier of [
+      student.email,
+      'Mixed.CASE@Example.test',
+      'Mixed_Case-7',
+      ' mixed_case-7 ',
+      'MIXED_CASE-7',
+    ]) {
+      const login = await prepareLoginAgent(identifier, student.password)
+      expect(login.response.status).toBe(200)
+      expect(login.response.body.user.id).toBe(student.user.id)
+    }
+  })
+
+  it('uses one generic failure for unknown usernames, wrong passwords and unknown emails', async () => {
+    const student = await registerTestStudent(app)
+    const results = [
+      await prepareLoginAgent('unknown@example.test', student.password),
+      await prepareLoginAgent('nobody_here', student.password),
+      await prepareLoginAgent(student.user.username, 'Wrong-Password-Value-2026'),
+    ]
+    for (const { response } of results) {
+      expect(response.status).toBe(401)
+      expect(response.body.error).toMatchObject({
+        code: 'INVALID_CREDENTIALS',
+        message: 'Email, username or password is incorrect.',
+      })
+    }
+    const stripped = results.map(({ response }) =>
+      Object.fromEntries(
+        Object.entries(response.body.error).filter(([key]) => key !== 'requestId'),
+      ),
+    )
+    expect(stripped[1]).toEqual(stripped[0])
+    expect(stripped[2]).toEqual(stripped[0])
+  })
+
+  it('shares one failed-login budget between the email and username of an account', async () => {
+    const student = await registerTestStudent(app)
+    for (const identifier of [
+      student.email,
+      student.user.username,
+      student.email,
+      student.user.username,
+      student.email,
+    ]) {
+      const failed = await prepareLoginAgent(identifier, 'Wrong-Password-Value-2026')
+      expect(failed.response.status).toBe(401)
+    }
+    const blocked = await prepareLoginAgent(student.user.username, 'Wrong-Password-Value-2026')
+    expect(blocked.response.status).toBe(429)
+    expect(blocked.response.body.error.code).toBe('RATE_LIMITED')
   })
 
   it('enforces trusted Origin or Referer and requires the synchronizer token', async () => {

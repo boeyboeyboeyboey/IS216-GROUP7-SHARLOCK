@@ -130,11 +130,11 @@ test('registers, restores, signs out, signs in, and stops a protected action aft
   await expect(page).toHaveURL(/\/login/)
 
   await page.goto('/login')
-  await page.getByLabel('Email address').fill(email)
+  await page.getByLabel('Email or username').fill(email)
   await page.getByLabel('Password', { exact: true }).fill('Wrong-Horse-🔒-2026')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByRole('alert')).toContainText('Email or password is incorrect.')
-  await expect(page.getByLabel('Email address')).toHaveValue(email)
+  await expect(page.getByRole('alert')).toContainText('Email, username or password is incorrect.')
+  await expect(page.getByLabel('Email or username')).toHaveValue(email)
 
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
   await page.getByRole('button', { name: 'Sign in' }).click()
@@ -156,4 +156,48 @@ test('registers, restores, signs out, signs in, and stops a protected action aft
   await expect(page).toHaveURL(/\/login/)
   await expect(page.getByRole('heading', { name: 'Sign in to Sharlock' })).toBeVisible()
   expect(protectedRunPosts).toBe(0)
+})
+
+test('signs in with a mixed-case username instead of the email', async ({
+  page,
+  browser,
+}, testInfo) => {
+  const suffix = `${Date.now().toString(36)}${testInfo.workerIndex}u`
+  const email = `auth-${suffix}@example.test`
+  const username = `Case_${suffix}`
+
+  await page.goto('/register')
+  await page.getByLabel('Email address').fill(email)
+  await page.getByLabel('Username').fill(username)
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
+  await page.getByLabel('Confirm password').fill(PASSWORD)
+  await page.locator('input[name="avatarId"][value="mint"]').check()
+  await page.getByRole('button', { name: 'Create account' }).click()
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible()
+  await page.getByLabel('Digit 1 of 6').click()
+  await page.keyboard.type(await readVerificationCode(email))
+  await page.getByRole('button', { name: 'Confirm code' }).click()
+  await expect(page).toHaveURL('/join-class?onboarding=1')
+  await page.getByRole('button', { name: 'Skip and explore Sharlock' }).click()
+  await expect(page).toHaveURL('/')
+
+  const freshContext = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+    viewport: testInfo.project.use.viewport,
+    isMobile: testInfo.project.use.isMobile,
+    hasTouch: testInfo.project.use.hasTouch,
+  })
+  try {
+    const loginPage = await freshContext.newPage()
+    await loginPage.goto('/login')
+    await loginPage.getByLabel('Email or username').fill(username.toUpperCase())
+    await loginPage.getByLabel('Password', { exact: true }).fill(PASSWORD)
+    await loginPage.getByRole('button', { name: 'Sign in' }).click()
+    await expect(loginPage).toHaveURL('/')
+    await expect(
+      loginPage.locator('.town-player').getByText(username, { exact: true }),
+    ).toBeVisible()
+  } finally {
+    await freshContext.close()
+  }
 })

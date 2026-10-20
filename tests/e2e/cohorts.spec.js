@@ -102,7 +102,7 @@ test('learner follows a class link and gets access after instructor approval', a
     await expect(studentPage).toHaveURL(/\/join-class$/)
     await studentPage.getByRole('button', { name: 'Sign in' }).click()
     await expect(studentPage).toHaveURL(/\/login/)
-    await studentPage.getByLabel('Email address').fill(studentIdentity.email)
+    await studentPage.getByLabel('Email or username').fill(studentIdentity.email)
     await studentPage.getByLabel('Password', { exact: true }).fill(studentIdentity.password)
     await studentPage.getByRole('button', { name: 'Sign in' }).click()
     try {

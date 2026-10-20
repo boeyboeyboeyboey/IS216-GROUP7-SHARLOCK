@@ -27,7 +27,7 @@ const Form = defineComponent({
   emits: ['submit'],
   setup(_props, { emit, expose }) {
     expose({ clearSecrets: vi.fn() })
-    return () => h('button', { onClick: () => emit('submit', { email: 'student@example.test' }) }, 'Submit credentials')
+    return () => h('button', { onClick: () => emit('submit', { identifier: 'student@example.test' }) }, 'Submit credentials')
   },
 })
 const wrappers = []

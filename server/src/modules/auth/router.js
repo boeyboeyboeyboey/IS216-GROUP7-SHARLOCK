@@ -224,8 +224,13 @@ export function createAuthRouter(database, settings, { mailer = createConsoleMai
       try {
         parseEmptyQuery(request.query)
         const input = parseLoginInput(request.body)
-        failureSlot = rateLimits.reserveFailedLogin(input.emailNormalized, request.ip)
-        const account = await authService.login(input)
+        const loginAccount = await authService.findLoginAccount(input.identifier)
+        // one failure budget per account, whichever identifier was typed
+        failureSlot = rateLimits.reserveFailedLogin(
+          loginAccount?.emailNormalized ?? input.identifier.normalized,
+          request.ip,
+        )
+        const account = await authService.login(input, loginAccount)
         failureSlot.succeed()
         if (account.pendingVerification) {
           const verification = await verificationService.issueForLogin(account.userId)
