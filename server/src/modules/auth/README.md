@@ -16,7 +16,7 @@ All auth responses use `Cache-Control: no-store`. The browser sends the session 
 | `POST /api/auth/register`               | `{ email, username, password, avatarId }` | 202 `{ verification, csrfToken }`, not signed in yet      |
 | `POST /api/auth/verify-email`           | `{ code }`                                | 201 `{ user, csrfToken }`, signed in                      |
 | `POST /api/auth/verify-email/resend`    | empty or `{}`                             | 202 `{ verification }`                                    |
-| `POST /api/auth/login`                  | `{ email, password }`                     | 200 `{ user, csrfToken }`, or 202 `{ verification, csrfToken }` when the email is unconfirmed |
+| `POST /api/auth/login`                  | `{ identifier, password }`                | 200 `{ user, csrfToken }`, or 202 `{ verification, csrfToken }` when the email is unconfirmed |
 | `GET /api/auth/me`                      | none                                      | 200 `{ user }`, or 401 when unauthenticated               |
 | `POST /api/auth/logout`                 | empty or `{}`                             | 204, current session invalidated                          |
 | `POST /api/auth/class-invitation`       | `{ code }`                                | 204, hash retained in the current session for ten minutes |
@@ -24,7 +24,7 @@ All auth responses use `Cache-Control: no-store`. The browser sends the session 
 
 Email is trimmed, lowercased ASCII, syntactically validated and at most 254 characters. Username is trimmed, 3–32 ASCII letters, digits, underscores or hyphens; uniqueness is case-insensitive. New passwords are unchanged, well-formed Unicode strings of 12–128 code points with at least one Unicode uppercase letter and one punctuation/symbol character. Whitespace does not satisfy the special-character requirement. Login checks only encoding/length, preserving older composition-free passwords. These are Boey's approved policy changes of 15 October 2026. Registration accepts only the six IDs in [avatars.js](avatars.js); submitted roles, IDs, memberships, scores and other account fields are rejected.
 
-Safe failures use `{ error: { code, message, fieldErrors? }, requestId }`. Invalid credentials use the same 401 error for unknown email, wrong password and disabled accounts. Duplicate email or username returns a generic 409 without identifying the conflicting index. Invalid input is 400, rejected origin/CSRF is 403, rate limits are 429 with `Retry-After`, and exhausted password-operation capacity is 503. Registration success is returned only after the session save completes. If account creation succeeds but session storage later fails, the account remains available for a normal login retry; no account is deleted as a rollback.
+Safe failures use `{ error: { code, message, fieldErrors? }, requestId }`. Login takes an email address or a username in `identifier` (an `@` selects email; both are matched case-insensitively), and still accepts the older `{ email, password }` body. Invalid credentials use the same 401 error for an unknown email or username, a wrong password and disabled accounts. Duplicate email or username returns a generic 409 without identifying the conflicting index. Invalid input is 400, rejected origin/CSRF is 403, rate limits are 429 with `Retry-After`, and exhausted password-operation capacity is 503. Registration success is returned only after the session save completes. If account creation succeeds but session storage later fails, the account remains available for a normal login retry; no account is deleted as a rollback.
 
 ## Storage and private fields
 
@@ -36,7 +36,7 @@ Sessions use `express-session` with the maintained `connect-mongo` store over th
 
 ## Limits
 
-Password operations are Argon2id at 19 MiB, two iterations and one lane, with two process-wide operations allowed at once and no waiting queue. IP limits cover CSRF bootstrap, registration, login and activation (10 activation requests per 15 minutes). A separate HMAC-keyed email/IP counter records only failed credential checks and expires after fifteen minutes; raw addresses and credentials are not used as limiter keys or logged.
+Password operations are Argon2id at 19 MiB, two iterations and one lane, with two process-wide operations allowed at once and no waiting queue. IP limits cover CSRF bootstrap, registration, login and activation (10 activation requests per 15 minutes). A separate HMAC-keyed account/IP counter (the matched account's email, or the typed identifier when none matches, so email and username attempts share one budget) records only failed credential checks and expires after fifteen minutes; raw addresses and credentials are not used as limiter keys or logged.
 
 Instructor activation is mounted at `POST /api/auth/activate-account` through the same origin/CSRF/session runtime; [recovery](../recovery/README.md) owns its transaction. [Admin](../admin/README.md) owns institution/class/instructor management. [Cohorts](../cohorts/README.md) owns enrollment and onboarding. General password recovery, account profile changes and persistent learning records remain pending. Sign-up [email verification](#email-verification) is implemented as AUTH-03. The current game APIs remain available under their existing contracts until separately approved integration.
 

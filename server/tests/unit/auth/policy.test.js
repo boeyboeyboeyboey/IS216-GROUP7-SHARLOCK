@@ -84,7 +84,6 @@ describe('auth request policy', () => {
   })
 
   it.each([
-    'learner',
     'learner@',
     'learner@@example.test',
     'learner..name@example.test',
@@ -94,6 +93,55 @@ describe('auth request policy', () => {
   ])('rejects a malformed or non-ASCII email: %s', (email) => {
     expect(() => parseLoginInput({ email, password: 'correct-horse-battery' })).toThrow()
   })
+
+  it('normalizes an email identifier and the legacy email key', () => {
+    const password = 'correct-horse-battery'
+    const expected = { kind: 'email', normalized: 'learner@example.test' }
+    expect(parseLoginInput({ identifier: '  Learner@Example.TEST ', password }).identifier).toEqual(
+      expected,
+    )
+    expect(parseLoginInput({ email: ' Learner@Example.test ', password }).identifier).toEqual(
+      expected,
+    )
+  })
+
+  it('lowercases a username identifier', () => {
+    const parsed = parseLoginInput({
+      identifier: ' Detective_01 ',
+      password: 'correct-horse-battery',
+    })
+    expect(parsed.identifier).toEqual({ kind: 'username', normalized: 'detective_01' })
+  })
+
+  it('rejects both identifier keys and unknown extra keys', () => {
+    const password = 'correct-horse-battery'
+    expect(() =>
+      parseLoginInput({
+        identifier: 'learner@example.test',
+        email: 'learner@example.test',
+        password,
+      }),
+    ).toThrow(/highlighted fields/)
+    try {
+      parseLoginInput({ identifier: 'learner', password, role: 'admin' })
+      throw new Error('Expected strict field validation to fail.')
+    } catch (error) {
+      expect(error.fieldErrors.role).toBe('This field is not allowed.')
+    }
+  })
+
+  it.each(['a@', 'two@@example.test', 'ab', 'has space', 'a'.repeat(33), ''])(
+    'reports an identifier field error for: %s',
+    (identifier) => {
+      try {
+        parseLoginInput({ identifier, password: 'correct-horse-battery' })
+        throw new Error('Expected identifier validation to fail.')
+      } catch (error) {
+        expect(error.code).toBe('VALIDATION_ERROR')
+        expect(error.fieldErrors.identifier).toBe('Enter your email address or username.')
+      }
+    },
+  )
 
   it('rejects unknown, role, prototype and Mongo operator fields with safe errors', () => {
     const payload = JSON.parse(

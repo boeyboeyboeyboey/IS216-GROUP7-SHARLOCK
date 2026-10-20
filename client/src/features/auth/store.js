@@ -230,10 +230,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function login({ email, password }) {
-    const input = validate(parseLoginInput, { email, password })
+  async function login({ identifier, password }) {
+    const input = validate(parseLoginInput, { identifier, password })
     return authenticate('login', {
-      email: input.emailNormalized,
+      identifier: input.identifier.normalized,
       password: input.password,
     })
   }

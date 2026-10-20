@@ -231,7 +231,10 @@ describe('auth store', () => {
     authRequests.requestLogin.mockResolvedValue({ verification, csrfToken: 'pending-token' })
     const auth = useAuthStore()
 
-    const result = await auth.login({ email: account.email, password: 'Correct-Horse-🔒-2026' })
+    const result = await auth.login({
+      identifier: account.email,
+      password: 'Correct-Horse-🔒-2026',
+    })
     expect(result).toBeNull()
     expect(auth.pendingVerification).toEqual(verification)
     expect(auth.status).not.toBe('authenticated')
@@ -245,12 +248,12 @@ describe('auth store', () => {
     const auth = useAuthStore()
 
     await expect(
-      auth.login({ email: 'detective@example.test', password: 'Correct-Horse-🔒-2026' }),
+      auth.login({ identifier: 'detective@example.test', password: 'Correct-Horse-🔒-2026' }),
     ).rejects.toMatchObject({ code: 'CSRF_INVALID' })
 
     expect(authRequests.requestLogin).toHaveBeenCalledTimes(1)
     expect(authRequests.requestLogin).toHaveBeenCalledWith(
-      { email: 'detective@example.test', password: 'Correct-Horse-🔒-2026' },
+      { identifier: 'detective@example.test', password: 'Correct-Horse-🔒-2026' },
       'stale-token',
     )
     expect(authRequests.requestCsrfToken).toHaveBeenCalledTimes(2)
@@ -292,7 +295,7 @@ describe('auth store', () => {
     const auth = useAuthStore()
 
     const restoring = auth.restoreSession({ force: true })
-    await auth.login({ email: account.email, password: 'Correct-Horse-🔒-2026' })
+    await auth.login({ identifier: account.email, password: 'Correct-Horse-🔒-2026' })
     resolveCurrentUser(account)
 
     await expect(restoring).resolves.toMatchObject({
@@ -313,7 +316,7 @@ describe('auth store', () => {
     )
     const auth = useAuthStore()
 
-    const signingIn = auth.login({ email: account.email, password: 'Correct-Horse-🔒-2026' })
+    const signingIn = auth.login({ identifier: account.email, password: 'Correct-Horse-🔒-2026' })
     await Promise.resolve()
     await expect(auth.restoreSession({ force: true })).rejects.toMatchObject({
       code: 'ACCOUNT_ACTION_PENDING',
@@ -379,9 +382,9 @@ describe('auth store', () => {
     const auth = useAuthStore()
 
     await expect(
-      auth.login({ email: 'detective@example.test', password: 'Correct-Horse-🔒-2026' }),
-    ).rejects.toMatchObject({ message: 'Email or password is incorrect.' })
-    expect(auth.requestError.message).toBe('Email or password is incorrect.')
+      auth.login({ identifier: 'detective@example.test', password: 'Correct-Horse-🔒-2026' }),
+    ).rejects.toMatchObject({ message: 'Email, username or password is incorrect.' })
+    expect(auth.requestError.message).toBe('Email, username or password is incorrect.')
     expect(auth.requestError.message).not.toContain('private backend detail')
     expect(auth.status).toBe('unknown')
   })
@@ -396,7 +399,7 @@ describe('auth store', () => {
       )
 
       await expect(
-        auth.login({ email: 'detective@example.test', password: 'Correct-Horse-🔒-2026' }),
+        auth.login({ identifier: 'detective@example.test', password: 'Correct-Horse-🔒-2026' }),
       ).rejects.toMatchObject({
         message: 'Sharlock could not complete that request. Please try again.',
       })
@@ -567,12 +570,27 @@ describe('auth forms and account summary', () => {
     wrapper.unmount()
   })
 
+  it('labels the sign-in field for email or username and submits a normalized username', async () => {
+    const wrapper = mount(LoginForm)
+    expect(wrapper.get('label[for="login-identifier"]').text()).toBe('Email or username')
+    expect(wrapper.get('#login-identifier').attributes('type')).toBe('text')
+    await wrapper.get('#login-identifier').setValue(' Detective_01 ')
+    await wrapper.get('#login-password').setValue('Correct-Horse-🔒-2026')
+    await wrapper.get('form').trigger('submit')
+
+    expect(wrapper.emitted('submit')[0][0]).toEqual({
+      identifier: 'detective_01',
+      password: 'Correct-Horse-🔒-2026',
+    })
+    wrapper.unmount()
+  })
+
   it('does not truncate valid Unicode passwords', async () => {
     const wrapper = mount(LoginForm)
     const password = '🔐'.repeat(15)
     const input = wrapper.get('#login-password')
     expect(input.attributes('maxlength')).toBeUndefined()
-    await wrapper.get('#login-email').setValue('detective@example.test')
+    await wrapper.get('#login-identifier').setValue('detective@example.test')
     await input.setValue(password)
     await wrapper.get('form').trigger('submit')
 
@@ -582,7 +600,7 @@ describe('auth forms and account summary', () => {
 
   it('disables editable sign-in and registration controls while pending', () => {
     const login = mount(LoginForm, { props: { pending: true } })
-    expect(login.get('#login-email').element.disabled).toBe(true)
+    expect(login.get('#login-identifier').element.disabled).toBe(true)
     expect(login.get('#login-password').element.disabled).toBe(true)
     expect(login.get('.auth-password-toggle').element.disabled).toBe(true)
     login.unmount()

@@ -4,7 +4,7 @@ import { AuthError } from './policy.js'
 import { hashPassword, verifyDummyPassword, verifyPassword } from './password.js'
 
 export const invalidCredentialsError = () =>
-  new AuthError('INVALID_CREDENTIALS', 'Email or password is incorrect.', 401)
+  new AuthError('INVALID_CREDENTIALS', 'Email, username or password is incorrect.', 401)
 
 const duplicateAccountError = () =>
   new AuthError('ACCOUNT_UNAVAILABLE', 'An account could not be created with those details.', 409)
@@ -47,10 +47,16 @@ export function createAuthService(database, { now = Date.now } = {}) {
     }
   }
 
-  async function login(input) {
-    const user = await User.findOne({ emailNormalized: input.emailNormalized }).select(
-      '+passwordHash +emailVerification',
-    )
+  function findLoginAccount(identifier) {
+    const filter =
+      identifier.kind === 'email'
+        ? { emailNormalized: identifier.normalized }
+        : { usernameNormalized: identifier.normalized }
+    return User.findOne(filter).select('+passwordHash +emailVerification')
+  }
+
+  async function login(input, account) {
+    const user = account === undefined ? await findLoginAccount(input.identifier) : account
     if (!user) {
       await verifyDummyPassword(input.password)
       throw invalidCredentialsError()
@@ -85,5 +91,5 @@ export function createAuthService(database, { now = Date.now } = {}) {
     return serializeUser(user)
   }
 
-  return Object.freeze({ register, login, findActiveSessionUser })
+  return Object.freeze({ register, findLoginAccount, login, findActiveSessionUser })
 }

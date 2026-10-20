@@ -93,7 +93,7 @@ async function createStudentThroughRegistration(page, identity) {
 
 async function signInWithUi(page, identity) {
   await page.goto('/login')
-  await page.getByLabel('Email address').fill(identity.email)
+  await page.getByLabel('Email or username').fill(identity.email)
   await page.getByLabel('Password', { exact: true }).fill(identity.password)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page).toHaveURL('/')
@@ -317,7 +317,7 @@ test('admin recovery revokes sessions and requires normal sign-in', async ({
     await expect(
       gatePage.getByText('Your password was updated. Sign in with your new password.'),
     ).toBeVisible()
-    await expect(gatePage.getByLabel('Email address')).toBeVisible()
+    await expect(gatePage.getByLabel('Email or username')).toBeVisible()
     expect(gateResponses).toEqual([204])
     const redemptionRequests = gateEvents.filter(
       (event) => event.path === '/api/auth/reset-password',
@@ -370,10 +370,12 @@ test('admin recovery revokes sessions and requires normal sign-in', async ({
     loginContext = await browser.newContext(isolatedContextOptions(testInfo))
     const loginPage = await loginContext.newPage()
     await loginPage.goto('/login')
-    await loginPage.getByLabel('Email address').fill(student.email)
+    await loginPage.getByLabel('Email or username').fill(student.email)
     await loginPage.getByLabel('Password', { exact: true }).fill(student.password)
     await loginPage.getByRole('button', { name: 'Sign in' }).click()
-    await expect(loginPage.getByRole('alert')).toContainText('Email or password is incorrect.')
+    await expect(loginPage.getByRole('alert')).toContainText(
+      'Email, username or password is incorrect.',
+    )
     await loginPage.getByLabel('Password', { exact: true }).fill(newPassword)
     await loginPage.getByRole('button', { name: 'Sign in' }).click()
     await expect(loginPage).toHaveURL('/')
@@ -460,7 +462,7 @@ test('instructors issue links; admin-only roles have no roster recovery control'
       instructorPage.getByText('Your password is set. Sign in normally to continue.'),
     ).toBeVisible()
     await instructorPage.getByRole('link', { name: 'Continue to sign in' }).click()
-    await instructorPage.getByLabel('Email address').fill(instructor.email)
+    await instructorPage.getByLabel('Email or username').fill(instructor.email)
     await instructorPage.getByLabel('Password', { exact: true }).fill(instructorPassword)
     await instructorPage.getByRole('button', { name: 'Sign in' }).click()
     await expect(instructorPage).toHaveURL('/')
@@ -496,7 +498,7 @@ test('instructors issue links; admin-only roles have no roster recovery control'
     await studentPage.goto(invitationUrl)
     await studentPage.getByRole('button', { name: 'Sign in' }).click()
     await expect(studentPage).toHaveURL(/\/login/)
-    await studentPage.getByLabel('Email address').fill(studentIdentity.email)
+    await studentPage.getByLabel('Email or username').fill(studentIdentity.email)
     await studentPage.getByLabel('Password', { exact: true }).fill(studentIdentity.password)
     await studentPage.getByRole('button', { name: 'Sign in' }).click()
     await expect(studentPage).toHaveURL(/\?classRequest=pending$/)

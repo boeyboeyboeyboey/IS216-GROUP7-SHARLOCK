@@ -164,7 +164,7 @@ test('admin manages institutions, assignments, audit history, and account access
     await expect(activationPage.getByLabel('Email address')).toHaveCount(0)
     await activationPage.getByRole('link', { name: 'Continue to sign in' }).click()
 
-    await activationPage.getByLabel('Email address').fill(instructor.email)
+    await activationPage.getByLabel('Email or username').fill(instructor.email)
     await activationPage.getByLabel('Password', { exact: true }).fill(instructorPassword)
     await activationPage.getByRole('button', { name: 'Sign in' }).click()
     await expect(activationPage).toHaveURL(`${origin}/`)

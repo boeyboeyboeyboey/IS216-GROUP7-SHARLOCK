@@ -9,14 +9,16 @@ const props = defineProps({
 })
 const emit = defineEmits(['submit'])
 
-const email = ref('')
+const identifier = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const localErrors = ref(Object.create(null))
 const summary = ref(null)
-const emailError = computed(() => localErrors.value.email || props.fieldErrors.email || '')
+const identifierError = computed(
+  () => localErrors.value.identifier || props.fieldErrors.identifier || '',
+)
 const passwordError = computed(() => localErrors.value.password || props.fieldErrors.password || '')
-const hasFieldErrors = computed(() => Boolean(emailError.value || passwordError.value))
+const hasFieldErrors = computed(() => Boolean(identifierError.value || passwordError.value))
 
 function focusSummary() {
   nextTick(() => summary.value?.focus())
@@ -25,8 +27,8 @@ function focusSummary() {
 function submit() {
   localErrors.value = Object.create(null)
   try {
-    const input = parseLoginInput({ email: email.value, password: password.value })
-    emit('submit', { email: input.emailNormalized, password: input.password })
+    const input = parseLoginInput({ identifier: identifier.value, password: password.value })
+    emit('submit', { identifier: input.identifier.normalized, password: input.password })
   } catch (error) {
     localErrors.value = error.fieldErrors || Object.create(null)
     focusSummary()
@@ -64,21 +66,26 @@ defineExpose({ clearSecrets })
     </div>
 
     <div class="auth-field">
-      <label for="login-email">Email address</label>
+      <label for="login-identifier">Email or username</label>
       <input
-        id="login-email"
-        v-model="email"
-        type="email"
-        name="email"
+        id="login-identifier"
+        v-model="identifier"
+        type="text"
+        name="username"
         autocomplete="username"
-        inputmode="email"
+        autocapitalize="none"
+        spellcheck="false"
         required
         :disabled="pending"
-        :aria-invalid="Boolean(emailError)"
-        :aria-describedby="emailError ? 'login-email-hint login-email-error' : 'login-email-hint'"
+        :aria-invalid="Boolean(identifierError)"
+        :aria-describedby="
+          identifierError ? 'login-identifier-hint login-identifier-error' : 'login-identifier-hint'
+        "
       />
-      <small id="login-email-hint">Use this email to sign in.</small>
-      <p v-if="emailError" id="login-email-error" class="auth-field-error">{{ emailError }}</p>
+      <small id="login-identifier-hint">Use your email address or username.</small>
+      <p v-if="identifierError" id="login-identifier-error" class="auth-field-error">
+        {{ identifierError }}
+      </p>
     </div>
 
     <div class="auth-field">
