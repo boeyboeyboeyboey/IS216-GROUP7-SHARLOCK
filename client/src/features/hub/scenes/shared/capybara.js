@@ -45,7 +45,6 @@ const EARS = [
   { id: 'r', p: [-0.185, 0.89, 0.5], side: -1 },
 ];
 const MONOCLE = { c: [0.235, 0.83, 0.745], n: [0.93, 0, 0.37], radius: 0.058 };
-const SCARF = { z0: 0.27, psi: -1.5, zEnd: 0.41 };
 const EYE_P = [0, 0.835, 0.74];
 const NOSE_P = [0, 0.82, 1.075];
 const MOUTH_P = [0, 0.655, 1.075];
@@ -53,21 +52,48 @@ const MOUTH_P = [0, 0.655, 1.075];
 // sharlock only: a stubbier head that sinks into a fatter body and bigger flatter nostrils, the dock workers keep the shared shapes above
 // pear shape: the rear half is fatter and a bit taller, the front half only slightly wider
 const SH_BODY = { c: [0, 0.6, -0.08], r: [0.372, 0.394, 0.62], e: [0.7, 0.85], pear: (z) => { const q = smooth(0.1, -0.45, z); return [1 + 0.08 * q, 1 + 0.05 * q]; } };
-const SH_HEAD = { c: [0, 0.72, 0.74], r: [0.215, 0.215, 0.32], e: [0.55, 0.6] };
+const SH_HEAD = { c: [0, 0.72, 0.74], r: [0.215, 0.215, 0.32], e: [0.55, 0.6], at: headAt };
+// loaf shaped head: the back half swells to about 0.30 wide and 0.31 tall with a higher crown and eases to the plain size by the eyes
+function headDims(z) {
+  const q = smooth(0.74, 0.46, z);
+  return { cy: 0.72 - 0.047 * q, rx: 0.215 * (1 + 0.4 * q), ry: 0.215 * (1 + 0.47 * q) };
+}
+function headAt(u, v) {
+  const H = SH_HEAD;
+  const phi = PI * v - PI / 2;
+  const psi = TAU * u;
+  const s = Math.abs(Math.cos(phi)) ** H.e[0];
+  const z = H.c[2] + H.r[2] * sp(Math.sin(phi), H.e[0]);
+  const d = headDims(z);
+  return [d.rx * s * sp(Math.cos(psi), H.e[1]), d.cy + d.ry * s * sp(Math.sin(psi), H.e[1]), z];
+}
+const SH_EARS = [
+  { id: 'l', p: [0.215, 0.945, 0.5], side: 1 },
+  { id: 'r', p: [-0.215, 0.945, 0.5], side: -1 },
+];
 const SH_MUZZLE = { c: [0, 0.725, 0.96], r: [0.185, 0.17, 0.12], e: [0.38, 0.5] };
 const SH_HIPS = HIPS.map((h) => ({ ...h, p: [h.p[0] * 1.11, h.p[1], h.p[2]] }));
 const SH_HEAD_SHIFT = [0, -0.02, -0.12];
-const SH_SCARF = { z0: 0.17, psi: -1.5, zEnd: 0.31 };
 const SH_NOSE = { x: 0.062, z: 1.08, r: [0.04, 0.03, 0.007] };
 const SH_RUMP = { c: [0, 0.55, -0.42], r: [0.42, 0.32, 0.26] };
 // tapered neck volume from the shoulders into the back of the head, so there is no step between the two
-const SH_NECK = { z0: 0.15, z1: 0.62, from: { y: 0.66, rx: 0.34, ry: 0.33 }, to: { y: 0.7, rx: 0.215, ry: 0.215 } };
+const SH_NECK = { z0: 0.15, z1: 0.42, from: { y: 0.6, rx: 0.36, ry: 0.385 }, to: { y: 0.66, rx: 0.28, ry: 0.29 } };
+// neck cross section at v along the loft, a straight taper so the top line runs on from the back into the head
+const neckDims = (v) => ({ y: SH_NECK.from.y + (SH_NECK.to.y - SH_NECK.from.y) * v, rx: SH_NECK.from.rx + (SH_NECK.to.rx - SH_NECK.from.rx) * v, ry: SH_NECK.from.ry + (SH_NECK.to.ry - SH_NECK.from.ry) * v });
 function neckAt(u, v) {
-  const n = SH_NECK;
-  const t = smooth(0, 1, v);
+  const d = neckDims(v);
   const a = TAU * u;
-  const mix1 = (k) => n.from[k] + (n.to[k] - n.from[k]) * t;
-  return [mix1('rx') * sp(Math.cos(a), 0.6), mix1('y') + mix1('ry') * sp(Math.sin(a), 0.6), n.z0 + (n.z1 - n.z0) * v];
+  return [d.rx * sp(Math.cos(a), 0.6), d.y + d.ry * sp(Math.sin(a), 0.6), SH_NECK.z0 + (SH_NECK.z1 - SH_NECK.z0) * v];
+}
+// scarf ring round the neck just behind the cheeks, a is the angle round the ring (0 is the left, down is the throat)
+const SH_RING = { z: 0.54, a: -0.9, tube: 0.04 };
+function ringPoint(a, extra = 0) {
+  const h = headDims(SH_RING.z - SH_HEAD_SHIFT[2]);
+  const d = { y: h.cy + SH_HEAD_SHIFT[1], rx: h.rx, ry: h.ry };
+  const px = d.rx * 1.08 * sp(Math.cos(a), 0.6);
+  const py = d.ry * 1.08 * sp(Math.sin(a), 0.6);
+  const len = Math.hypot(px / d.rx, py / d.ry) || 1;
+  return [px + (px / d.rx / len) * extra, d.y + py + (py / d.ry / len) * extra, SH_RING.z - 0.015 * Math.sin(a)];
 }
 
 // a bag of vertex coloured triangles, one surface at a time so normals stay smooth inside a shape
@@ -271,34 +297,32 @@ const phiOf = (z, B = BODY) => Math.asin(sp(clamp((z - B.c[2]) / B.r[2], -1, 1),
 // knitted scarf: the ribs run round the neck, so the shade only changes across the width; u is across the strip
 const ribs = (st, count, v, edge = 0) => scaleColor(st.scarf, (0.92 + 0.08 * Math.cos(v * TAU * count)) * (1 - 0.25 * edge));
 
-// slim scarf collar at the head and body junction: it rides high over the back and slopes forward to the chest under the head
-function addScarfCollar(kit, st, B = BODY, sc = SCARF) {
+// knitted scarf ring: a soft tube round the neck, a little proud of the fur everywhere
+function addScarfRing(kit, st) {
   kit.surface({
     cols: 40,
-    rows: 10,
-    hint: [0, 1, 0],
+    rows: 8,
+    wrap: true,
     at: (u, v) => {
-      const psi = (u * 2 - 1) * 2.5;
-      const z = sc.z0 + 0.16 * smooth(0, 2.5, Math.abs(psi)) + v * 0.1;
-      return bodyAt(phiOf(z, B), psi, 1.04 + 0.03 * Math.sin(v * PI) ** 0.6, 1, B);
+      const a = TAU * u;
+      const b = TAU * v;
+      const c = ringPoint(a, SH_RING.tube * Math.cos(b));
+      return [c[0], c[1], c[2] + SH_RING.tube * Math.sin(b)];
     },
-    color: (p, n, u, v) => ribs(st, 8, v, smooth(0.9, 1, Math.abs(v * 2 - 1))),
+    color: (p, n, u, v) => ribs(st, 3, v),
   });
 }
 
-// knot and two hanging ends on their own pivot so they can sway; the knot sits at the front left, the ends drape down the shoulder
-const KNOT_P = bodyAt(phiOf(SH_SCARF.zEnd, SH_BODY), SH_SCARF.psi, 1.08, 1, SH_BODY);
-function addScarfEnds(kit, st, B = BODY, sc = SCARF) {
-  kit.surface({ cols: 14, rows: 10, wrap: true, at: ellipsoid({ c: bodyAt(phiOf(sc.zEnd + 0.03, B), sc.psi, 1.1, 1, B), r: [0.04, 0.045, 0.05] }), color: () => scaleColor(st.scarf, 0.95) });
-  for (const [zc, width, length, drift] of [[sc.zEnd, 0.08, 0.8, 0], [sc.zEnd + 0.075, 0.075, 0.55, 0.03]]) {
+// knot at the front left of the throat and two short ends that lie down the chest, on their own pivot so they can sway
+const KNOT_P = ringPoint(SH_RING.a, 0.03);
+function addScarfEnds(kit, st, B = BODY) {
+  kit.surface({ cols: 14, rows: 10, wrap: true, at: ellipsoid({ c: KNOT_P, r: [0.045, 0.045, 0.05] }), color: () => scaleColor(st.scarf, 0.95) });
+  for (const [base, length] of [[0.9, 0.26], [0.55, 0.18]]) {
     kit.surface({
       cols: 8,
-      rows: 14,
-      hint: [-1, 0, 0.3],
-      at: (u, v) => {
-        const z = zc + (u - 0.5) * width + drift * v;
-        return bodyAt(phiOf(z, B), sc.psi + 0.12 - length * v, 1.1 + 0.02 * Math.sin(u * PI), 1, B);
-      },
+      rows: 12,
+      hint: [0.6, -0.6, 0.2],
+      at: (u, v) => bodyAt(phiOf(0.5 - length * v, B), PI - base + (u - 0.5) * 0.3, 1.05 + 0.025 * Math.sin(u * PI), 1, B),
       color: (p, n, u, v) => ribs(st, 3, u, smooth(0.92, 1, v)),
     });
   }
@@ -316,7 +340,7 @@ function addEye(kit, s) {
 
 // split leaves the nostrils and eyes out so the rig can hang them on their own pivots
 function addHead(kit, st, split = false, H = HEAD, M = MUZZLE, mouthZ = 1.265) {
-  kit.surface({ cols: 32, rows: 20, wrap: true, at: ellipsoid({ ...H, axis: 'z' }), color: headFur(st, H.c[2] - HEAD.c[2] + HEAD.r[2] - H.r[2]) });
+  kit.surface({ cols: 32, rows: 20, wrap: true, at: H.at ?? ellipsoid({ ...H, axis: 'z' }), color: headFur(st, H.c[2] - HEAD.c[2] + HEAD.r[2] - H.r[2]) });
   kit.surface({ cols: 24, rows: 14, wrap: true, at: ellipsoid({ ...M, axis: 'z' }), color: muzzleFur(st) });
   if (!split) {
     for (const s of [-1, 1]) {
@@ -450,7 +474,7 @@ function finishFlat(scene, name, material, positions, indices, colors) {
 }
 
 // the deerstalker is authored at 1.2 times the old size, shrunk by HAT_K to a small cap on the crown and tipped a few degrees, so every hat surface goes through hatSurface
-const HAT = { c: [0, 0.905, 0.78], rx: 0.276, rz: 0.312, h: 0.198 };
+const HAT = { c: [0, 0.925, 0.78], rx: 0.276, rz: 0.312, h: 0.198 };
 const HAT_K = 0.56;
 const hatTurn = rotator([-0.06, 0, 0.07]);
 const hatSurface = (kit, opts) =>
@@ -714,7 +738,7 @@ export function createCapybaraRig(scene, { name = 'sharlock', style = furStyles.
   const torsoKit = new Kit();
   addBody(torsoKit, style, SH_BODY);
   torsoKit.surface({ cols: 24, rows: 10, wrap: true, at: neckAt, color: bodyFur(style) });
-  addScarfCollar(torsoKit, style, SH_BODY, SH_SCARF);
+  addScarfRing(torsoKit, style);
   hang(track(torsoKit).toMesh(scene, `${name}-torso`, furMat), torso, torsoP);
 
   // rump bulge, hidden inside the barrel until he sits
@@ -728,7 +752,7 @@ export function createCapybaraRig(scene, { name = 'sharlock', style = furStyles.
   // the scarf ends hang from the knot on their own pivot so they can sway
   const scarf = pivot('scarf', torso, KNOT_P, torsoP);
   const scarfKit = new Kit();
-  addScarfEnds(scarfKit, style, SH_BODY, SH_SCARF);
+  addScarfEnds(scarfKit, style, SH_BODY);
   hang(track(scarfKit).toMesh(scene, `${name}-scarf`, furMat), scarf, KNOT_P);
 
   const head = pivot('head', torso, NECK.map((v, i) => v + SH_HEAD_SHIFT[i]), torsoP);
@@ -753,7 +777,7 @@ export function createCapybaraRig(scene, { name = 'sharlock', style = furStyles.
     hang(track(capKit).toMesh(scene, `${name}-cap`, furMat), head, NECK);
   }
 
-  const ears = EARS.map((e) => {
+  const ears = SH_EARS.map((e) => {
     const node = pivot(`ear-${e.id}`, head, e.p, NECK);
     const kit = new Kit();
     addEar(kit, style, e.side, e.p);
