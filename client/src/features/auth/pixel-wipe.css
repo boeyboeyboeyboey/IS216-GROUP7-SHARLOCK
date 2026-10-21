@@ -10,6 +10,12 @@
   pointer-events: all;
 }
 
+/* the page's own scrollbar sits outside the fixed overlay, so a destination taller than the window
+   would show its bar beside the covered screen; hide it for as long as a wipe is mounted */
+html:has(.pixel-wipe) {
+  overflow: hidden;
+}
+
 .pixel-wipe__grid {
   position: absolute;
   inset: 0;
