@@ -94,6 +94,42 @@ export const WIPE_SECTIONS = Object.freeze({
     emoji: '🏆',
     label: 'Checking the rankings…',
   },
+  // played when a signed-out visitor is sent back to sign in
+  login: {
+    kind: 'blocks',
+    pattern: 'bars',
+    color: '#2f5d8a',
+    emoji: '🔑',
+    label: 'Heading to the sign-in desk…',
+  },
+  register: {
+    kind: 'blocks',
+    pattern: 'diagonal',
+    color: '#2f5d8a',
+    emoji: '📝',
+    label: 'Opening the sign-up desk…',
+  },
+  joinClass: {
+    kind: 'blocks',
+    pattern: 'iris',
+    color: '#2f6b4a',
+    emoji: '🔖',
+    label: 'Finding your class…',
+  },
+  instructor: {
+    kind: 'blocks',
+    pattern: 'blinds',
+    color: '#6b4a8a',
+    emoji: '📋',
+    label: 'Opening the class register…',
+  },
+  admin: {
+    kind: 'blocks',
+    pattern: 'bars',
+    color: '#5b6670',
+    emoji: '🛡️',
+    label: 'Entering the control room…',
+  },
   // the capybara's fur brown from the town art
   about: {
     kind: 'blocks',
@@ -172,6 +208,16 @@ export function sectionOf(route) {
       return 'leaderboard'
     case '/about':
       return 'about'
+    case '/login':
+      return 'login'
+    case '/register':
+      return 'register'
+    case '/join-class':
+      return 'joinClass'
+    case '/instructor':
+      return 'instructor'
+    case '/admin':
+      return 'admin'
     default:
       // any game page (the newspaper dialog is part of town and was matched above)
       return route.path.startsWith('/games/')
