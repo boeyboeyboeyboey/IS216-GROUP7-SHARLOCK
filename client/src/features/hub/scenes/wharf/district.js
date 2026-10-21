@@ -98,6 +98,9 @@ export function buildDistrict({ world, signs }) {
     const fl = (u0, u1, v0, v1, color) => b.cloth.quad([f.point(u0, v0, cw), f.point(u1, v0, cw), f.point(u1, v1, cw), f.point(u0, v1, cw)], { color, normal: f.dir(0, 0, 1) });
     fl(-1.6, -0.05, top + 1.5, top + 2.55, [0.2, 0.4, 0.9, 1]);
     fl(-1.6, -0.05, top + 1.9, top + 2.15, [1.05, 1.0, 0.92, 1]);
+    // shaft with lantern room, then the spire and pennant, as separate camera blockers
+    B.block(f, [-S / 2 - 0.55, S / 2 + 0.55], [cw - S / 2 - 0.55, cw + S / 2 + 0.55], [police.H, lb + 2.85], 0.2);
+    B.block(f, [-1.6, 1.6], [cw - 1.6, cw + 1.6], [sb, top + 2.6], 0.1);
   }
   house({ x: -10, z: -10, yaw: E, W: 5, D: 12, floors: 3, wall: 'brickRed', color: [0.98, 0.92, 0.88, 1] });
   const pub = house({ x: -10, z: -21.25, yaw: E, W: 17.5, D: 12, floors: 3, wall: 'brickRed', color: [0.92, 0.8, 0.76, 1], nChimney: 3, litBias: 0.35, fascia: 'pub-fascia', hang: { id: 'pub-hang', u: -6.4, size: [2.6, 1.95] }, doorColor: [0.32, 0.16, 0.12, 1], awn: stripes([0.2, 0.42, 0.28, 1], [0.95, 0.9, 0.78, 1]) });
@@ -135,6 +138,7 @@ export function buildDistrict({ world, signs }) {
       b.wash.box({ c: pf.point(0, v, -0.07), s: [bw + 0.2, bh + 0.2, 0.1], yaw: pf.boxYaw, color: [0.18, 0.15, 0.16, 1] });
       for (const u of [-0.9, 0.9]) b.wash.bar(pf.point(u, 9.0, -0.1), pf.point(u, 9.3, -0.1), 0.1, { color: IRON });
     }
+    B.block(f, [-6.6, 6.6], [0, 3.1], [0, 10.4], 0.25);
     // pediment
     const pe = (u, v, w) => f.point(u, v, w);
     b.stone.quad([pe(-6.6, 8.25, 2.8), pe(6.6, 8.25, 2.8), pe(0, 10.4, 2.8), pe(0, 10.4, 2.8)], { color: [1.04, 1, 0.94, 1], normal: f.dir(0, 0, 1) });

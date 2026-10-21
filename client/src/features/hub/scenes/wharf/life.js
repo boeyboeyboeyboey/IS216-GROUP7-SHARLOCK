@@ -92,7 +92,7 @@ function hansom(scene, material) {
   return { bodyMesh, wheel };
 }
 
-export function buildLife({ scene, world, tier, reduced, chimneys }) {
+export function buildLife({ scene, world, tier, reduced, chimneys, farStacks = [] }) {
   const disposers = [];
   const rand = rng(31337);
 
@@ -173,11 +173,16 @@ export function buildLife({ scene, world, tier, reduced, chimneys }) {
   const smoke = chimneys.length && tier.chimneySmoke
     ? makeSmoke(scene, { name: 'chimney-smoke', texture: puff, points: chimneys, rate: tier.chimneySmoke, capacity: 260, color1: new Color4(0.95, 0.72, 0.62, 0.34), color2: new Color4(0.85, 0.62, 0.7, 0.26), life: [4, 7], size: [0.9, 1.5], grow: 5, power: [0.6, 1.2], wind: [0.55, 0.45, 0.2] })
     : null;
+  // a few slow plumes over the backdrop, desktop only
+  const farSmoke = farStacks.length && tier.backdropSmoke
+    ? makeSmoke(scene, { name: 'backdrop-smoke', texture: puff, points: farStacks, rate: tier.backdropSmoke, capacity: 160, color1: new Color4(0.9, 0.7, 0.66, 0.3), color2: new Color4(0.8, 0.62, 0.72, 0.22), life: [6, 10], size: [1.6, 2.6], grow: 6, power: [0.7, 1.3], wind: [0.55, 0.45, 0.2] })
+    : null;
 
   let time = 0;
   const update = (dt) => {
     if (!reduced()) time += dt;
     if (smoke) smoke.updateSpeed = reduced() ? 0 : 0.016;
+    if (farSmoke) farSmoke.updateSpeed = reduced() ? 0 : 0.016;
     // workers face the way they walk: heading from a short look ahead along the loop
     workers.forEach((w, i) => {
       const s = w.start * 1.2 + time * w.speed * w.dir;
@@ -214,6 +219,7 @@ export function buildLife({ scene, world, tier, reduced, chimneys }) {
     cabAt: () => ({ x: cabNode.position.x, z: cabNode.position.z }),
     dispose() {
       smoke?.dispose();
+      farSmoke?.dispose();
       puff.dispose();
       crowd.dispose();
       for (const x of [cabParts.bodyMesh, cabParts.wheel, gull, jib, load, jibRoot, loadNode, cabNode]) x.dispose();

@@ -216,6 +216,7 @@ export function createHub({ container, joystick = {}, params = new URLSearchPara
     },
     enter: (id) => api()?.enter(id) ?? Promise.resolve(false),
     back: () => api()?.back() ?? Promise.resolve(false),
+    resetCamera: () => api()?.resetCamera(),
     position: () => api()?.debug.position() ?? null,
     pauseInput(value) {
       state.inputPaused = Boolean(value);
@@ -235,6 +236,7 @@ export function createHub({ container, joystick = {}, params = new URLSearchPara
       select: hub.select,
       enter: hub.enter,
       back: hub.back,
+      resetCamera: hub.resetCamera,
       pauseInput: hub.pauseInput,
       get debug() {
         const debug = api()?.debug;

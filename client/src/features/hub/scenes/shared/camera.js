@@ -11,8 +11,7 @@ export function createFollowCamera({ scene, canvas, spawn, alpha = -Math.PI / 2,
   camera.upperRadiusLimit = limits.radius?.[1] ?? 36;
   camera.lowerBetaLimit = limits.beta?.[0] ?? 0.55;
   camera.upperBetaLimit = limits.beta?.[1] ?? 1.38;
-  camera.lowerAlphaLimit = alpha - (limits.spread ?? 1.6);
-  camera.upperAlphaLimit = alpha + (limits.spread ?? 1.6);
+  // no alpha limits: the camera orbits a full turn
   camera.panningSensibility = 0;
   camera.wheelDeltaPercentage = 0.012;
   camera.pinchDeltaPercentage = 0.01;

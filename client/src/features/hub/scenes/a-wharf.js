@@ -5,12 +5,14 @@ import { PhysicsBody } from '@babylonjs/core/Physics/v2/physicsBody.js';
 import { PhysicsShapeBox, PhysicsShapeContainer } from '@babylonjs/core/Physics/v2/physicsShape.js';
 import { PhysicsMotionType } from '@babylonjs/core/Physics/v2/IPhysicsEnginePlugin.js';
 import { createFollowCamera, freeCamera } from './shared/camera.js';
-import { clampAlpha, createDoors, doorSpot } from './shared/doors.js';
+import { createSpringArm } from './shared/cameraCollision.js';
+import { createDoors, doorSpot } from './shared/doors.js';
+import { alphaBehind, createOrbitKeys } from './shared/orbit.js';
 import { createInstrumentation } from './shared/instrumentation.js';
 import { createPlayer } from './shared/player.js';
 import { getTier } from './shared/quality.js';
 import { createPlanarMirror } from './shared/mirror.js';
-import { loadIndexes } from './shared/assets.js';
+import { loadIndexes, probeOptionalPlates } from './shared/assets.js';
 import { createSharlock } from './shared/sharlock.js';
 import { createWorld } from './wharf/world.js';
 import { createSigns } from './wharf/signs.js';
@@ -18,13 +20,16 @@ import { buildGround } from './wharf/ground.js';
 import { buildDistrict } from './wharf/district.js';
 import { buildLamps, buildCargo, buildNewsstand, buildCraneTower } from './wharf/props.js';
 import { buildBridge } from './wharf/bridge.js';
-import { buildSkyline } from './wharf/skyline.js';
+import { buildBackdrop } from './wharf/backdrop.js';
+import { buildSkyline, plateBase } from './wharf/skyline.js';
+import { buildFarBank } from './wharf/farbank.js';
 import { createSky } from './wharf/sky.js';
 import { createWater, waterClock } from './wharf/water.js';
 import { buildBoats } from './wharf/boats.js';
 import { buildLife } from './wharf/life.js';
 import { setupLook } from './wharf/look.js';
 import { applyToon } from './wharf/toon.js';
+import { selectionViews } from './wharf/views.js';
 import { destinations, heightAt, obstacles, paths, spawn, walkable, waterY } from './wharf/layout.js';
 
 export async function build({ engine, scene, canvas, state, notify, params, joystick, spawnAt = null, quality = 'auto', resumeAt = null }) {
@@ -50,10 +55,12 @@ export async function build({ engine, scene, canvas, state, notify, params, joys
     radius: aspect >= 1.45 ? 16 : 16 + (1.45 - aspect) * 15,
     fov: 0.95,
     far: 1400,
-    limits: { radius: [9, 38], beta: [0.85, 1.4], spread: 0.9 },
+    limits: { radius: [9, 38], beta: [0.85, 1.4] },
   });
-  if (returnTo) camera.alpha = clampAlpha(camera, Math.atan2(-Math.cos(returnTo.face), -Math.sin(returnTo.face)));
+  if (returnTo) camera.alpha = alphaBehind(returnTo.face);
   const indexes = loadIndexes();
+  // the south plates are optional, so they are probed while the district builds
+  const probing = probeOptionalPlates(indexes, plateBase);
   const look = setupLook({ scene, camera, tier });
   disposers.push(() => look.dispose());
 
@@ -66,6 +73,7 @@ export async function build({ engine, scene, canvas, state, notify, params, joys
   });
   const ground = buildGround({ scene, world });
   const district = buildDistrict({ world, signs });
+  const backdrop = buildBackdrop({ world, signs, tier });
   const news = buildNewsstand({ world, signs, info: destinations.find((d) => d.id === 'threat-briefing'), B: district.B });
   const lamps = buildLamps({ scene, world, extraHeads: [...district.lampHeads, news.lamp], reduced });
   disposers.push(() => lamps.dispose());
@@ -83,18 +91,22 @@ export async function build({ engine, scene, canvas, state, notify, params, joys
   // sky, river, far skyline, boats and street life
   const sky = createSky(scene, tier.desktop ? {} : { width: 1024, height: 256 });
   disposers.push(() => sky.dispose());
+  await probing;
   const skyline = await buildSkyline({ scene, indexes, tier });
   disposers.push(() => skyline.dispose());
+  // river wall in front of the mid plates, hides their painted quay and the cross fades
+  const farBank = buildFarBank({ scene, brick: world.textures.brickRed, tier });
+  disposers.push(() => farBank.dispose());
   const boats = buildBoats({ scene, world, tier, reduced });
   disposers.push(() => boats.dispose());
-  const life = buildLife({ scene, world, tier, reduced, chimneys: district.chimneys });
+  const life = buildLife({ scene, world, tier, reduced, chimneys: district.chimneys, farStacks: backdrop.smokeStacks });
   disposers.push(() => life.dispose());
 
   // planar reflection of boats, lamps, lit windows, skyline and the bridge, desktop only
   let mirror = null;
   if (tier.mirror) {
     const reflectKeys = ['brickRed', 'brickYellow', 'stone', 'slate', 'wash', 'plank', 'windowLit', 'bridgeStone', 'bridgeWash', 'bridgePlank', 'bridgeSlate'];
-    const list = [...built.meshes.filter((m) => reflectKeys.some((k) => m.name === `static-${k}`)), ...skyline.meshes, ...boats.reflect, ...lamps.meshes.slice(0, 1)];
+    const list = [...built.meshes.filter((m) => reflectKeys.some((k) => m.name === `static-${k}`)), ...skyline.meshes, ...farBank.meshes, ...boats.reflect, ...lamps.meshes.slice(0, 1)];
     mirror = createPlanarMirror(scene, { name: 'thames-mirror', y: waterY, ratio: tier.mirrorRatio, list });
     mirror.clearColor = new Color4(0, 0, 0, 0);
     // node materials do not register their render targets, so the scene is told to refresh it every frame
@@ -136,15 +148,35 @@ export async function build({ engine, scene, canvas, state, notify, params, joys
     nav: { spawn: origin, heading: origin.heading, heightAt, walkable, paths, destinations, door: doorSpot },
   });
 
-  const infos = destinations.map((d) => ({ ...d, focus: { x: d.x + Math.sin(d.face) * 1.5, y: d.building === 'newsstand' ? 1.5 : d.building === 'customs' ? 5.2 : d.building === 'police' ? 15 : 2.4, z: d.z + Math.cos(d.face) * 1.5 }, view: { radius: d.building === 'newsstand' ? 11 : d.building === 'customs' ? 17 : d.building === 'police' ? 32 : 15, beta: 1.12 } }));
-  const doors = createDoors({ scene, state, notify, infos, control, camera, reduced, groundY: heightAt });
+  // the focus point is read live so the views in selectionViews can be tuned while the hub runs
+  const infos = destinations.map((d) => {
+    const view = selectionViews[d.id];
+    return {
+      ...d,
+      view,
+      get focus() {
+        return { x: d.x + Math.sin(d.face) * 1.5, y: view.focusY, z: d.z + Math.cos(d.face) * 1.5 };
+      },
+    };
+  });
+  const doors = createDoors({ scene, state, notify, infos, control, camera, reduced, groundY: heightAt, radiusNow: () => arm.state().desired });
 
-  // lower the player in the frame so the river and sky fill the top
+  // keeps the follow camera out of the buildings. off while the enter swoop runs and once the debug camera has freed the limits
+  let cameraFreed = false;
+  const arm = createSpringArm({ camera, boxes: world.blockers, reduced, active: () => !cameraFreed && !doors.isEntering() });
+  // the asked for radius goes back before the camera reads its inputs
+  const armRestore = scene.onBeforeAnimationsObservable.add(() => arm.restore());
+
+  // lower the player in the frame so the river and sky fill the top. a selection view brings its own shift, and the shift
+  // shrinks with the spring arm so a pulled in camera does not drop the player to the bottom edge
   const frameOffset = -2.7;
+  let frameNow = frameOffset;
   camera.targetScreenOffset.set(0, frameOffset);
   const metrics = createInstrumentation({ scene, state });
   const windowLit = world.materials.windowLit;
   const start = performance.now();
+  // the minimap reads this by reference on a timer, so nothing is allocated per frame
+  state.player = { x: origin.x, z: origin.z, heading: origin.heading };
   const frame = scene.onBeforeRenderObservable.add(() => {
     const dt = Math.min(engine.getDeltaTime() / 1000, 1 / 20);
     const t = (performance.now() - start) / 1000;
@@ -152,7 +184,17 @@ export async function build({ engine, scene, canvas, state, notify, params, joys
       control.update(dt);
       if (!reduced()) waterClock.time = t;
     }
+    const at = control.position();
+    state.player.x = at.x;
+    state.player.z = at.z;
+    state.player.heading = control.heading();
     doors.update(dt, t);
+    arm.update(dt);
+    const armed = arm.state();
+    const framed = doors.framedId() && control.isHeld() ? selectionViews[doors.framedId()].shift : frameOffset;
+    frameNow = reduced() ? framed : frameNow + (framed - frameNow) * (1 - Math.exp(-dt * 5));
+    camera.targetScreenOffset.y = armed.active && armed.desired > 0 ? (frameNow * armed.effective) / armed.desired : frameNow;
+    orbit.update(dt);
     // lit windows warm up as the sun sets, lamps come on one by one
     const warm = reduced() ? 1 : Math.min(1, t / 24);
     windowLit.emissiveColor.set(0.5 + 0.5 * warm, 0.42 + 0.55 * warm, 0.36 + 0.55 * warm);
@@ -170,9 +212,25 @@ export async function build({ engine, scene, canvas, state, notify, params, joys
     if (inputPaused) camera.detachControl();
     else camera.attachControl(canvas, true);
   };
+  // swing the camera back behind sharlock, or back to the selection view while a building is selected
+  const resetCamera = () => {
+    if (inputPaused || doors.isEntering() || state.mode !== 'explore') return;
+    if (state.selected) {
+      doors.refocus();
+      return;
+    }
+    const p = control.position();
+    control
+      .flyTo({ target: new Vector3(p.x, p.y + 0.4, p.z), alpha: alphaBehind(control.heading()) }, 0.6)
+      .then(() => {
+        if (!state.selected && !doors.isEntering()) control.releaseCamera();
+      });
+  };
+  const orbit = createOrbitKeys({ camera, enabled: () => !inputPaused && !doors.isEntering(), onReset: resetCamera });
   return {
     api: {
       select: doors.select,
+      resetCamera,
       enter: doors.enter,
       back: async () => {
         const done = await doors.back();
@@ -190,10 +248,15 @@ export async function build({ engine, scene, canvas, state, notify, params, joys
         doors: () => infos.map((i) => ({ id: i.id, ...doorSpot(i, i.reach) })),
         camera: (alpha, beta, radius, tx, ty, tz, fov) => {
           control.releaseCamera();
+          cameraFreed = true;
           freeCamera(camera, alpha, beta, radius, tx === undefined ? null : [tx, ty, tz]);
           if (fov) camera.fov = fov;
           control.flyTo({}, 0.001);
         },
+        springArm: () => arm.state(),
+        views: selectionViews,
+        frameShift: () => camera.targetScreenOffset.y,
+        blockers: () => world.blockers.length,
         cameraState: () => ({ target: camera.target.asArray(), alpha: camera.alpha, beta: camera.beta, radius: camera.radius }),
         walkTo: (x, z) => control.walkTo([[x, z]], { cancelHold: true }),
         clickAt: (cx, cy) => {
@@ -210,7 +273,9 @@ export async function build({ engine, scene, canvas, state, notify, params, joys
     },
     dispose() {
       scene.onBeforeRenderObservable.remove(frame);
+      scene.onBeforeAnimationsObservable.remove(armRestore);
       metrics.dispose();
+      orbit.dispose();
       doors.dispose();
       control.dispose();
       camera.detachControl();

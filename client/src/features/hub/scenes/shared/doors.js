@@ -10,16 +10,6 @@ import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTextur
 // ground point just outside a door; face is the yaw of the facade normal
 export const doorSpot = (info, reach = info.reach) => ({ x: info.x + Math.sin(info.face) * reach, z: info.z + Math.cos(info.face) * reach });
 
-// camera alpha nearest to a wanted angle, wrapped next to the allowed range before clamping
-export function clampAlpha(camera, wanted) {
-  const lo = camera.lowerAlphaLimit ?? -9;
-  const hi = camera.upperAlphaLimit ?? 9;
-  const mid = (lo + hi) / 2;
-  while (wanted > mid + Math.PI) wanted -= Math.PI * 2;
-  while (wanted < mid - Math.PI) wanted += Math.PI * 2;
-  return Math.min(hi, Math.max(lo, wanted));
-}
-
 export function ringTexture(scene) {
   const texture = new DynamicTexture('door-ring', 256, scene, true);
   const ctx = texture.getContext();
@@ -43,8 +33,8 @@ export function ringTexture(scene) {
 }
 
 // door triggers and the select / enter / back flow shared by every walkable scene
-// infos: [{ id, title, accent, x, z, face, reach, focus?: { x, y, z }, view?: { radius, beta } }]
-export function createDoors({ scene, state, notify, infos, control, camera, reduced, groundY = () => 0, onGlow = null, ringRadius = 1.05, ringMaterial = null }) {
+// infos: [{ id, title, accent, x, z, face, reach, focus?: { x, y, z }, view?: { radius, beta, alphaOffset } }]
+export function createDoors({ scene, state, notify, infos, control, camera, reduced, radiusNow = () => camera.radius, groundY = () => 0, onGlow = null, ringRadius = 1.05, ringMaterial = null }) {
   const infoOf = (id) => infos.find((i) => i.id === id);
   const glow = new Map(infos.map((i) => [i.id, 0]));
 
@@ -83,15 +73,34 @@ export function createDoors({ scene, state, notify, infos, control, camera, redu
   ringMesh.alphaIndex = 50;
 
   let entering = false;
+  // false until the first update has noted which ring, if any, the player starts on
+  let primed = false;
+  // the door a menu or map pick is walking the player to, so leaving another ring on the way is not a deselect
+  let headingTo = null;
+  let headingRoute = 0;
   let ringDirty = false;
   let saved = { alpha: camera.alpha, beta: camera.beta, radius: camera.radius };
   // the normal follow view, which a deselect settles back into
   const home = { alpha: camera.alpha, beta: camera.beta, radius: camera.radius };
+  // the building whose selection view the camera is flying to or holding
+  let framed = null;
+  // the enter swoop goes closer than the follow view allows; the limit comes back once the camera has left the door
+  let followLowerRadius = null;
+
+  const frameView = (info) => {
+    framed = info.id;
+    // flyTo turns the short way; the offset leans the view off the street axis so a backdrop shows behind the facade
+    const alpha = Math.PI / 2 - info.face + (info.view?.alphaOffset ?? 0);
+    const focus = info.focus ?? { x: info.x, y: 1.6, z: info.z };
+    return control.flyTo({ target: new Vector3(focus.x, focus.y, focus.z), radius: info.view?.radius ?? 14, beta: info.view?.beta ?? 1.0, alpha }, 1.0);
+  };
 
   const select = (id) => {
     state.selected = id;
+    headingTo = id && id !== state.nearDoor ? id : null;
     notify();
     if (!id) {
+      framed = null;
       // stop where the player stands and ease the camera back to the follow view
       control.cancelRoute();
       const p = control.position();
@@ -100,20 +109,23 @@ export function createDoors({ scene, state, notify, infos, control, camera, redu
       });
       return;
     }
-    const info = infoOf(id);
     control.routeToDoor(id);
+    headingRoute = control.routeSerial();
     // face the shopfront from the open side
-    const side = clampAlpha(camera, Math.PI / 2 - info.face);
-    const focus = info.focus ?? { x: info.x, y: 1.6, z: info.z };
-    control.flyTo({ target: new Vector3(focus.x, focus.y, focus.z), radius: info.view?.radius ?? 14, beta: info.view?.beta ?? 1.0, alpha: side }, 1.0);
+    frameView(infoOf(id));
   };
+
+  // flies back to the selection view after the player has turned the camera away
+  const refocus = () => (state.selected && infoOf(state.selected) ? frameView(infoOf(state.selected)) : Promise.resolve());
 
   const enter = async (id = state.selected) => {
     if (!id || entering) return false;
     const info = infoOf(id);
     entering = true;
     control.setEnabled(false);
-    saved = { alpha: camera.alpha, beta: camera.beta, radius: camera.radius };
+    saved = { alpha: camera.alpha, beta: camera.beta, radius: radiusNow() };
+    followLowerRadius ??= camera.lowerRadiusLimit;
+    camera.lowerRadiusLimit = 1;
     state.mode = 'entering';
     notify();
     const spot = doorSpot(info, Math.max(1.2, info.reach - 1.2));
@@ -130,10 +142,15 @@ export function createDoors({ scene, state, notify, infos, control, camera, redu
     notify();
     const p = control.position();
     await control.flyTo({ target: new Vector3(p.x, p.y + 0.4, p.z), ...saved }, 0.6);
+    if (followLowerRadius !== null) camera.lowerRadiusLimit = followLowerRadius;
+    followLowerRadius = null;
     control.releaseCamera();
     control.setEnabled(true);
     entering = false;
     state.panelFor = null;
+    // leaving a building clears its selection; the player stays on the ring without reselecting it
+    state.selected = null;
+    framed = null;
     state.mode = 'explore';
     notify();
     return true;
@@ -147,11 +164,35 @@ export function createDoors({ scene, state, notify, infos, control, camera, redu
       const spot = doorSpot(info, info.reach);
       if (Math.hypot(spot.x - p.x, spot.z - p.z) < 2.1) near = info.id;
     }
-    if (near !== state.nearDoor) {
+    if (!primed) {
+      // coming back from a game puts the player on that door's ring, which must not count as walking onto it
+      primed = true;
       state.nearDoor = near;
+    } else if (near !== state.nearDoor) {
+      const left = state.nearDoor;
+      state.nearDoor = near;
+      if (near && near === headingTo) headingTo = null;
       // one source of truth: walking onto a door selects it, unless an auto-walk is heading elsewhere
       if (!entering && near && (!control.isWalking() || near === state.selected)) state.selected = near;
+      // walking off the selected door's ring deselects it; an auto-walk passing over other rings does not
+      if (!entering && !near && left && left === state.selected && headingTo !== left) {
+        if (control.isHeld()) select(null);
+        else {
+          state.selected = null;
+          framed = null;
+        }
+      }
       notify();
+    }
+    // steering away (keys, joystick or a click elsewhere) before reaching the picked door drops the pick
+    if (!entering && headingTo && headingTo === state.selected && state.nearDoor !== headingTo && (!control.isWalking() || control.routeSerial() !== headingRoute)) {
+      headingTo = null;
+      if (control.isHeld()) select(null);
+      else {
+        state.selected = null;
+        framed = null;
+        notify();
+      }
     }
     infos.forEach((info, i) => {
       const active = info.id === state.selected || info.id === state.nearDoor;
@@ -178,6 +219,8 @@ export function createDoors({ scene, state, notify, infos, control, camera, redu
     back,
     update,
     infoOf,
+    refocus,
+    framedId: () => framed,
     isEntering: () => entering,
     dispose() {
       ownMaterial?.emissiveTexture?.dispose();

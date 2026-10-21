@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { GRAPHICS_TO_TIER } from './scenes/shared/quality.js'
+import HubMinimap from './HubMinimap.vue'
 import { decidePerf, perfRecord, writePerf } from './perfWatch.js'
 
 const props = defineProps({
@@ -31,6 +32,7 @@ const view = reactive({
   fps: 0,
   drawCalls: 0,
   lowering: false,
+  player: null,
 })
 let hub = null
 let gone = false
@@ -65,6 +67,17 @@ function choose(id) {
   const next = view.selected === id ? null : id
   view.selected = next
   hub?.select(next)
+}
+
+// the engine writes the player's spot into its shared state every frame; the map samples it at 10 Hz
+let mapTimer = null
+function samplePlayer() {
+  const at = hub?.state?.player
+  if (!at) return
+  const last = view.player
+  if (!last || Math.abs(last.x - at.x) > 0.05 || Math.abs(last.z - at.z) > 0.05 || Math.abs(last.heading - at.heading) > 0.03) {
+    view.player = { x: at.x, z: at.z, heading: at.heading }
+  }
 }
 
 function onEscape() {
@@ -178,10 +191,14 @@ function rebuildHub() {
   mountHub(resume)
 }
 
-onMounted(mountHub)
+onMounted(() => {
+  mapTimer = setInterval(samplePlayer, 100)
+  mountHub()
+})
 
 onBeforeUnmount(() => {
   gone = true
+  clearInterval(mapTimer)
   hub?.dispose()
   hub = null
 })
@@ -227,6 +244,18 @@ defineExpose({
       >
         {{ status }}
       </p>
+      <button
+        v-if="view.ready"
+        type="button"
+        class="btn btn-secondary btn-sm hub-reset"
+        data-testid="hub-reset-camera"
+        aria-label="Reset camera behind Sharlock"
+        title="Reset camera (R)"
+        :disabled="inputPaused || view.mode !== 'explore'"
+        @click="hub?.resetCamera()"
+      >
+        Reset camera
+      </button>
     </div>
     <div class="hub-dock">
       <nav class="hub-dest" aria-label="Destinations">
@@ -255,6 +284,13 @@ defineExpose({
         Enter {{ selectedGame.name }}
       </button>
     </div>
+    <HubMinimap
+      v-if="view.ready && !inputPaused"
+      :games="games"
+      :player="view.player"
+      :selected="view.selected"
+      @choose="choose"
+    />
     <div ref="pad" class="hub-joystick" aria-hidden="true"><div ref="knob" class="hub-joystick-knob"></div></div>
   </section>
 </template>
@@ -354,6 +390,18 @@ defineExpose({
   bottom: 16px;
   transform: translateX(-50%);
   max-width: calc(100% - 32px);
+  transition: filter 0.12s;
+}
+/* the shared pixel button nudges itself on hover, which would undo the centring, so only the shade changes */
+.hub-enter.btn:hover,
+.hub-enter.btn:focus-visible,
+.hub-enter.btn:active {
+  transform: translateX(-50%);
+  box-shadow: var(--shadow-pixel);
+  filter: brightness(0.9);
+}
+.hub-enter.btn:active {
+  filter: brightness(0.8);
 }
 .hub-joystick {
   position: absolute;
@@ -414,10 +462,17 @@ defineExpose({
     transform: none;
     pointer-events: auto;
   }
+  .hub-enter.btn:hover,
+  .hub-enter.btn:focus-visible,
+  .hub-enter.btn:active {
+    transform: none;
+  }
+  /* the left column holds the toolbar, status and Reset camera, so the pad moves under the Map button on the right */
   .hub-joystick {
     bottom: auto;
-    top: 64px;
-    left: 8px;
+    top: 116px;
+    right: 8px;
+    left: auto;
     width: 96px;
     height: 96px;
   }

@@ -9,11 +9,25 @@ const IRON = [0.2, 0.2, 0.26, 1];
 const LIT = 0.55;
 
 // victorian brick terraces and warehouses. facade-local frame: u right, v up, w outward from the wall
-export function createBuilder({ world, signs }) {
-  const rand = rng(1881);
+export function createBuilder({ world, signs, seed = 1881 }) {
+  const rand = rng(seed);
   const chimneys = [];
   const b = world.batches;
   const uvOf = (id) => signs.uv(id);
+
+  // camera blocker around a box given in frame coordinates, grown by pad so a wall hugging player stays outside it
+  const block = (f, [u0, u1], [w0, w1], [y0, y1], pad = 0.3) => {
+    const xs = [];
+    const zs = [];
+    for (const u of [u0 - pad, u1 + pad]) {
+      for (const w of [w0 - pad, w1 + pad]) {
+        const p = f.point(u, 0, w);
+        xs.push(p[0]);
+        zs.push(p[2]);
+      }
+    }
+    world.blockers.push({ min: [Math.min(...xs), y0, Math.min(...zs)], max: [Math.max(...xs), y1 + pad, Math.max(...zs)], pad });
+  };
 
   // world bounds of a box given in frame coordinates (only right angle yaws are used)
   const boxArgs = (f, u, v, w, su, sv, sw) => {
@@ -173,8 +187,9 @@ export function createBuilder({ world, signs }) {
         for (let k = 0; k < floors; k += 1) windowAt(g, -W / 2 + (W / nb) * (i + 0.5), gf + fh * k + 0.55, 1.2, 1.9, rand() < LIT);
       }
     }
+    block(f, [-W / 2, W / 2], [-D, 0], [0, H + rh]);
     return { f, W, D, H, gf, fh, floors };
   }
 
-  return { house, windowAt, fbox, board, hanging, awning, chimney, chimneys, rand, b, boxArgs, turned };
+  return { house, windowAt, fbox, board, hanging, awning, chimney, chimneys, rand, b, boxArgs, turned, block };
 }

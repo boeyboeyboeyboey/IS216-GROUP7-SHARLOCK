@@ -18,7 +18,7 @@ export function buildGround({ scene, world }) {
   const dark = [0.55, 0.48, 0.52, 1];
 
   // base under everything, so no gap ever shows the sky
-  flat(cobble, -90, 90, -80, 46, -0.03, dark);
+  flat(cobble, -140, 140, -170, 46, -0.03, dark);
   // the last 3 m before the quay edge darken as if damp from the river
   const dampZ = quayZ - 3.4;
   const damp = [0.7, 0.72, 0.8, 1];

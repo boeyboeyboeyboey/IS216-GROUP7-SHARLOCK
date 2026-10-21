@@ -115,7 +115,7 @@ export function paintSkyline(ctx, w, h, { seed, arc, radius, dome = null, spires
   ctx.globalCompositeOperation = 'source-over';
 }
 
-const plateBase = `${import.meta.env.BASE_URL}hub/plates/`;
+export const plateBase = `${import.meta.env.BASE_URL}hub/plates/`;
 
 // the painted stand-ins, the single file plates of the first kit, or numbered pieces per ring; any png dropped into
 // assets/plates with the documented names replaces the painted stand-in. loadFile is swappable so a test can feed synthetic textures
@@ -126,7 +126,7 @@ export async function buildSkyline({ scene, indexes, tier, loadFile = loadPlateT
   const have = (name) => Boolean(name) && indexes.plates.has(name);
   const scale = tier.desktop ? 1 : 0.5;
 
-  const strip = async (name, file, { az0, az1, r, paint, alphaIndex, groundFrac: frac = groundFrac, fadeLeft = 0, columns = 16, cropTo = null }) => {
+  const strip = async (name, file, { az0, az1, r, paint, alphaIndex, groundFrac: frac = groundFrac, fadeLeft = 0, fadeRight = 0, columns = 16, cropTo = null }) => {
     let texture = have(file) ? await loadFile(scene, `${plateBase}${file}`, { cropTo, cutBelow: cropTo ? 1 - frac : null }) : null;
     const fromFile = Boolean(texture);
     if (!texture) {
@@ -147,7 +147,7 @@ export async function buildSkyline({ scene, indexes, tier, loadFile = loadPlateT
     const heightM = widthM * (size.height / size.width);
     // the ground line sits a fixed fraction up from the bottom edge (14 percent unless the ring says otherwise) and is put at the water level
     const y0 = -(fromFile ? frac : groundFrac) * heightM + groundY;
-    const mesh = arcStrip(scene, name, { r, y0, y1: y0 + heightM, az0: rad(az0), az1: rad(az1), columns, rows: 1, fadeLeft: fromFile ? fadeLeft : 0 });
+    const mesh = arcStrip(scene, name, { r, y0, y1: y0 + heightM, az0: rad(az0), az1: rad(az1), columns, rows: 1, fadeLeft: fromFile ? fadeLeft : 0, fadeRight: fromFile ? fadeRight : 0 });
     const material = glowMaterial(scene, name, { texture, fog: false, backFaceCulling: false });
     material.useAlphaFromDiffuseTexture = true;
     material.disableDepthWrite = true;
@@ -156,7 +156,7 @@ export async function buildSkyline({ scene, indexes, tier, loadFile = loadPlateT
     mesh.applyFog = false;
     mesh.alphaIndex = alphaIndex;
     // the vertex alpha carries the overlap ramp of a piece
-    mesh.hasVertexAlpha = Boolean(fromFile && fadeLeft);
+    mesh.hasVertexAlpha = Boolean(fromFile && (fadeLeft || fadeRight));
     meshes.push(mesh);
     materials.push(material);
   };

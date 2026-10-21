@@ -193,6 +193,7 @@ export function buildNewsstand({ world, signs, info, B }) {
   for (let i = 0; i < 5; i += 1) fbox(b.wash, f, -1.1 + i * 0.5, 1.12 + (i % 2) * 0.1, 0.5, 0.42, 0.22 + (i % 3) * 0.08, 0.5, paper[i % 3]);
   for (let i = 0; i < 3; i += 1) fbox(b.wash, f, 2.0, 0.3 + i * 0.22, 0.2 - i * 0.05, 0.5, 0.2, 0.6, paper[i]);
   fbox(b.wash, f, 1.0, 1.2, -0.7, 0.9, 0.5, 0.06, [0.15, 0.12, 0.1, 1]);
+  B.block(f, [-1.75, 1.75], [-1.15, 1.95], [0, 2.5], 0.2);
   // header board and extra board
   B.board(f, 'news-fascia', 0, 2.9, 1.0, 3.4, 3.4 * (176 / 1024) * 1.15, [1.05, 1.02, 0.98, 1]);
   // a frame board: two leaning quads, readable from the street side
@@ -213,6 +214,7 @@ export function buildCraneTower({ world }) {
   const x = 31.7;
   const z = 41.7;
   slab(stone, x - 1.6, x + 1.6, 0, 0.7, z - 1.6, z + 1.6, [0.9, 0.86, 0.8, 1]);
+  world.blockers.push({ min: [x - 1.9, 0, z - 1.9], max: [x + 2.9, 11.2, z + 1.9] });
   wash.cylinder({ c: [x, 4.9, z], r: 1.15, rTop: 0.8, h: 8.4, seg: 10, color: [0.3, 0.42, 0.36, 1] });
   for (const y of [2.6, 5.4, 8.0]) wash.cylinder({ c: [x, y, z], r: y < 4 ? 1.07 : y < 7 ? 0.94 : 0.84, rTop: y < 4 ? 1.07 : y < 7 ? 0.94 : 0.84, h: 0.22, seg: 10, color: [0.92, 0.82, 0.6, 1] });
   // machine house and boiler stack

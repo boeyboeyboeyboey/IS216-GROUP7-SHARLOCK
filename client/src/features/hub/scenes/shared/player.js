@@ -1,6 +1,7 @@
 import { PhysicsCharacterController, CharacterSupportedState } from '@babylonjs/core/Physics/v2/characterController.js';
 import '@babylonjs/core/Culling/ray.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
+import { nearestAlpha } from './orbit.js';
 const capsule = { height: 1, radius: 0.3 };
 const speed = 7.2;
 const gravity = new Vector3(0, -9.81, 0);
@@ -140,8 +141,11 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
   joyEl?.addEventListener('pointerup', joyUp);
   joyEl?.addEventListener('pointercancel', joyUp);
 
+  // bumped by every new walk, so a caller can tell its route was replaced
+  let routeSerial = 0;
   function walkTo(points, { cancelHold = false } = {}) {
     route = points.map(([x, z]) => ({ x, z }));
+    routeSerial += 1;
     stallTime = 0;
     if (cancelHold) hold = false;
   }
@@ -181,7 +185,8 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
     const from = { target: camera.target.clone(), alpha: camera.alpha, beta: camera.beta, radius: camera.radius };
     const end = {
       target: to.target ?? from.target,
-      alpha: to.alpha ?? from.alpha,
+      // alpha rotates the short way, whatever turn count it has piled up
+      alpha: to.alpha === undefined ? from.alpha : nearestAlpha(from.alpha, to.alpha),
       beta: to.beta ?? from.beta,
       radius: to.radius ?? from.radius,
     };
@@ -339,6 +344,8 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
     routeToDoor,
     flyTo,
     releaseCamera,
+    heading: () => heading,
+    isHeld: () => hold,
     cancelRoute: () => {
       route = [];
     },
@@ -352,6 +359,7 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
     position: () => ({ x: pos().x, z: pos().z, y: pos().y - capsule.height / 2 }),
     feet,
     isWalking: () => route.length > 0,
+    routeSerial: () => routeSerial,
     teleport(x, z) {
       controller.setPosition(new Vector3(x, heightAt(x, z) + capsule.height / 2 + 0.1, z));
       controller.setVelocity(new Vector3(0, 0, 0));

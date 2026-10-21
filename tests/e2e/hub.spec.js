@@ -115,6 +115,16 @@ test('deselects a destination by clicking it again or pressing Escape', async ({
   await page.keyboard.press('Escape')
   await expect(dest).toHaveAttribute('aria-pressed', 'false')
   await expect(enter).toHaveCount(0)
+
+  // steering by hand before arriving drops the pick
+  await dest.click()
+  await expect(dest).toHaveAttribute('aria-pressed', 'true')
+  await page.waitForTimeout(300)
+  await page.keyboard.down('KeyS')
+  await page.waitForTimeout(400)
+  await page.keyboard.up('KeyS')
+  await expect(dest).toHaveAttribute('aria-pressed', 'false', slow)
+  await expect(enter).toHaveCount(0)
 })
 
 test('returns to the door of the building that was entered', async ({ page }) => {
@@ -133,6 +143,22 @@ test('returns to the door of the building that was entered', async ({ page }) =>
   const at = await position(page)
   expect(Math.hypot(at.x - door.x, at.z - door.z)).toBeLessThan(3)
   expect(await page.evaluate(() => sessionStorage.getItem('sharlock.hubReturn'))).toBeNull()
+  // standing on the ring after coming back does not reselect the building
+  await page.waitForTimeout(500)
+  expect(await page.evaluate(() => window.__hub.state.selected)).toBeNull()
+  await expect(page.getByTestId('dest-cli-cyber-defender')).toHaveAttribute('aria-pressed', 'false')
+
+  // walking off the selected building's ring deselects it
+  await page.getByTestId('dest-cli-cyber-defender').click()
+  await expect(page.getByTestId('dest-cli-cyber-defender')).toHaveAttribute('aria-pressed', 'true')
+  await expect
+    .poll(() => page.evaluate(() => window.__hub.state.nearDoor), slow)
+    .toBe('cli-cyber-defender')
+  await page.evaluate(() => window.__hub.debug.walkTo(0, 20))
+  await expect
+    .poll(() => page.evaluate(() => window.__hub.state.selected), slow)
+    .toBeNull()
+  await expect(page.getByTestId('dest-cli-cyber-defender')).toHaveAttribute('aria-pressed', 'false')
 
   // a fresh visit starts at the usual spot
   await page.reload()
@@ -179,6 +205,7 @@ test('remounts the hub after leaving it and keeps the news dialog usable', async
   await page.getByTestId('enter').click()
   await expect(page.getByRole('dialog', { name: 'The Sharlock Times' })).toBeVisible(slow)
   expect(await page.evaluate(() => window.__hub.state.inputPaused)).toBe(true)
+  await expect(page.getByTestId('hub-minimap')).toHaveCount(0)
   await page.waitForFunction(() => window.__hub.state.mode === 'explore', null, slow)
 
   const before = await position(page)
@@ -244,4 +271,107 @@ test('rebuilds the hub at the low tier from the Graphics setting and remembers i
   await hubReady(page)
   await expect(graphics).toHaveValue('low')
   expect(await page.evaluate(() => window.__hub.state.tier)).toBe('low')
+})
+
+const cameraAlpha = (page) => page.evaluate(() => window.__hub.debug.cameraState().alpha)
+// shortest arc between the camera and the spot behind sharlock, in radians
+const offBehind = (page) =>
+  page.evaluate(() => {
+    const heading = window.__hub.state.player.heading
+    const want = Math.atan2(-Math.cos(heading), -Math.sin(heading))
+    const diff = window.__hub.debug.cameraState().alpha - want
+    return Math.abs(diff - Math.PI * 2 * Math.round(diff / (Math.PI * 2)))
+  })
+
+test('turns the camera with Q and brings it back with the reset button and R', async ({ page }) => {
+  await page.goto('/')
+  await hubReady(page)
+  const start = await cameraAlpha(page)
+
+  // the software renderer is slow, so keep the key down until the camera has visibly turned
+  await page.keyboard.down('KeyQ')
+  await expect.poll(async () => Math.abs((await cameraAlpha(page)) - start), slow).toBeGreaterThan(0.15)
+  await page.keyboard.up('KeyQ')
+  await expect.poll(() => offBehind(page), slow).toBeGreaterThan(0.1)
+
+  await page.getByTestId('hub-reset-camera').click()
+  await expect.poll(() => offBehind(page), slow).toBeLessThan(0.15)
+
+  await page.keyboard.down('KeyE')
+  await expect.poll(() => offBehind(page), slow).toBeGreaterThan(0.15)
+  await page.keyboard.up('KeyE')
+  await page.keyboard.press('KeyR')
+  await expect.poll(() => offBehind(page), slow).toBeLessThan(0.15)
+})
+
+test('minimap selects a destination and follows the player', async ({ page }, testInfo) => {
+  await page.goto('/')
+  await hubReady(page)
+  const compact = testInfo.project.name === 'mobile-chromium'
+  const map = page.getByTestId('hub-minimap')
+  const toggle = page.getByTestId('hub-map-toggle')
+  const id = 'social-engineering-simulator'
+  const pin = page.getByTestId(`hub-map-${id}`)
+  await expect(pin).toHaveCount(1, slow)
+
+  // the dot sits where the player stands: x east, z north, with the map's west and north edges at x -34 and z 80
+  await page.evaluate(() => window.__hub.debug.teleport(4, 10))
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const dot = document.querySelector('[data-testid="hub-minimap"] .m-dot')
+          return dot ? [Math.round(dot.getAttribute('cx')), Math.round(dot.getAttribute('cy'))] : null
+        }),
+      slow,
+    )
+    .toEqual([38, 70])
+
+  if (compact) {
+    await expect(map).toBeHidden()
+    await toggle.click()
+  } else {
+    await expect(toggle).toBeHidden()
+    await expect(map).toBeVisible()
+  }
+  await expect(map).toHaveAccessibleName('Map')
+  await expect(pin).toHaveAccessibleName('Travel to LLM Social Engineering Simulator')
+  await pin.click()
+  await expect(page.getByTestId(`dest-${id}`)).toHaveAttribute('aria-pressed', 'true')
+  await expect(pin).toHaveAttribute('aria-pressed', 'true')
+  expect(await page.evaluate(() => window.__hub.state.selected)).toBe(id)
+  await expect(page.getByTestId('enter')).toBeVisible()
+  // choosing a building closes the compact overlay
+  if (compact) await expect(map).toBeHidden()
+})
+
+test('the mobile map opens from the Map button and closes with Escape', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'the compact map only exists on phones')
+  await page.goto('/')
+  await hubReady(page)
+  const map = page.getByTestId('hub-minimap')
+  const toggle = page.getByTestId('hub-map-toggle')
+  await expect(toggle).toBeVisible(slow)
+  await expect(map).toBeHidden()
+
+  await toggle.click()
+  await expect(map).toBeVisible()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.getByTestId('hub-map-close')).toBeFocused()
+  const box = await map.boundingBox()
+  const scene = await page.locator('.hub-scene').boundingBox()
+  expect(box.width).toBeGreaterThan(scene.width - 4)
+  expect(box.height).toBeGreaterThan(scene.height - 4)
+
+  // escape closes the map without deselecting anything, and focus goes back to the button
+  await page.keyboard.press('Escape')
+  await expect(map).toBeHidden()
+  await expect(toggle).toBeFocused()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+  await toggle.click()
+  await page.getByTestId('hub-map-close').click()
+  await expect(map).toBeHidden()
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+  expect(overflow).toBeLessThanOrEqual(0)
 })

@@ -53,6 +53,8 @@ export function createWorld(scene, { signs }) {
     textures,
     materials,
     batches,
+    // inflated boxes { min, max } of the buildings and tall props, for the camera spring arm
+    blockers: [],
     // builds one mesh per non empty batch. ground only receives shadows, glass never casts them
     finish() {
       const meshes = [];

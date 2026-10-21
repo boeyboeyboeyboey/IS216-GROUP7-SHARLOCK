@@ -14,17 +14,20 @@ export const legacyRings = {
 
 // numbered pieces: every piece is a 21:9 image cropped to its band, pinned by its own ground line, neighbours overlap by a few degrees
 export const pieceSets = {
-  far: { r: 470, width: 50, step: 46, count: 6, start: -140, prefix: 'thames-far-', alphaBase: 10, groundFrac: 0.09, overlap: 4, size: [2016, 864] },
+  far: { r: 470, width: 50, step: 46, count: 6, start: -140, prefix: 'thames-far-', alphaBase: 10, groundFrac: 0.09, overlap: 4, size: [2016, 864],
+    // the south arc: the last piece ramps out over the first one across the wrap
+    tail: [{ start: 136, width: 44 }, { start: 176, width: 48, fadeRight: true }] },
   mid: { r: 300, width: 46, step: 42, count: 4, start: -86, prefix: 'thames-mid-', alphaBase: 20, groundFrac: 0.1, overlap: 4, size: [2016, 864] },
 };
 
 export const pieceRings = {};
 for (const [set, d] of Object.entries(pieceSets)) {
-  for (let i = 0; i < d.count; i += 1) {
-    const az0 = d.start + i * d.step;
+  const spans = Array.from({ length: d.count }, (_, i) => ({ az0: d.start + i * d.step, width: d.width }));
+  for (const t of d.tail ?? []) spans.push({ az0: t.start, width: t.width, fadeRight: t.fadeRight });
+  spans.forEach(({ az0, width, fadeRight }, i) => {
     // only the later piece ramps in over the overlap, so the earlier one stays opaque and no hole can open
-    pieceRings[`${d.prefix}${i + 1}`] = { set, index: i, file: `${d.prefix}${i + 1}.webp`, az0, az1: az0 + d.width, r: d.r, alphaIndex: d.alphaBase + i, groundFrac: d.groundFrac, fadeLeft: i ? d.overlap / d.width : 0, overlap: d.overlap, columns: d.width, cropTo: d.size[0] / d.size[1], size: d.size };
-  }
+    pieceRings[`${d.prefix}${i + 1}`] = { set, index: i, file: `${d.prefix}${i + 1}.webp`, az0, az1: az0 + width, r: d.r, alphaIndex: d.alphaBase + i, groundFrac: d.groundFrac, fadeLeft: i ? d.overlap / width : 0, fadeRight: fadeRight ? d.overlap / width : 0, overlap: d.overlap, columns: width, cropTo: d.size[0] / d.size[1], size: d.size };
+  });
 }
 export const rings = { ...legacyRings, ...pieceRings };
 
