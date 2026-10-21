@@ -231,7 +231,11 @@ export async function build({ engine, scene, canvas, state, notify, params, joys
     api: {
       select: doors.select,
       resetCamera,
-      enter: doors.enter,
+      enter: (id) => {
+        // a small happy hop as the swoop starts
+        if (state.mode !== 'entering' && state.mode !== 'panel') control.hop();
+        return doors.enter(id);
+      },
       back: async () => {
         const done = await doors.back();
         if (inputPaused) applyInput();
@@ -245,6 +249,8 @@ export async function build({ engine, scene, canvas, state, notify, params, joys
         scene,
         teleport: (x, z) => control.teleport(x, z),
         position: () => control.position(),
+        jump: () => control.jump(),
+        airborne: () => control.airborne(),
         doors: () => infos.map((i) => ({ id: i.id, ...doorSpot(i, i.reach) })),
         camera: (alpha, beta, radius, tx, ty, tz, fov) => {
           control.releaseCamera();

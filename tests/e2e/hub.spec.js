@@ -375,3 +375,54 @@ test('the mobile map opens from the Map button and closes with Escape', async ({
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   expect(overflow).toBeLessThanOrEqual(0)
 })
+
+test('Space jumps once: leaves the ground, lands again and cannot double jump', async ({ page }) => {
+  await page.goto('/')
+  await hubReady(page)
+  await page.evaluate(() => document.activeElement?.blur())
+  // the capsule starts a little above the cobbles, so wait until its height stops changing
+  let last = Infinity
+  await expect
+    .poll(async () => {
+      const y = (await position(page)).y
+      const still = Math.abs(y - last) < 0.002
+      last = y
+      return still
+    }, slow)
+    .toBe(true)
+  const base = last
+  await page.evaluate(() => {
+    window.__maxY = -Infinity
+    window.__peakTimer = setInterval(() => {
+      window.__maxY = Math.max(window.__maxY, window.__hub.debug.position().y)
+    }, 20)
+  })
+
+  await page.keyboard.press('Space')
+  await expect.poll(async () => (await position(page)).y - base, slow).toBeGreaterThan(0.15)
+  // a second press in the air is ignored
+  await page.keyboard.press('Space')
+  await expect.poll(() => page.evaluate(() => window.__hub.debug.airborne()), slow).toBe(false)
+  await expect.poll(async () => Math.abs((await position(page)).y - base), slow).toBeLessThan(0.1)
+
+  const apex = await page.evaluate(() => {
+    clearInterval(window.__peakTimer)
+    return window.__maxY
+  })
+  expect(apex - base).toBeGreaterThan(0.15)
+  expect(apex - base).toBeLessThan(0.9)
+})
+
+test('the jump button shows with the joystick on phones only', async ({ page }, testInfo) => {
+  await page.goto('/')
+  await hubReady(page)
+  const jump = page.getByTestId('hub-jump')
+  if (testInfo.project.name === 'mobile-chromium') {
+    await expect(jump).toBeVisible(slow)
+    await expect(jump).toHaveAccessibleName('Jump')
+    const box = await jump.boundingBox()
+    expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44)
+  } else {
+    await expect(jump).toBeHidden()
+  }
+})

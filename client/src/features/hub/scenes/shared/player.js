@@ -2,6 +2,8 @@ import { PhysicsCharacterController, CharacterSupportedState } from '@babylonjs/
 import '@babylonjs/core/Culling/ray.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { nearestAlpha } from './orbit.js';
+import { LOOK_RANGE, lookYawTo } from './idle.js';
+import { createJump, JUMP_SPEED } from './jump.js';
 const capsule = { height: 1, radius: 0.3 };
 const speed = 7.2;
 const gravity = new Vector3(0, -9.81, 0);
@@ -57,6 +59,9 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
   let stallTime = 0;
   let lastPos = new Vector3();
   let walkBlend = 0;
+  const jump = createJump();
+  // last supported height, so the follow camera does not bob with a jump
+  let groundY = controller.getPosition().y;
   let curSpeed = 0;
   const lastDir = { x: 0, z: 1 };
 
@@ -64,6 +69,16 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
   const feet = () => ({ x: pos().x, z: pos().z });
 
   const onKey = (event, isDown) => {
+    if (event.code === 'Space') {
+      if (!isDown || event.repeat) return;
+      // buttons and links keep space for their own activation
+      if (event.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT|BUTTON|A|SUMMARY)$/.test(event.target.tagName)) return;
+      if (enabled) {
+        event.preventDefault();
+        jump.request();
+      }
+      return;
+    }
     const map = { KeyW: 'f', ArrowUp: 'f', KeyS: 'b', ArrowDown: 'b', KeyA: 'l', ArrowLeft: 'l', KeyD: 'r', ArrowRight: 'r' };
     const key = map[event.code];
     if (!key) return;
@@ -136,6 +151,17 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
     joystick.y = 0;
     knob.style.transform = 'translate(0, 0)';
   };
+  const jumpEl = pad.jump ?? null;
+  const jumpTap = (event) => {
+    event.preventDefault();
+    if (enabled) jump.request();
+  };
+  // keyboard and screen reader activation arrive as a click with no pointer
+  const jumpKey = (event) => {
+    if (event.detail === 0 && enabled) jump.request();
+  };
+  jumpEl?.addEventListener('pointerdown', jumpTap);
+  jumpEl?.addEventListener('click', jumpKey);
   joyEl?.addEventListener('pointerdown', joyDown);
   joyEl?.addEventListener('pointermove', joyMove);
   joyEl?.addEventListener('pointerup', joyUp);
@@ -283,7 +309,9 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
     const wanted = moving ? Math.min(mag * speed * aligned, arriveCap) : 0;
     const rate = (wanted > curSpeed ? 60 : 150) * dt;
     curSpeed += Math.max(-rate, Math.min(rate, wanted - curSpeed));
-    const out = new Vector3(lastDir.x * curSpeed, supported ? -0.6 : v.y + gravity.y * dt, lastDir.z * curSpeed);
+    const air = jump.step(dt, { supported, calm: reduced(), enabled });
+    const vy = air.launch ? JUMP_SPEED : air.grounded ? -0.6 : v.y + gravity.y * dt;
+    const out = new Vector3(lastDir.x * curSpeed, vy, lastDir.z * curSpeed);
     controller.setVelocity(out);
     controller.integrate(dt, support, gravity);
 
@@ -299,6 +327,7 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
       }
     }
     lastPos = np.clone();
+    if (air.grounded) groundY = np.y;
 
     // the capsule rests 0.1 m above the floor, so the visual drops to stand on it (a little less, the toes dip while striding)
     player.root.position.set(np.x, np.y - capsule.height / 2 - 0.08, np.z);
@@ -306,7 +335,19 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
     if (moving) heading += diff * (1 - Math.exp(-dt * 10));
     player.root.rotation.y = heading;
     walkBlend += ((moving ? 1 : 0) - walkBlend) * Math.min(1, dt * 10);
-    if (player.rig) player.rig.update(dt, curSpeed, speed, { turn: dt > 0 ? (heading - before) / dt : 0, lead: moving ? diff : 0 });
+    // the nearest door within reach of a glance, only worth working out while standing still
+    let look = null;
+    if (player.rig && !moving) {
+      let best = LOOK_RANGE;
+      for (const d of destinations) {
+        const gap = Math.hypot(d.x - np.x, d.z - np.z);
+        if (gap < best) {
+          best = gap;
+          look = lookYawTo(np.x, np.z, heading, d.x, d.z);
+        }
+      }
+    }
+    if (player.rig) player.rig.update(dt, curSpeed, speed, { turn: dt > 0 ? (heading - before) / dt : 0, lead: moving ? diff : 0, active: moving || manual || air.active, look, jump: air });
     else if (player.animated) player.animate(walkBlend * speed, speed);
     else {
       const t = performance.now() / 1000;
@@ -330,7 +371,7 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
         flight = null;
       }
     } else if (!hold) {
-      const goal = lookAt.set(np.x, np.y + 0.4, np.z);
+      const goal = lookAt.set(np.x, groundY + 0.4, np.z);
       if (reduced()) camera.target.copyFrom(goal);
       else Vector3.LerpToRef(camera.target, goal, 1 - Math.exp(-dt * 6), camera.target);
     }
@@ -359,12 +400,18 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
     position: () => ({ x: pos().x, z: pos().z, y: pos().y - capsule.height / 2 }),
     feet,
     isWalking: () => route.length > 0,
+    jump: () => {
+      if (enabled) jump.request();
+    },
+    hop: () => jump.hop(),
+    airborne: () => jump.isAirborne(),
     routeSerial: () => routeSerial,
     teleport(x, z) {
       controller.setPosition(new Vector3(x, heightAt(x, z) + capsule.height / 2 + 0.1, z));
       controller.setVelocity(new Vector3(0, 0, 0));
       curSpeed = 0;
       route = [];
+      groundY = heightAt(x, z) + capsule.height / 2 + 0.1;
       camera.target.set(x, heightAt(x, z) + 0.4, z);
     },
     dispose() {
@@ -373,6 +420,8 @@ export function createPlayer({ scene, canvas, camera, ground, sharlock, reduced,
       window.removeEventListener('blur', blur);
       canvas.removeEventListener('pointerdown', onDown);
       canvas.removeEventListener('pointerup', onUp);
+      jumpEl?.removeEventListener('pointerdown', jumpTap);
+      jumpEl?.removeEventListener('click', jumpKey);
       joyEl?.removeEventListener('pointerdown', joyDown);
       joyEl?.removeEventListener('pointermove', joyMove);
       joyEl?.removeEventListener('pointerup', joyUp);

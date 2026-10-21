@@ -173,9 +173,10 @@ Skip it and **every** E2E test fails instantly with `browserType.launch: Executa
 
 **3D controls**
 
-- Keyboard: WASD or arrow keys walk; hold Q or E to rotate the camera; R resets the camera behind Sharlock; Esc deselects the building. Keys are ignored while you type in an input.
+- Keyboard: WASD or arrow keys walk; Space jumps; hold Q or E to rotate the camera; R resets the camera behind Sharlock; Esc deselects the building. Keys are ignored while you type in an input.
 - Mouse: click the ground to walk there; drag to orbit; scroll to zoom. A destination list button walks Sharlock to that building, and on arrival "Enter <building>" opens it. "Reset camera" is a button. On desktop the minimap (bottom right) travels to a building when you click its pin.
-- Touch (phones and tablets): the joystick at the top right walks; drag to orbit; pinch to zoom. The "Map" button opens a full-screen map (Esc closes it) whose pins travel to a building.
+- Touch (phones and tablets): the joystick at the top right walks, and the "Jump" button next to the joystick jumps; drag to orbit; pinch to zoom. The "Map" button opens a full-screen map (Esc closes it) whose pins travel to a building.
+- Standing still for a while, Sharlock looks around, sits down and yawns.
 - The daily briefing newsstand opens the newspaper as an overlay on the hub. Closing it returns to the hub, and hub input is paused while it is open.
 
 **2D mode** (the "2D map" toggle; the choice is remembered)

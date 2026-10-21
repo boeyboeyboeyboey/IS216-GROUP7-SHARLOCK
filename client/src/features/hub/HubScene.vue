@@ -22,6 +22,7 @@ const returnKey = 'sharlock.hubReturn'
 const stage = ref(null)
 const pad = ref(null)
 const knob = ref(null)
+const jumpBtn = ref(null)
 const destList = ref(null)
 const view = reactive({
   ready: false,
@@ -160,7 +161,7 @@ async function mountHub(resume = null) {
   const params = isDev ? new URLSearchParams(location.search) : new URLSearchParams()
   const next = createHub({
     container: stage.value,
-    joystick: { el: pad.value, knob: knob.value },
+    joystick: { el: pad.value, knob: knob.value, jump: jumpBtn.value },
     params,
     spawnAt: takeDoor(),
     quality: props.quality === 'auto' && watchedTier ? TIER_TO_GRAPHICS[watchedTier] : props.quality,
@@ -292,6 +293,7 @@ defineExpose({
       @choose="choose"
     />
     <div ref="pad" class="hub-joystick" aria-hidden="true"><div ref="knob" class="hub-joystick-knob"></div></div>
+    <button ref="jumpBtn" type="button" class="hub-jump" data-testid="hub-jump">Jump</button>
   </section>
 </template>
 
@@ -416,6 +418,22 @@ defineExpose({
   background: rgb(255 248 223 / 45%);
   touch-action: none;
 }
+.hub-jump {
+  position: absolute;
+  left: 152px;
+  bottom: 28px;
+  display: none;
+  width: 64px;
+  height: 64px;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--town-edge);
+  border-radius: 50%;
+  background: var(--accent-primary);
+  color: inherit;
+  font-weight: 700;
+  touch-action: none;
+}
 .hub-joystick-knob {
   width: 52px;
   height: 52px;
@@ -423,9 +441,16 @@ defineExpose({
   border-radius: 50%;
   background: var(--accent-primary);
 }
+.hub-jump:focus-visible {
+  outline: 3px solid var(--town-edge);
+  outline-offset: 3px;
+}
 @media (pointer: coarse) {
   .hub-joystick {
     display: grid;
+  }
+  .hub-jump {
+    display: inline-flex;
   }
 }
 @media (max-width: 575.98px) {
@@ -475,6 +500,15 @@ defineExpose({
     left: auto;
     width: 96px;
     height: 96px;
+  }
+  /* under the pad on the right edge, above the Map button */
+  .hub-jump {
+    top: 222px;
+    right: 24px;
+    bottom: auto;
+    left: auto;
+    width: 56px;
+    height: 56px;
   }
 }
 @media (min-width: 768px) and (min-height: 600px) {
