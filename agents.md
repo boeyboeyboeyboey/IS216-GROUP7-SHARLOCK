@@ -141,9 +141,13 @@ Use semantic controls, labels, visible focus and feedback beyond color; provide 
 
 Use [verification commands and journey coverage](TASKS.md#verification-commands-and-journey-coverage). Add meaningful tests alongside security/core-journey changes: unit tests for scoring/permissions, API integration for authorization/sessions/persistence, E2E for actual student/staff flows. Use deterministic synthetic fixtures, stable role/label/test-ID selectors and condition-based waits; avoid fixed sleeps and test-order coupling.
 
+E2E specs that touch the town must force 2D mode (`await page.addInitScript(() => localStorage.setItem('sharlock.townMode', '2d'))`, see [hub README](client/src/features/hub/README.md#testing)); only the hub specs force 3D.
+
 Install the pinned Playwright browser with `pnpm exec playwright install chromium` before reporting any E2E result, on a fresh checkout and again after any `@playwright/test` version change. When that browser is missing, every browser test fails at once with `browserType.launch: Executable doesn't exist` and a zero duration; treat that as a missing download, never as a code defect, and never record it as a failing suite.
 
 Only reset explicitly configured disposable `_test` databases. Reject unsafe/missing configuration before cleanup and never fall back to development/Atlas. Mock external responses in repeatable tests; record a separate live API/model check where applicable.
+
+When a game is added, or how a game is reached or played changes, confirm its README "Using the app" destinations row and its module README were updated (§10).
 
 Documentation-only changes need links/anchors, synchronized specifications, truthful status and focused formatting/diff checks. Do not run application suites merely to imply the proposed games exist. Report exact commands and outcomes, including not-run checks and reasons. Review the final diff; mark Review with evidence and Done only after acceptance.
 
@@ -154,6 +158,7 @@ Documentation-only changes need links/anchors, synchronized specifications, trut
 - TASKS.md owns authorization, availability/collision evidence, dependencies, active records, detailed feature specifications, operational verification and retained history.
 - agents.md owns the decision tree and engineering guardrails; DESIGN.md owns visual details.
 - Keep README and TASKS copies of the shared/six-game blueprints synchronized in the same change. TASKS may add coordination or implementation-detail notes without silently altering approved rules.
+- Self-sustaining docs: when adding a game or changing how a game is reached or played, update (a) that game's row in the README [Using the app](README.md#using-the-app) destinations table (one-line summary, status, link) and (b) its module README `client/src/games/<id>/README.md`, creating it if missing. When changing hub or 2D controls or settings, update README "Using the app" and [client/src/features/hub/README.md](client/src/features/hub/README.md).
 - Every new feature specification includes title/concept, 1–3-star difficulty and required concepts, interaction loop, exact recommended components/props/emits, API payloads, schema/state ownership, dependencies and acceptance checks. For non-game features identify difficulty as implementation complexity. Non-feature QA/submission tasks may state that gameplay/schema additions are not applicable.
 - Preserve initial exploratory ideas and historical evidence as history, not assignments or available work. Never manufacture remote inspection, acceptance, test results, commits or pushes.
 - When setup, accounts or test requirements change, keep the five-section README accurate and resolve submission documentation requirements explicitly. Credit libraries, original/reused assets and data sources; the soundtrack still needs contributor-provided source/permission.

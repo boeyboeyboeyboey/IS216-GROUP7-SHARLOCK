@@ -6,7 +6,7 @@ Cyber News Central retains catalog ID `threat-briefing` and `/games/threat-brief
 
 ## Presentation walkthrough
 
-1. `Dashboard.vue` remains mounted at `/` while its nested news route opens `NewsDialog.vue`
+1. `Dashboard.vue` remains mounted at `/` while its nested news route opens `NewsDialog.vue`. In the default 3D hub the newsstand ("The daily briefing") is a building too and opens the same overlay; the TownMap path is 2D mode.
 2. `NewsDialog.vue` calls native `showModal()` and owns Escape/Close; Dashboard owns Back versus direct-link replacement and restores the newsstand focus
 3. `NewsDialog.vue` also owns URL location, `NewsTabs.vue`, `OwaspTopTen.vue` and `NewsAudio.vue`; `CyberNewsCentral.vue` composes the newspaper, sections, feedback, story grid and pagination
 4. `useNewsLocation.js` validates URL filters and searches/pages the loaded edition without HTTP calls
@@ -32,7 +32,7 @@ Newspaper query fields are `tab=owasp` (omit for Latest news), `section=cybersec
 
 ## Integration boundaries
 
-Shared changes are limited to the existing router, Dashboard, PortalLayout focus handling, TownMap activation/focus methods, catalog/card and town links. The original newsstand SVG follows the shared asset convention in `client/public/images/town/newsstand.svg`; no second registry or camera is introduced. Other activity previews retain their existing card behaviour. Dashboard passes `soundSuspended` through TownMap to `TownAudio({ suspended })`; this pauses the same town player and restores only an already-enabled soundtrack after closing. The paper uses shared pixel tokens through `.news-dialog`-prefixed CSS; it never styles the document body or another page.
+Shared changes are limited to the existing router, Dashboard, PortalLayout focus handling, TownMap activation/focus methods (2D mode), the newsstand building in the 3D hub, catalog/card and town links. The original newsstand SVG follows the shared asset convention in `client/public/images/town/newsstand.svg`; no second registry or camera is introduced. Other activity previews retain their existing card behaviour. Dashboard passes `soundSuspended` through TownMap to `TownAudio({ suspended })`; this pauses the same town player and restores only an already-enabled soundtrack after closing. The paper uses shared pixel tokens through `.news-dialog`-prefixed CSS; it never styles the document body or another page.
 
 Unit tests live in `__tests__/news.test.js` and `__tests__/audio.test.js`; browser journeys live in `tests/e2e/news.spec.js`. Deterministic stories are test fixtures only. The actual app never silently substitutes fixtures for live news.
 

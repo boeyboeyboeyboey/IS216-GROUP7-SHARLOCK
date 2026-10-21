@@ -26,9 +26,11 @@ or authorize a new feature.
 Treat DESIGN.md as mandatory for every new shared UI surface. Inspect
 its referenced styles/components and the existing pages before planning.
 Preserve the exact current shared pixel scheme and 3D navbar logo.
+The home page `/` is the 3D hub; the pixel town is its 2D mode, so E2E
+specs that touch the town must force 2D mode (client/src/features/hub/README.md).
 Game screens may have their own design philosophy, fonts and artwork,
 but must isolate styles within their module; the shared navbar, town
-building/card and other pages keep the hub scheme. Retain the existing
+building/card and other pages keep the shared pixel scheme. Retain the existing
 admin/log-content exception. Task 3 hover-card refinement is skipped;
 do not restart it. Tasks 4–5 are accepted; new implementation requires
 its own explicit plan approval. Follow TASKS.md's feature-folder convention
@@ -130,23 +132,25 @@ Never claim a test, commit, push or working feature that did not occur.
 
 ## 2. Project Setup
 
-Requires Node.js **24.12.0** and a MongoDB connection. Run from the repository root:
+Requires Node.js 24 (24.12.0 or a later 24.x) and a MongoDB connection. Run from the repository root:
 
 ```sh
-npm install --global pnpm@12.3.4
+npm install --global pnpm@12.3.4   # first setup only
 pnpm install --frozen-lockfile
 pnpm setup:env
 ```
 
-`setup:env` creates root `.env` from `.env.example` and generates server defaults without overwriting existing files. Set `MONGO_URI` in root `.env`, then run:
+`setup:env` creates root `.env` from `.env.example` and generates server defaults without overwriting existing files; never print these files. Set `MONGO_URI` in root `.env`. If you have no MongoDB, `pnpm db:local` starts a local development MongoDB on 127.0.0.1:27018 with data kept in `.local/mongodb`; leave it running in its own terminal. Then run:
 
 ```sh
 pnpm dev
 ```
 
+This serves the client on http://localhost:5173 and the API on port 3000. Run `pnpm install --frozen-lockfile` again after every pull; the 3D hub added `@babylonjs/core` 9.31.0 and `@babylonjs/havok` 1.3.14.
+
 For live Times stories, privately add `GUARDIAN_API_KEY` from [Guardian Open Platform](https://open-platform.theguardian.com/access/) to root `.env` and restart the backend. The OWASP Top 10 reference and the rest of the app remain usable without a key. Never put it in frontend configuration or chat.
 
-Open **http://localhost:5173**. The existing workspace and scripts require pnpm; retain the single `pnpm-lock.yaml`.
+Open **http://localhost:5173** (Vite answers on `localhost`, not `127.0.0.1`). The existing workspace and scripts require pnpm; retain the single `pnpm-lock.yaml`.
 
 AUTH-01-A provides backend registration, login, session restoration and logout under `/api/auth`. AUTH-01-B connects the pixel-themed account pages: open `/register`, choose a capybara avatar, enter matching passwords and create an account; use `/login` for an existing account. COH-01 then handles class invitations or optional onboarding before town. Usernames accept 3–32 letters, numbers, underscores or hyphens. New passwords need at least 12 characters, including an uppercase letter and a punctuation/symbol character. Existing passwords remain usable at login. Town, games and The Sharlock Times require sign-in in the browser; About remains public, while signed-out Profile/Progress pages offer account links. Accounts, avatars and class memberships are saved; game results remain unsaved. See the [browser journey](client/src/features/auth/README.md), [auth API contract](server/src/modules/auth/README.md) and [preset assets and prompts](client/public/images/avatars/README.md). Startup creates the required collections and indexes without seeding accounts or changing existing learning records.
 
@@ -158,7 +162,44 @@ pnpm exec playwright install chromium
 
 Skip it and **every** E2E test fails instantly with `browserType.launch: Executable doesn't exist`. That looks like a broken suite but is only a missing download - Playwright pins a browser revision per version, so an upgrade invalidates the one already on disk.
 
-**Current implementation:** MEVN scaffold, pixel-styled town, The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator, CLI Cyber Defender and Clearance Tower games, plus combined About/introduction, one scored-game preview and database health check. The four games remain in Review and do not persist results. AUTH-01-A/B and COH-01 provide accounts, six capybara presets and approved class membership; permission integration across game APIs, server game-resource ownership and persistent learning records remain pending. Localhost demonstration; zero project budget.
+**Troubleshooting:**
+
+- Blank page with `504 Outdated Optimize Dep` in the console: stop `pnpm dev`, run `rm -rf client/node_modules/.vite`, then restart.
+- 3D view will not load or runs slowly: the hub falls back to the 2D map on devices without WebGL2 or with a software renderer. Use the "2D map" toggle or set Graphics to Low.
+
+### Using the app
+
+`/` shows the 3D Thames Wharf hub (Babylon.js; WebGPU when available, otherwise WebGL2). Sharlock walks between buildings and each building opens a game. Details for developers are in the [hub module README](client/src/features/hub/README.md).
+
+**3D controls**
+
+- Keyboard: WASD or arrow keys walk; hold Q or E to rotate the camera; R resets the camera behind Sharlock; Esc deselects the building. Keys are ignored while you type in an input.
+- Mouse: click the ground to walk there; drag to orbit; scroll to zoom. A destination list button walks Sharlock to that building, and on arrival "Enter <building>" opens it. "Reset camera" is a button. On desktop the minimap (bottom right) travels to a building when you click its pin.
+- Touch (phones and tablets): the joystick at the top right walks; drag to orbit; pinch to zoom. The "Map" button opens a full-screen map (Esc closes it) whose pins travel to a building.
+- The daily briefing newsstand opens the newspaper as an overlay on the hub. Closing it returns to the hub, and hub input is paused while it is open.
+
+**2D mode** (the "2D map" toggle; the choice is remembered)
+
+- Drag or swipe to pan; pinch or Ctrl/Cmd + wheel to zoom (a plain wheel pans); arrow keys pan; + and - zoom; 0 resets. On-screen zoom and Reset view buttons do the same.
+- Hover or focus a building for its card; Esc dismisses the card.
+- The background music button exists only in 2D mode and starts muted.
+
+**Graphics** (Auto, High, Medium or Low; remembered). Auto checks the device: no WebGL2 or a software renderer selects 2D; save-data, 2 GB of memory or less, or 2 CPU cores or fewer selects Low. It then watches the frame rate, stepping quality down and finally to 2D, unless you explicitly chose 3D. An automatic-2D notice offers "Try 3D anyway" with a warning.
+
+**Destinations**
+
+| Building / game                                                          | What it is                                                                                    | Status       | Link                                                             |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------- |
+| CLI Cyber Defender (`/games/cli-cyber-defender`)                         | Contain fictional cyber incidents with commands in a simulated terminal.                      | Playable     | [module README](client/src/games/cli-cyber-defender/README.md)   |
+| The Phishing Post-Mortem (`/games/phishing-post-mortem`)                 | Trace a fictional email incident and uncover the message that started it.                     | Playable     | [module README](client/src/games/phishing-post-mortem/README.md) |
+| LLM Social Engineering Simulator (`/games/social-engineering-simulator`) | Spot a fictional colleague’s pressure tactics and protect a synthetic reset code.             | Playable     | [blueprint](#g-soc--llm-social-engineering-simulator)            |
+| Clearance Tower (`/games/clearance-tower`)                               | Design who may see what in an intelligence tower, then watch a day test your policy.          | Playable     | [module README](client/src/games/clearance-tower/README.md)      |
+| SQL Injection Arcade (generic `/games/:gameId` preview page)             | Solve a simulated login puzzle and learn how parameterized queries protect it.                | Preview only | [blueprint](#g-sql--sql-injection-arcade)                        |
+| The daily briefing / Threat Briefing (`/games/threat-briefing`)          | Read The Sharlock Times for recent cybersecurity and technology stories; opens as an overlay. | Playable     | [module README](client/src/games/threat-briefing/README.md)      |
+
+Game owners: keep your row and your module README current (see [agents.md §10](agents.md#10-documentation-maintenance)).
+
+**Current implementation:** MEVN scaffold, a 3D Thames Wharf hub on `/` (the pixel town is kept as its 2D mode), The Sharlock Times with live news, and playable unsaved Phishing Post-Mortem, Social Engineering Simulator, CLI Cyber Defender and Clearance Tower games, plus combined About/introduction, one scored-game preview and database health check. The four games remain in Review and do not persist results. AUTH-01-A/B and COH-01 provide accounts, six capybara presets and approved class membership; permission integration across game APIs, server game-resource ownership and persistent learning records remain pending. Localhost demonstration; zero project budget.
 
 DATA-01-A/AUTH-02-A adds the backend class foundation: institutions, cohorts, memberships, instructor assignments, own-account read endpoints and current server context/access checks. COH-01 connects student class requests and assigned-staff approval; saved game integration remains future work. See the [class API and permission contract](server/src/modules/cohorts/README.md).
 
@@ -187,6 +228,8 @@ Team: Boey, Keane, Eric, Russell, Xin Lei and Athithya. No automatic assignments
 - **[TASKS.md](TASKS.md):** Feature specifications, availability checks, task claims, dependencies, contributors and verification evidence. Claim only after the collision check and plan approval.
 - **[DESIGN.md](DESIGN.md):** Mandatory shared pixel design, exact tokens/components, game-local design freedom, responsiveness and building registration.
 - **[agents.md](agents.md):** AI operating instructions, conflict detection, overwrite restrictions and review workflow.
+- **[Hub module README](client/src/features/hub/README.md):** 3D hub file map, 3D/2D decision flow, storage keys, dev-only hooks, testing rules and the add-a-building checklist.
+- **[Legacy town README](client/src/features/legacy-town/README.md):** The Panzoom pixel town kept as the hub's 2D mode, with rollback steps.
 - **[CODE_STYLE.md](CODE_STYLE.md):** Authoritative readability rules, human review checklist and small-batch maintenance workflow.
 - **[Saved-game integration guide](docs/saved-game-integration.md):** Owner-approved planning workflow for connecting one existing game to saved accounts and results; the guide does not authorize a migration.
 - **[Course reference index](TASKS.md#course-reference-index):** Supplied project brief, CS440 lecture decks and WAD2 teaching slides under `documentation/`. The 21 September additions include CS440 security basics, encryption, certificates, authentication, access control, network/software/web security and WAD2 Week 6 on Vue components, props, slots, events and local storage. Read the relevant sources before mapping learning objectives or making course/assessment claims; the index records filename/version ambiguities.
@@ -209,7 +252,7 @@ The following proposed persistence contract applies to the five scored games. Ra
 - Backend: `server/src/modules/games/<game-id>/`, containing routes, validators, scoring and private scenario data.
 - Requests: reuse `client/src/services/api.js`; its base URL already contains `/api`.
 - State: keep gameplay in a module composable using `ref`, `reactive` and `computed`. Reserve Pinia for shared account/context state.
-- Visual boundary: follow [DESIGN.md](DESIGN.md#rules-for-new-pages-and-features). Game modules may choose their own design philosophy and scoped fonts/artwork/controls; shared navigation, town registration/cards and shared pages retain the exact hub scheme. Verify accessibility/responsiveness and no style leakage.
+- Visual boundary: follow [DESIGN.md](DESIGN.md#rules-for-new-pages-and-features). Game modules may choose their own design philosophy and scoped fonts/artwork/controls; shared navigation, town registration/cards and shared pages retain the exact shared pixel scheme. Verify accessibility/responsiveness and no style leakage.
 - Town integration: all six activities have one catalog entry and building. SQL injection uses the generic preview route and `isPreview: true`; news, phishing, social-engineering, CLI and Clearance Tower (in the former regex shed) are playable behind their routes. A separately approved implementation must reuse its recorded ID, route and placement, then remove the preview flag only after verification. Do not add duplicate buildings or infer permission from a preview. Only genuinely new activities need an additional registration through DESIGN.md; no completion locks.
 
 **Proposed shared API**
