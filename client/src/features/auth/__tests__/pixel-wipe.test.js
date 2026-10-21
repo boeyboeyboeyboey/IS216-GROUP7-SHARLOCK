@@ -37,6 +37,10 @@ function createTestRouter({ signedOut = false, laterGuard, hold = 0 } = {}) {
       { path: '/games/brand-new-game', component: page },
       { path: '/login', name: 'login', component: page },
       { path: '/about', name: 'about', component: page },
+      { path: '/register', component: page },
+      { path: '/join-class', component: page },
+      { path: '/instructor', component: page },
+      { path: '/admin', component: page },
     ],
   })
   // the account guard runs first and may redirect a signed-out visitor away from town
@@ -120,11 +124,16 @@ describe('sectionOf', () => {
     expect(await sectionAt('/classes')).toBe('classes')
     expect(await sectionAt('/leaderboard')).toBe('leaderboard')
     expect(await sectionAt('/about')).toBe('about')
-    expect(await sectionAt('/login')).toBeNull()
+    expect(await sectionAt('/login')).toBe('login')
+    expect(await sectionAt('/register')).toBe('register')
+    expect(await sectionAt('/join-class')).toBe('joinClass')
+    expect(await sectionAt('/instructor')).toBe('instructor')
+    expect(await sectionAt('/admin')).toBe('admin')
     expect(await sectionAt('/games/clearance-tower')).toBe('game:clearance-tower')
     // the newspaper dialog is part of town, not a game
     expect(await sectionAt('/games/threat-briefing')).toBe('town')
-  })
+    // every step plays a full wipe, so the walk through all the tabs outlasts the default timeout
+  }, 30000)
 })
 
 describe('game doors', () => {
@@ -257,11 +266,11 @@ describe('installPageWipes', () => {
     expect((await observe(() => router.push('/'))).phases).toEqual(['idle'])
   })
 
-  it('plays when arriving from an ordinary page but not when going to one', async () => {
+  it('plays when arriving from an ordinary page', async () => {
     const router = createTestRouter()
     await router.push('/login')
     expect((await observe(() => router.push('/profile'))).sections).toEqual(['profile'])
-    expect((await observe(() => router.push('/login'))).phases).toEqual(['idle'])
+    expect((await observe(() => router.push('/login'))).sections).toEqual(['login'])
   })
 
   it('plays the About wipe, with its own look, when About is the destination', async () => {
@@ -275,10 +284,12 @@ describe('installPageWipes', () => {
     expect(WIPE_SECTIONS.about.pattern).not.toBe(WIPE_SECTIONS.profile.pattern)
   })
 
-  it('does not play when a signed-out visitor is redirected to sign-in', async () => {
+  it('plays the sign-in wipe when a signed-out visitor is redirected to sign-in', async () => {
     const router = createTestRouter({ signedOut: true })
     await router.push('/about')
-    expect((await observe(() => router.push('/'))).phases).toEqual(['idle'])
+    const { phases, sections } = await observe(() => router.push('/'))
+    expect(phases).toEqual(['idle', 'cover', 'reveal', 'idle'])
+    expect(sections).toEqual(['login'])
     expect(router.currentRoute.value.name).toBe('login')
   })
 
