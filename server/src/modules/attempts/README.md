@@ -1,10 +1,10 @@
 # Shared saved attempts and results
 
-GAME-01-A is the server foundation for saved gameplay. It is not a migration of Phishing, CLI or Social. Normal startup registers no scored adapters, so those existing games still use their unsaved endpoints and labels. The sample game used by integration tests lives only under `server/tests/integration/attempts/`; no HTTP field, environment switch or startup import enables it in the normal app.
+GAME-01-A is the server foundation for saved gameplay. It is not a migration of Phishing, CLI or Social. Normal startup now registers the separately approved G-SQL `sql-1` practice adapter; Phishing, CLI, Social and Clearance retain their unsaved endpoints and labels. The sample game used by integration tests lives only under `server/tests/integration/attempts/`; no HTTP field, environment switch or startup import enables it in the normal app.
 
 ## Request and storage flow
 
-Future owner-agreed game UI → existing credentialed Axios client → the four routes below → existing session/origin/CSRF checks → shared current account/context permissions → registered server ruleset → one `game_attempts` document. This slice adds no client wrapper, context chooser, result screen, points, awards, rankings or teaching dashboard.
+Future owner-agreed game UI → existing credentialed Axios client → the four routes below → existing session/origin/CSRF checks → shared current account/context permissions → registered server ruleset → one `game_attempts` document. GAME-01-B supplies a shared browser request wrapper, context chooser and saved-result component for G-SQL. No aggregate points, awards, rankings or teaching dashboard is added.
 
 `app.js` mounts only these handlers using its single auth runtime. `server.js` initializes the named collection and indexes additively, without seeding or rewriting existing records. The service uses the passed Mongoose connection. Writes affect one attempt document, so state, score, revision, action receipt and completed result are atomic without a multi-document transaction or replica-set prerequisite.
 
@@ -63,3 +63,9 @@ The router owns and disposes its process-local limiter stores: creation 30/user 
 - `server/tests/integration/attempts/`: injected synthetic adapter and real authenticated persistence/permission/retry/concurrency checks
 
 Verification commands and actual results are recorded in TASKS.md. Tests use only the established guarded disposable `_test` runner. This server-only slice needs no browser screenshot pass and performs no normal database/provider check, administrator recreation, fixture seeding or import of old unsaved runs.
+
+## Browser context discovery and G-SQL registration
+
+`GET /api/attempt-contexts?page=1&limit=20` requires a live session, uses the existing attempt read limits and returns `Cache-Control: no-store`. Exact optional pagination accepts positive decimal strings, pages 1–10000 and limits 1–50; unknown/repeated/structured parameters reject. It delegates to `createContextService.listEligibleContexts`, returning `{personal,cohorts,page,total}` for the current actor only. Rows contain cohort/institution names and IDs, never rosters or user IDs. Attempt creation still rechecks current access.
+
+`production-registry.js` registers only the real SQL Injection Arcade ruleset. App routing and startup storage initialization use the same production registration; injected test registries remain supported. The synthetic adapter remains test-only. Browser components live in `client/src/features/attempts/`; the G-SQL module documents its untimed noncompetitive rules and strict state. The original proposed `/sqli-test` endpoint is superseded by the canonical action route.

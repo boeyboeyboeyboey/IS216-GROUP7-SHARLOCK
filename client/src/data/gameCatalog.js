@@ -69,7 +69,7 @@ export const gameCatalog = defineGameCatalog([
     difficulty: 2,
     backgroundKnowledge: ['SQL strings', 'Boolean conditions', 'Parameterized queries'],
     route: '/games/sql-injection-arcade',
-    isPreview: true,
+    isPreview: false,
     duration: '6 min',
     icon: 'lock',
     building: { type: 'hut', x: 832, y: 128 },

@@ -20,6 +20,7 @@ import {
   registerTestStudent,
 } from '../auth/helpers.js'
 import { createSyntheticAttemptRegistry, syntheticGameId } from './helpers.js'
+import { createAttemptRegistry } from '../../../src/modules/attempts/registry.js'
 
 const password = 'Synthetic-Test-Password-2026'
 const owned = {
@@ -440,16 +441,13 @@ describe('saved attempt API', () => {
     expect(restored.headers['cache-control']).toBe('no-store')
   })
 
-  it('keeps the production registry empty while owners can still read completed snapshots', async () => {
+  it('keeps completed snapshots readable with an explicitly empty registry', async () => {
     const student = await createStudent()
     const started = await createAttempt(student)
     await answerAttempt(student, started)
     const completed = await finishAttempt(student, started.attemptId)
 
-    const emptyRegistryApp = createTestApp(database, {
-      ...baseAuthOptions,
-      now: testNow(),
-    })
+    const emptyRegistryApp = createAppForRegistry(createAttemptRegistry())
     const restoredStudent = await loginStudent(emptyRegistryApp, student)
     const publicStart = await startRequest(restoredStudent).expect(404)
     expect(publicStart.body.error.code).toBe('ATTEMPT_NOT_FOUND')

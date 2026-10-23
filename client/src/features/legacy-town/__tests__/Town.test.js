@@ -20,6 +20,7 @@ describe('town registration contract', () => {
     expect(gameCatalog.filter((game) => !game.isPreview).map((game) => game.id)).toEqual([
       'cli-cyber-defender',
       'phishing-post-mortem',
+      'sql-injection-arcade',
       'threat-briefing',
       'social-engineering-simulator',
       'clearance-tower',

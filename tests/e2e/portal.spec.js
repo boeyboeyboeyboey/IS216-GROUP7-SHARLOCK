@@ -71,6 +71,14 @@ test('explores every building without prerequisites while showing account state'
       await expect(page).toHaveURL('/')
       continue
     }
+    if (game.id === 'sql-injection-arcade') {
+      await card.getByRole('link', { name: 'Enter activity' }).click()
+      await expect(page).toHaveURL(new RegExp(`${game.route}$`))
+      await expect(page.getByRole('heading', { name: 'SQL Injection Arcade', level: 1 })).toBeVisible()
+      await page.getByRole('link', { name: 'Back to town', exact: true }).click()
+      await expect(page).toHaveURL('/')
+      continue
+    }
     await card.getByRole('link', { name: 'View activity preview' }).click()
     await expect(page).toHaveURL(new RegExp(`${game.route}$`))
     await expect(page.getByRole('heading', { name: 'A new case is taking shape.' })).toBeVisible()
@@ -79,7 +87,7 @@ test('explores every building without prerequisites while showing account state'
   }
   await page.goto('/games/mini-ctf')
   await expect(page).toHaveURL('/games/sql-injection-arcade')
-  await expect(page.getByRole('heading', { name: 'A new case is taking shape.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'SQL Injection Arcade', level: 1 })).toBeVisible()
   // the regex legacy urls now redirect to the playable clearance tower that replaced it
   for (const previous of ['red-blue', 'regex-defender']) {
     await page.goto(`/games/${previous}`)
