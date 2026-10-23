@@ -5,10 +5,10 @@
 - What it is: a 3D Thames Wharf landing page on `/` where the player walks Sharlock, a capybara detective, between six buildings; each building opens a game or the news. This is a navigation feature, not a security lesson, so it needs no course citations.
 - How to use it: walk (WASD, arrows or the touch joystick), orbit and zoom, use the minimap or destination list, press Enter at a building to open it, jump (Space or the Jump button), or switch to the 2D map.
 - Technical: Babylon.js 9 with WebGPU falling back to WebGL2; Havok character physics; a procedural capybara rig with a seeded idle state machine; automatic graphics tiers with a 2D fallback; DOM twins of the scene for accessibility.
-- Status: Review for HUB-01 to HUB-03 (on `main`); HUB-04, the Sharlock character pass with idles and jump, is in progress.
+- Status: Review for see the HUB-01 to HUB-04 records in [TASKS.md](../../../../TASKS.md) (HUB-04 is the Sharlock character pass with idles and jump).
 - Known limits: see Known gaps below. Not verified on real phones or low-end hardware.
 
-The default view on `/`: a Babylon.js 3D hub where Sharlock walks between buildings and each building opens a game. The pixel town lives in [legacy-town](../legacy-town/README.md) and is the 2D mode. Task records: HUB-01, HUB-02 and HUB-03 in TASKS.md (status Review). Owner: Boey. Integration-sensitive: `client/src/views/Dashboard.vue` (mounts `HubScene` or `TownMap`, never both) and legacy-town.
+The default view on `/`: a Babylon.js 3D hub where Sharlock walks between buildings and each building opens a game. The pixel town lives in [legacy-town](../legacy-town/README.md) and is the 2D mode. Task records: HUB-01, HUB-02, HUB-03 and HUB-04 in TASKS.md. Owner: Boey. Integration-sensitive: `client/src/views/Dashboard.vue` (mounts `HubScene` or `TownMap`, never both) and legacy-town.
 
 Players' controls and settings are described in the root README under "Using the app". Update both when they change.
 

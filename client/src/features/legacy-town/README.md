@@ -9,7 +9,7 @@ The pre-HUB-01 Panzoom pixel town. Since HUB-01 it is the **2D mode** on `/` and
 
 Rollback:
 
-1. Quick: in `Dashboard.vue`, make `useTownMode` default to `'2d'` (the `stored ?? '3d'` line in `resolveMode`).
+1. Quick: in `Dashboard.vue`, make `resolveMode` in `useTownMode.js` return `'2d'` in its final default case (`return { mode: '3d', ... }`, line 44).
 2. Full: check out git tag `legacy-town-2026-10` (commit `f5f8995`) to restore the original town and Dashboard.
 
 Owned files: `TownMap.vue`, `TownScenery.vue`, `TownAudio.vue`, `GameInfoCard.vue`, `useTownMode.js`, `__tests__/`.

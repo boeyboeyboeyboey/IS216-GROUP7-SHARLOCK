@@ -1,5 +1,13 @@
 # Social Engineering Simulator - server module
 
+## Presentation summary
+
+- What it is: the server side of G-SOC, a chat where a fictional colleague, played by an LLM, pressures the trainee to reveal a synthetic reset code.
+- Rules: the server owns the 12 scenarios (`scenarios.js`), the reset code and the system prompts, and decides the score; model output is never a security boundary.
+- API: `POST` `session`, `message`, `verifier-message`, `nudge` and `complete` under `/games/social-engineering-simulator` (`router.js`); sessions are held in memory.
+- LLM: a bad-actor adapter (`LLM_API_KEY` + `LLM_MODEL`) and a separate real-colleague adapter (`LLM_COLLEAGUE_*`); without them the game reports it is not configured.
+- Status: playable and unsaved, merged to `main` via PR #3. The `llm/` engine is separately owned and not changed here.
+
 Runs G-SOC: a fictional colleague, played by an LLM, pressures the trainee to reveal a
 synthetic reset code. The server owns the code and the system prompts and decides the
 score; the model's words are never a security boundary.
@@ -88,8 +96,8 @@ and it ends the whole run as compromised.
 
 ## Two LLM roles and the real-colleague chat
 
-Implemented on branch `g-soc-real-colleague` (15 October 2026). It is unsaved and pending
-review. Full design: `docs/superpowers/specs/2026-10-15-soc-real-colleague-verification-design.md`.
+Implemented on branch `g-soc-real-colleague` (15 October 2026) and merged to `main` via
+PR #3 (c46dfba). It is unsaved. Full design: `docs/superpowers/specs/2026-10-15-soc-real-colleague-verification-design.md`.
 
 - **Two chats.** The existing pressure chat stays. A second chat lets the player message the
   real colleague (`verifiers.js`: one colleague per persona, four in all, with server-owned

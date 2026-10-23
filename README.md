@@ -8,10 +8,17 @@ Do not write code, install dependencies, generate scaffolding or claim a
 task until the following workflow reaches explicit plan approval.
 
 1. INGEST
-Read TASKS.md first, then README.md, DESIGN.md and agents.md in full.
-Then read CODE_STYLE.md for the readability rules and the bounded
-maintenance path. This path applies only to explicitly approved existing
-code; it does not weaken the collision guardrail for new features.
+Claude Code loads CLAUDE.md, which imports agents.md; otherwise read
+agents.md in full. TASKS.md is about 1.8k lines: search it with rg for
+"Current authorization", your task ID and your name as owner instead of
+reading it whole. Read README.md sections 1-2. Read DESIGN.md only before
+UI work. Read CODE_STYLE.md before changing code for the readability rules
+and the bounded maintenance path; it applies only to explicitly approved
+existing code and does not weaken the collision guardrail for new features.
+Work on your own branch cut from the latest origin/main. Before any merge
+or PR, fetch origin/main and check for conflicts; on a conflict, stop and
+tell me to alert the team. Never resolve conflicts in another
+contributor's files.
 Inspect git status, staged/unstaged diffs, relevant source, tests and
 available branch/PR information. Preserve all existing changes.
 Ask my name if it is not already known; never invent a contributor.
@@ -23,17 +30,16 @@ non-sensitive local storage. Identify supporting filenames and slide/page
 numbers; verify actual content when filenames or versions are ambiguous.
 Course examples do not override this repository's security boundaries
 or authorize a new feature.
-Treat DESIGN.md as mandatory for every new shared UI surface. Inspect
-its referenced styles/components and the existing pages before planning.
-Preserve the exact current shared pixel scheme and 3D navbar logo.
+No shared visual style is selected; the earlier pixel and cyberpunk
+directions are not binding. Before UI work, read DESIGN.md and keep its
+accessibility and component contracts and the 3D navbar logo. Propose
+shared-UI style changes to Boey before applying them.
 The home page `/` is the 3D hub; the pixel town is its 2D mode, so E2E
 specs that touch the town must force 2D mode (client/src/features/hub/README.md).
-Game screens may have their own design philosophy, fonts and artwork,
-but must isolate styles within their module; the shared navbar, town
-building/card and other pages keep the shared pixel scheme. Retain the existing
-admin/log-content exception. Task 3 hover-card refinement is skipped;
-do not restart it. Tasks 4–5 are accepted; new implementation requires
-its own explicit plan approval. Follow TASKS.md's feature-folder convention
+Games have their own design freedom but must isolate styles within
+their module; the shared navbar, town building/card and other pages keep
+the shared contracts. New implementation requires its own explicit plan
+approval. Follow TASKS.md's feature-folder convention
 and list the feature files, tests and minimal shared integration edits.
 
 1a. REQUEST TYPE
@@ -54,10 +60,6 @@ feature-specific prototype or preview. A generic empty directory alone
 does not prove implementation.
 An active claim is also a coordination conflict even if code is not
 present locally. State any branches or work you could not inspect.
-Cyber News Central is the existing threat-briefing / The daily briefing
-activity. Its Times, newsstand and API are implemented; inspect the
-feature modules and claim. Do not treat the different title as an
-available new feature or create a duplicate.
 
 3. ENFORCE THE COLLISION GUARDRAIL FOR NEW FEATURE SELECTION
 If a newly selected or proposed feature already has partial or complete work, STOP.
@@ -140,7 +142,7 @@ pnpm install --frozen-lockfile
 pnpm setup:env
 ```
 
-`setup:env` creates root `.env` from `.env.example` and generates server defaults without overwriting existing files; never print these files. Set `MONGO_URI` in root `.env`. If you have no MongoDB, `pnpm db:local` starts a local development MongoDB on 127.0.0.1:27018 with data kept in `.local/mongodb`; leave it running in its own terminal. Then run:
+`setup:env` creates root `.env` from `.env.example` and generates server defaults without overwriting existing files; never print these files. For local development keep root `.env` at `MONGO_URI=mongodb://127.0.0.1:27018/sharlock_dev` (the `.env.example` default) and change it only to use Atlas. `pnpm db:local` starts that local development MongoDB on 127.0.0.1:27018 with data kept in `.local/mongodb`; leave it running in its own terminal. `pnpm db:local` and the integration and E2E tests download a MongoDB 8.2.6 binary into `.cache/mongodb` on first run. Then run:
 
 ```sh
 pnpm dev
@@ -149,6 +151,8 @@ pnpm dev
 This serves the client on http://localhost:5173 and the API on port 3000. Run `pnpm install --frozen-lockfile` again after every pull; the 3D hub added `@babylonjs/core` 9.31.0 and `@babylonjs/havok` 1.3.14.
 
 For live Times stories, privately add `GUARDIAN_API_KEY` from [Guardian Open Platform](https://open-platform.theguardian.com/access/) to root `.env` and restart the backend. The OWASP Top 10 reference and the rest of the app remain usable without a key. Never put it in frontend configuration or chat.
+
+Other optional keys in root `.env` (server-side only, never printed): `LLM_API_KEY` and `LLM_MODEL` enable the Social Engineering Simulator's attacker chat, which shows a "not configured" message without them. `LLM_COLLEAGUE_BASE_URL` and `LLM_COLLEAGUE_MODEL` (plus optional `LLM_COLLEAGUE_AUTH_TOKEN` and `LLM_COLLEAGUE_TIMEOUT_MS`, 1000-60000) enable the real-colleague chat; the base URL and model must be set together or both left empty.
 
 Open **http://localhost:5173** (Vite answers on `localhost`, not `127.0.0.1`). The existing workspace and scripts require pnpm; retain the single `pnpm-lock.yaml`.
 
@@ -495,7 +499,7 @@ The game follows the hub's light town palette and Pixelify Sans, scoped under `.
 
 **Gameplay / interaction loop**
 
-1. Enter the town directly at `/` and select the newsstand; hover/focus still reveals its shared metadata card.
+1. Open `/` (the 3D hub; switch to the 2D town map if needed) and select the newsstand; hover/focus still reveals its shared metadata card.
 2. Open the newspaper over the mounted town at `/games/threat-briefing`.
 3. Browse the past seven days, switch section, search the fetched edition and use ten-story pages. The older-stories option expands to the past 30 days.
 4. Read publisher headlines, short excerpts, bylines and publication dates; open the publisher's full article in a new tab.
