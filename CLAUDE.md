@@ -45,6 +45,17 @@ Never print, overwrite or commit `.env` or `server/.env`.
 5. Update the TASKS.md record. Task status lives only in TASKS.md.
 6. Finish with a completion report listing the checks run and the docs updated, or "no docs impact" with the reason.
 
+## Subagents
+
+Subagents (Explore, Plan, general-purpose or custom agents) do not inherit this file or `agents.md`. Every delegation brief must:
+
+- tell the subagent to read `agents.md` in full before any edit
+- restate the approved scope, the files it may touch, and that it must not edit other contributors' modules or the `llm/` engine
+- restate the docs-upkeep rule (agents.md section 10) when it changes code, and the comment style (lowercase, minimal, no trailing full stop)
+- tell it to stop and report if the work grows beyond that scope
+
+The main session stays responsible for reviewing every subagent change and for the docs and TASKS.md updates in the checklist above.
+
 ## Branches and merge conflicts
 
 Work on your own branch cut from the latest `origin/main`. Before any merge or PR, fetch `origin/main` and check for conflicts. On a conflict, stop and tell the user to alert the team. Never resolve conflicts in files another contributor owns. Never commit, push or open a PR unless asked.
