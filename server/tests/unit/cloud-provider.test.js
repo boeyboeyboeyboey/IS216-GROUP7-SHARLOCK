@@ -30,6 +30,16 @@ describe('createCloudProvider (gemini)', () => {
     expect(body.contents.map((c) => c.role)).toEqual(['model', 'user'])
   })
 
+  it('turns thinking off so hidden thought tokens do not cut the reply short', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(okResponse('ok'))
+    const provider = createCloudProvider({ apiKey: 'test-key', fetchImpl })
+
+    await provider.chat({ systemPrompt: 's', messages: [{ role: 'user', content: 'hi' }] })
+
+    const { generationConfig } = JSON.parse(fetchImpl.mock.calls[0][1].body)
+    expect(generationConfig.thinkingConfig).toEqual({ thinkingBudget: 0 })
+  })
+
   it('throws LLM_UPSTREAM_UNAVAILABLE when the host cannot be reached', async () => {
     const fetchImpl = vi.fn().mockRejectedValue(new Error('network'))
     const provider = createCloudProvider({ apiKey: 'test-key', fetchImpl })

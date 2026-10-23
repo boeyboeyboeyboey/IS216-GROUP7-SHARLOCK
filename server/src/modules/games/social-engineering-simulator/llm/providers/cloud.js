@@ -20,7 +20,12 @@ export function createCloudProvider({
           role: message.role === 'assistant' ? 'model' : 'user',
           parts: [{ text: message.content }],
         })),
-        generationConfig: { temperature: 0.3, maxOutputTokens: 256 },
+        // thinking tokens share the output cap and cut replies short, so thinking is off
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 256,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
       }
       let response
       try {
