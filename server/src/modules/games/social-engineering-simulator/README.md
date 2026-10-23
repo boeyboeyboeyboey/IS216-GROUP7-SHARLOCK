@@ -137,9 +137,12 @@ PR #3 (c46dfba). It is unsaved. Full design: `docs/superpowers/specs/2026-10-15-
   `LLM_COLLEAGUE_TIMEOUT_MS` (default 60000). The browser waits 65000 ms for the colleague
   (`VERIFIER_TIMEOUT_MS` in the client `simulator.js`; 45000 ms for the bad-actor chat). A
   reply that passes the limit shows a retryable "hasn't replied yet" state.
-- **Status.** Unit tests cover the behaviour with mocked adapters. A live rehearsal against the
-  shared project Ollama gateway has not been run yet; see the TASKS.md record. The gateway
-  token is shared privately and lives only in each teammate's own `.env`.
+- **Status.** Unit tests cover the behaviour with mocked adapters. On 24 October 2026 Eric ran
+  live rehearsals with `node tests/soc-live-session.mjs [--scenario <id>]` against Gemini and the
+  Ollama colleague (an attack and a legitimate scenario, both with a colleague check). Known
+  limit: Gemini thinking tokens count against `maxOutputTokens: 256` in the guarded
+  `llm/providers/cloud.js`, so attacker replies can be cut short; see the TASKS.md record. The
+  gateway token is shared privately and lives only in each teammate's own `.env`.
 
 ## Why there is no database here
 
