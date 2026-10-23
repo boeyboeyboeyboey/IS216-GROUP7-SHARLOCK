@@ -43,7 +43,8 @@ describe('social-engineering service', () => {
     expect(start.brief.title).toBeTruthy()
     expect(start.openingMessage).toBeTruthy()
     expect(start.resetCode).toBe(codeFor(start))
-    expect(JSON.stringify(start)).not.toContain('system')
+    // checks the field, not the word: the lobby-visitor opening says "visitor system"
+    expect(JSON.stringify(start)).not.toContain('systemPrompt')
 
     const turn = await service.sendMessage(start.sessionId, 'Who is this exactly?')
     const { systemPrompt } = adapter.chat.mock.calls[0][0]
