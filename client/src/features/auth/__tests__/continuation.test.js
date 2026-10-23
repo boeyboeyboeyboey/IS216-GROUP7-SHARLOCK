@@ -8,15 +8,28 @@ const mocks = vi.hoisted(() => ({
   user: { id: 'student', globalRoles: ['student'] },
   login: vi.fn(),
   register: vi.fn(),
+  verifyEmail: vi.fn(),
   replace: vi.fn(),
   resolve: vi.fn(),
 }))
-vi.mock('../store.js', () => ({ useAuthStore: () => ({
-  user: mocks.user,
-  login: mocks.login,
-  register: mocks.register,
-  requestError: null,
-}) }))
+vi.mock('../store.js', async () => {
+  const { reactive } = await import('vue')
+  const store = reactive({ status: 'anonymous', user: mocks.user, requestError: null, pendingVerification: null })
+  const signIn = (operation) => async (...args) => {
+    const user = await operation(...args)
+    store.status = 'authenticated'
+    return user
+  }
+  store.login = signIn((...args) => mocks.login(...args))
+  // registration ends at the email-code step; the code signs the account in
+  store.register = async (...args) => {
+    await mocks.register(...args)
+    store.pendingVerification = { email: 'student@example.test' }
+    return null
+  }
+  store.verifyEmail = signIn((...args) => mocks.verifyEmail(...args))
+  return { useAuthStore: () => store }
+})
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: {} }),
   useRouter: () => ({ replace: mocks.replace }),
@@ -30,12 +43,24 @@ const Form = defineComponent({
     return () => h('button', { onClick: () => emit('submit', { identifier: 'student@example.test' }) }, 'Submit credentials')
   },
 })
+const CodePanel = defineComponent({
+  emits: ['submit'],
+  setup(_props, { emit }) {
+    return () => h('button', { onClick: () => emit('submit', '123456') }, 'Submit code')
+  },
+})
 const wrappers = []
 afterEach(() => wrappers.splice(0).forEach((wrapper) => wrapper.unmount()))
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks()
+  const { useAuthStore } = await import('../store.js')
+  const store = useAuthStore()
+  store.status = 'anonymous'
+  store.pendingVerification = null
+  mocks.resolve.mockReset()
   mocks.login.mockResolvedValue(mocks.user)
-  mocks.register.mockResolvedValue(mocks.user)
+  mocks.register.mockResolvedValue(null)
+  mocks.verifyEmail.mockResolvedValue(mocks.user)
   mocks.replace.mockResolvedValue()
 })
 
@@ -46,11 +71,16 @@ describe('account enrollment continuation', () => {
   ])('retries class setup without repeating %s credentials', async (operation, Page) => {
     mocks.resolve.mockRejectedValueOnce(new Error('Unavailable')).mockResolvedValueOnce('/join-class?onboarding=1')
     const wrapper = mount(Page, { global: { stubs: {
-      LoginForm: Form, RegisterForm: Form, RouterLink: true, PixelIcon: true, SessionNotice: true,
+      LoginForm: Form, RegisterForm: Form, VerifyEmailPanel: CodePanel, RouterLink: true, PixelIcon: true, SessionNotice: true,
     } } })
     wrappers.push(wrapper)
     await wrapper.get('button').trigger('click')
     await flushPromises()
+    // registration needs one more step: confirm the emailed code
+    if (operation === 'register') {
+      await wrapper.get('button').trigger('click')
+      await flushPromises()
+    }
     expect(wrapper.get('[role="alert"]').text()).toContain('Class setup is unavailable')
     expect(mocks[operation]).toHaveBeenCalledOnce()
     expect(mocks.resolve).toHaveBeenCalledWith(mocks.user, expect.objectContaining({ afterAccountAccess: true }))

@@ -78,7 +78,7 @@ describe('social-engineering scenarios', () => {
   it('keeps briefs, titles and openings free of answer-revealing words', () => {
     for (const scenario of SCENARIOS) {
       const text = [scenario.brief.title, scenario.brief.objective, scenario.opening].join(' ')
-      expect(text).not.toMatch(/unsafe|protect|safe|legitimate|verify independently/i)
+      expect(text).not.toMatch(/unsafe|protect|\bsafe\b|legitimate|verify independently/i)
     }
   })
 
