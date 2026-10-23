@@ -14,12 +14,19 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock('../store.js', async () => {
   const { reactive } = await import('vue')
-  const store = reactive({ status: 'anonymous', user: mocks.user, requestError: null, pendingVerification: null })
-  const signIn = (operation) => async (...args) => {
-    const user = await operation(...args)
-    store.status = 'authenticated'
-    return user
-  }
+  const store = reactive({
+    status: 'anonymous',
+    user: mocks.user,
+    requestError: null,
+    pendingVerification: null,
+  })
+  const signIn =
+    (operation) =>
+    async (...args) => {
+      const user = await operation(...args)
+      store.status = 'authenticated'
+      return user
+    }
   store.login = signIn((...args) => mocks.login(...args))
   // registration ends at the email-code step; the code signs the account in
   store.register = async (...args) => {
@@ -36,19 +43,19 @@ vi.mock('vue-router', () => ({
 }))
 vi.mock('../../cohorts/journey.js', () => ({ resolveEnrollmentDestination: mocks.resolve }))
 
-const Form = defineComponent({
-  emits: ['submit'],
-  setup(_props, { emit, expose }) {
-    expose({ clearSecrets: vi.fn() })
-    return () => h('button', { onClick: () => emit('submit', { identifier: 'student@example.test' }) }, 'Submit credentials')
-  },
+// one stub factory keeps a single component definition in the file
+const stub = (label, makePayload, { exposeClear = false } = {}) =>
+  defineComponent({
+    emits: ['submit'],
+    setup(_props, { emit, expose }) {
+      if (exposeClear) expose({ clearSecrets: vi.fn() })
+      return () => h('button', { onClick: () => emit('submit', makePayload()) }, label)
+    },
+  })
+const Form = stub('Submit credentials', () => ({ identifier: 'student@example.test' }), {
+  exposeClear: true,
 })
-const CodePanel = defineComponent({
-  emits: ['submit'],
-  setup(_props, { emit }) {
-    return () => h('button', { onClick: () => emit('submit', '123456') }, 'Submit code')
-  },
-})
+const CodePanel = stub('Submit code', () => '123456')
 const wrappers = []
 afterEach(() => wrappers.splice(0).forEach((wrapper) => wrapper.unmount()))
 beforeEach(async () => {
@@ -69,10 +76,21 @@ describe('account enrollment continuation', () => {
     ['login', LoginPage],
     ['register', RegisterPage],
   ])('retries class setup without repeating %s credentials', async (operation, Page) => {
-    mocks.resolve.mockRejectedValueOnce(new Error('Unavailable')).mockResolvedValueOnce('/join-class?onboarding=1')
-    const wrapper = mount(Page, { global: { stubs: {
-      LoginForm: Form, RegisterForm: Form, VerifyEmailPanel: CodePanel, RouterLink: true, PixelIcon: true, SessionNotice: true,
-    } } })
+    mocks.resolve
+      .mockRejectedValueOnce(new Error('Unavailable'))
+      .mockResolvedValueOnce('/join-class?onboarding=1')
+    const wrapper = mount(Page, {
+      global: {
+        stubs: {
+          LoginForm: Form,
+          RegisterForm: Form,
+          VerifyEmailPanel: CodePanel,
+          RouterLink: true,
+          PixelIcon: true,
+          SessionNotice: true,
+        },
+      },
+    })
     wrappers.push(wrapper)
     await wrapper.get('button').trigger('click')
     await flushPromises()
@@ -83,7 +101,10 @@ describe('account enrollment continuation', () => {
     }
     expect(wrapper.get('[role="alert"]').text()).toContain('Class setup is unavailable')
     expect(mocks[operation]).toHaveBeenCalledOnce()
-    expect(mocks.resolve).toHaveBeenCalledWith(mocks.user, expect.objectContaining({ afterAccountAccess: true }))
+    expect(mocks.resolve).toHaveBeenCalledWith(
+      mocks.user,
+      expect.objectContaining({ afterAccountAccess: true }),
+    )
     await wrapper.get('button').trigger('click')
     await flushPromises()
     expect(mocks[operation]).toHaveBeenCalledOnce()
@@ -92,10 +113,22 @@ describe('account enrollment continuation', () => {
 
   it('cancels continuation on departure and does not navigate after a stale response', async () => {
     let finish
-    mocks.resolve.mockImplementation(() => new Promise((resolve) => { finish = resolve }))
-    const wrapper = mount(LoginPage, { global: { stubs: {
-      LoginForm: Form, RouterLink: true, PixelIcon: true, SessionNotice: true,
-    } } })
+    mocks.resolve.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    const wrapper = mount(LoginPage, {
+      global: {
+        stubs: {
+          LoginForm: Form,
+          RouterLink: true,
+          PixelIcon: true,
+          SessionNotice: true,
+        },
+      },
+    })
     await wrapper.get('button').trigger('click')
     await flushPromises()
     const signal = mocks.resolve.mock.calls[0][1].signal

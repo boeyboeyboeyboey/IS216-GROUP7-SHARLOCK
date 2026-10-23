@@ -330,6 +330,7 @@ describe('composer restoreText', () => {
   it('restores failed text into an empty draft only', async () => {
     const restore = ref('')
     const el = document.createElement('div')
+    // eslint-disable-next-line vue/one-component-per-file
     const app = createApp({ render: () => h(MessageComposer, { restoreText: restore.value }) })
     app.mount(el)
     const field = el.querySelector('textarea')
@@ -363,6 +364,7 @@ describe('simulator screen with a colleague', () => {
     const el = document.createElement('div')
     document.body.append(el)
     const app = createApp(Screen)
+    // eslint-disable-next-line vue/one-component-per-file
     app.component('RouterLink', { render: () => h('a') })
     app.mount(el)
     await flushPromises()
