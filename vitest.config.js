@@ -2,7 +2,9 @@ import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
-  plugins: [vue()],
+  // leave /images/... urls as plain strings: they are served from client/public, so tests
+  // that import the router or the town need not resolve them
+  plugins: [vue({ template: { transformAssetUrls: { includeAbsolute: false } } })],
   test: {
     projects: [
       {
