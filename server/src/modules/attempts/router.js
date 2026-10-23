@@ -5,6 +5,9 @@ import { CohortError } from '../cohorts/policy.js'
 import { AttemptError } from './policy.js'
 import { createAttemptRegistry } from './registry.js'
 import { createAttemptService } from './service.js'
+import { createContextService } from '../../services/context.js'
+import { parsePagination } from '../cohorts/policy.js'
+import { assertEmptyQuery } from './policy.js'
 
 const authMessages = {
   AUTHENTICATION_REQUIRED: [401, 'Sign in to continue.'],
@@ -154,6 +157,35 @@ export function createAttemptRouter(
   const routeErrorHandler = (error, _request, response, _next) => {
     sendError(error, response)
   }
+
+  router.get(
+    '/attempt-contexts',
+    noStore,
+    ...sessionMiddleware,
+    readUser.middleware,
+    readIp.middleware,
+    createHandler((request, response) => {
+      const { page, limit, ...unknown } = request.query
+      assertEmptyQuery(unknown)
+      if (
+        [page, limit].some(
+          (value) =>
+            value !== undefined && (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)),
+        )
+      ) {
+        throw new AttemptError('ATTEMPT_INVALID_REQUEST', 'Use valid pagination values.', 400)
+      }
+      const pagination = parsePagination({
+        page: page === undefined ? 1 : Number(page),
+        limit: limit === undefined ? 20 : Number(limit),
+      })
+      return createContextService(database).listEligibleContexts(
+        response.locals.authUser,
+        pagination,
+      )
+    }),
+    routeErrorHandler,
+  )
 
   router.post(
     '/games/:gameId/attempts',

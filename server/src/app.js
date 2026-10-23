@@ -10,6 +10,7 @@ import { createCohortRouter } from './modules/cohorts/router.js'
 import { createAuditRouter } from './modules/audit/router.js'
 import { createAdminRouter } from './modules/admin/router.js'
 import { createAttemptRouter } from './modules/attempts/router.js'
+import { createProductionAttemptRegistry } from './modules/attempts/production-registry.js'
 import { createProfileRouter } from './modules/profile/router.js'
 import { createRecoveryRouter } from './modules/recovery/router.js'
 import { createHealthRouter } from './routes/health.js'
@@ -70,6 +71,7 @@ export function createApp(
   })
   app.use('/api', cohortRouter)
   const attemptRouter = createAttemptRouter(database, {
+    registry: createProductionAttemptRegistry(),
     ...attempts,
     now: attempts.now ?? authRuntime.now,
     requireSession: authRuntime.requireSession,

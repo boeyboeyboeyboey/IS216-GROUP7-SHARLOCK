@@ -2,7 +2,7 @@
 
 This guide helps a game owner and their teammate or agent plan one real game's connection to Sharlock Hub's shared saved-attempt foundation. It is a start-here guide and planning worksheet; it is not an approval to migrate a game, register a production adapter, or change shared infrastructure.
 
-## Readiness as of 16 October 2026
+## Historical readiness as of 16 October 2026
 
 | Piece                                                                | Current state                         | What this means for a game owner                                                                                      |
 | -------------------------------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -14,6 +14,10 @@ This guide helps a game owner and their teammate or agent plan one real game's c
 | Server context resolution                                            | Implemented                           | It validates requested personal or cohort context; it does not provide the missing browser flow                       |
 
 These are separate readiness facts. A completed server foundation does not make a game saved, and a playable game does not imply that its owner approved a migration. Check [TASKS.md](../TASKS.md) for current branch, publication, task status, approval, and contributor evidence before proposing work.
+
+## Current G-SQL continuation
+
+The approved GAME-01-B / G-SQL work supplies `client/src/features/attempts/` request/context/result components, authenticated context discovery, and one production `sql-1` practice adapter. G-SQL uses the canonical saved-attempt routes. The table above preserves the earlier baseline; other games still require their own owner-agreed integration plans. Follow the current TASKS record and the shared browser/server module READMEs instead of treating that historical missing-prerequisite snapshot as current availability.
 
 ## Begin with the existing contracts
 
@@ -65,7 +69,7 @@ Treat these as planning checkpoints, not a pre-approved implementation sequence.
 6. **Plan verification.** Derive focused unit/API/client tests from the worksheet and the canonical contract. Use synthetic accounts and game data in the guarded disposable test environment only; do not create demo data in the normal database.
 7. **Review the completed scope.** Before changing a task to Review, record the exact files and commands run, outcomes and limits, resulting branch/publication state, and any follow-up dependencies. Acceptance and publication remain separate decisions.
 
-The normal server's empty registry is intentional. Making a real game playable against saved results requires an owner-approved adapter and the corresponding shared/browser integration; a successful route guard, foundation API, mock adapter, or UI label alone does not establish that the learner's result was saved.
+The historical empty registry was intentional; the separately approved G-SQL continuation now registers its own practice adapter. Making a real game playable against saved results requires an owner-approved adapter and the corresponding shared/browser integration; a successful route guard, foundation API, mock adapter, or UI label alone does not establish that the learner's result was saved.
 
 ## Saved-status messages
 
@@ -176,7 +180,7 @@ game unsaved until its own approved implementation actually persists results.
 
 ## Safe verification and what this guide does not authorize
 
-The contract's synthetic adapter is a test fixture, not an example production game. It lives in [attempt integration helpers](../server/tests/integration/attempts/helpers.js) and is exercised by the [attempt integration tests](../server/tests/integration/attempts/attempts.test.js). Production startup intentionally has no scored adapters. Never register, import, copy, or relabel that fixture as a real game adapter.
+The contract's synthetic adapter is a test fixture, not an example production game. It lives in [attempt integration helpers](../server/tests/integration/attempts/helpers.js) and is exercised by the [attempt integration tests](../server/tests/integration/attempts/attempts.test.js). Production startup now registers only the separately approved real G-SQL practice adapter. Never register, import, copy, or relabel that fixture as a real game adapter.
 
 For an approved server integration, add focused registry/ruleset tests and authenticated API tests to the owning game/foundation tests. Use only the established guarded disposable `_test` database runner; confirm the runner's safety checks and replica-set need before execution. Test direct access to another player's and cohort's IDs, changed membership, invalid or repeated actions, lost responses, concurrent mutations, incomplete completion, and private-state serialization. Add client tests for the actual player journey after a shared client contract exists.
 

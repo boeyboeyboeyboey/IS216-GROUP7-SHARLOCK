@@ -8,6 +8,7 @@ import { initializeCohortStorage } from './modules/cohorts/storage.js'
 import { initializeAuditStorage } from './modules/audit/storage.js'
 import { initializeRecoveryStorage } from './modules/recovery/storage.js'
 import { initializeAttemptStorage } from './modules/attempts/storage.js'
+import { createProductionAttemptRegistry } from './modules/attempts/production-registry.js'
 import { createApp } from './app.js'
 import { loadEnvironment } from './config/env.js'
 import { connectDatabase } from './config/database.js'
@@ -64,7 +65,7 @@ try {
     throw new Error('Activation storage could not initialize. Check database access and restart.')
   }
   try {
-    await initializeAttemptStorage(database)
+    await initializeAttemptStorage(database, createProductionAttemptRegistry())
   } catch {
     throw new Error(
       'Saved activity storage could not initialize. Check database access and restart.',

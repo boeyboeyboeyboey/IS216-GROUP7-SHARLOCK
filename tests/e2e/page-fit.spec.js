@@ -12,7 +12,7 @@ const SIGNED_IN = [
   ['Detective profile', '/profile'],
   ['Learning progress', '/progress'],
   ['Your classes', '/classes'],
-  ['SQL injection preview', '/games/sql-injection-arcade'],
+  ['SQL Injection Arcade briefing', '/games/sql-injection-arcade'],
   ['Regex preview', '/games/regex-defender'],
   ['CLI Cyber Defender briefing', '/games/cli-cyber-defender'],
   ['Phishing Post-Mortem briefing', '/games/phishing-post-mortem'],

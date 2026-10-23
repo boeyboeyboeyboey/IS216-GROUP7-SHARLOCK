@@ -142,6 +142,11 @@ export const routes = [
     redirect: `/games/${current}`,
   })),
   {
+    path: '/games/sql-injection-arcade',
+    component: () => import('../games/sql-injection-arcade/SqlInjectionArcade.vue'),
+    meta: { title: 'SQL Injection Arcade', requiresAccount: true },
+  },
+  {
     path: '/games/phishing-post-mortem',
     component: () => import('../games/phishing-post-mortem/PhishingPostMortem.vue'),
     meta: { title: 'The Phishing Post-Mortem', requiresAccount: true },
