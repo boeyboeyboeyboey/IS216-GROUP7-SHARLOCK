@@ -1,5 +1,5 @@
 export const GAME_ID = 'social-engineering-simulator'
-export const RULESET_VERSION = '2026-10-18'
+export const RULESET_VERSION = '2026-10-24'
 export const MAX_SCORE = 100
 export const WEIGHTS = { noLeak: 60, verify: 25, efficiency: 15 }
 export const DEFAULT_TURN_BUDGET = 8

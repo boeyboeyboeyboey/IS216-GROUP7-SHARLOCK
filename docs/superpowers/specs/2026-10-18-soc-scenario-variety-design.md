@@ -1,6 +1,6 @@
 # Social Engineering Simulator: scenario variety and legitimate requests (design)
 
-Date: 2026-10-18. Status: implemented on 2026-10-18 (see docs/superpowers/plans/2026-10-18-soc-scenario-variety.md). The open point about tightening attack scoring (the 75 points for refusing an attack without checking) is closed for now and deferred: attack scoring stays unchanged until the user picks this up again.
+Date: 2026-10-18. Amended 2026-10-24: refusing a genuine request after checking now scores efficiency only (ruleset `2026-10-24`), so contact alone is not rewarded. Status: implemented on 2026-10-18 (see docs/superpowers/plans/2026-10-18-soc-scenario-variety.md). The open point about tightening attack scoring (the 75 points for refusing an attack without checking) is closed for now and deferred: attack scoring stays unchanged until the user picks this up again.
 
 Module: G-SOC, `server/src/modules/games/social-engineering-simulator/` and `client/src/games/social-engineering-simulator/`. Read `server/src/modules/games/social-engineering-simulator/README.md` first; this design changes its scoring section.
 
@@ -86,7 +86,7 @@ Weights stay 60 / 25 / 15 and the maximum stays 100.
 | Player did                            | Decision points (60) | Verify (25) | Efficiency (15)     | Outcome                  |
 | ------------------------------------- | -------------------- | ----------- | ------------------- | ------------------------ |
 | contacted the colleague, then shared  | 60                   | 25          | 15 if within budget | `resisted` (100)         |
-| contacted the colleague, then refused | 0                    | 25          | as earned           | `partial` (up to 40)     |
+| contacted the colleague, then refused | 0                    | 0           | as earned           | `partial` (up to 15)     |
 | refused without contacting            | 0                    | 0           | as earned           | `partial` (up to 15)     |
 | shared without contacting             | 0                    | 0           | as earned           | `compromised` (up to 15) |
 

@@ -297,10 +297,12 @@ describe('social-engineering service', () => {
       ])
     })
 
-    it('gives partial credit for contacting and then refusing', () => {
+    it('gives only efficiency for contacting and then refusing a genuine request', () => {
       const result = score({ leaked: false, decision: 'refuse', verifierContacted: true })
-      expect(result.score).toBe(40)
+      expect(result.score).toBe(15)
       expect(result.outcome).toBe('partial')
+      // contact alone earns nothing: the verify points need the right decision after it
+      expect(result.breakdown.find((item) => item.key === 'verify').points).toBe(0)
     })
 
     it('gives only efficiency for refusing without contact', () => {
@@ -328,7 +330,7 @@ describe('social-engineering service', () => {
         decision: 'verify-independently',
         verifierContacted: true,
       })
-      expect(result.score).toBe(40)
+      expect(result.score).toBe(15)
       expect(result.outcome).toBe('partial')
     })
 
@@ -467,7 +469,8 @@ describe('social-engineering service', () => {
         }).score
       expect(mean((l) => run(l, 'refuse', false))).toBeCloseTo(54, 0)
       expect(mean((l) => run(l, 'share-code', false))).toBeCloseTo(15, 0)
-      expect(mean((l) => run(l, 'refuse', true))).toBeCloseTo(79, 0)
+      // contacting the colleague and then always refusing no longer scores near the informed player
+      expect(mean((l) => run(l, 'refuse', true))).toBeCloseTo(70, 0)
       expect(mean((l) => run(l, l ? 'share-code' : 'refuse', true))).toBe(100)
     })
   })

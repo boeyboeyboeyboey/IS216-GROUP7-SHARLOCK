@@ -72,7 +72,8 @@ function scoreLegitimate({
     {
       key: 'verify',
       label: verifierName ? `Checked with ${verifierName}` : 'Checked the request',
-      points: checked ? WEIGHTS.verify : 0,
+      // contact alone earns nothing: the verify points need the right decision after the check
+      points: sharedAfterChecking ? WEIGHTS.verify : 0,
       max: WEIGHTS.verify,
     },
     {
